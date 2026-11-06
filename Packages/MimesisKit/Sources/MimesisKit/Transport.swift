@@ -72,10 +72,8 @@ struct Transport: View {
         .disabled(comparison.focused == nil)
     }
 
-    /// The clip on the ruler (A while linked, else the selected one), for its marks.
-    private var rulerClip: Clip? {
-        comparison.linked ? comparison.clips.first : comparison.focused
-    }
+    /// The clip on the ruler and its marks: always the focused one, linked or not.
+    private var rulerClip: Clip? { comparison.focused }
 
     /// A strip over the ruler's progress bar: diamonds for sync points, dots for drawings. Tap one to go there.
     @ViewBuilder private var marks: some View {
@@ -116,7 +114,7 @@ struct Transport: View {
     private func jump(to time: Double, clip: Clip) {
         if comparison.linked {
             comparison.pause()
-            let u = (time - clip.syncTime) / clip.speed
+            let u = comparison.linkedTime(of: clip, at: time)
             Task { await comparison.seek(to: u) }
         } else {
             clip.engine.pause()
@@ -135,14 +133,14 @@ struct Transport: View {
 
     /// AreteMedia's FrameRulerTimeline, styled as in Arete's player.
     @ViewBuilder private var ruler: some View {
-        if comparison.linked, let lead = comparison.clips.first {
-            // Clip A's own time; a seek on it moves the shared timeline, so B follows.
+        if comparison.linked, let lead = comparison.focused {
+            // The focused clip's own frames; a seek on it moves the shared timeline, so the other follows.
             let range = comparison.range
             areteRuler(
                 currentTime: lead.engine.currentTime,
                 duration: lead.engine.duration,
-                fps: Float(Double(lead.engine.fps)),
-                onSeek: { t in comparison.scrub(to: (t - lead.syncTime) / lead.speed) },
+                fps: lead.engine.fps,
+                onSeek: { t in comparison.scrub(to: comparison.linkedTime(of: lead, at: t)) },
                 trimStart: comparison.clipTime(lead, at: range.lowerBound),
                 trimEnd: comparison.clipTime(lead, at: range.upperBound),
                 onDraggingChanged: { dragging in

@@ -225,6 +225,11 @@ public final class Comparison {
         warp(clip).time(at: u)
     }
 
+    /// Where on the linked timeline `clip` shows its own time `t`: the inverse of `clipTime`.
+    public func linkedTime(of clip: Clip, at t: Double) -> Double {
+        warp(clip).u(at: t)
+    }
+
     /// Where the linked timeline is, read from clip A.
     public var position: Double {
         warp(a).u(at: a.engine.currentTime)

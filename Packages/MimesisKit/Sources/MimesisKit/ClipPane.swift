@@ -48,10 +48,10 @@ struct ClipPane: View {
                 .allowsHitTesting(false)
         }
         .overlay {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(Theme.accent.opacity(0.95), lineWidth: 2.5)
-                .shadow(color: Theme.accent.opacity(0.55), radius: 8)
-                .padding(4)
+            // Flush with the clip's edge, corners softly rounded.
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .strokeBorder(Theme.accent, lineWidth: 2.5)
+                .shadow(color: Theme.accent.opacity(0.5), radius: 6)
                 .opacity((focused && showsFocus) || dropping ? 1 : 0)
                 .scaleEffect((focused && showsFocus) || dropping ? 1 : 0.985)
                 .allowsHitTesting(false)
