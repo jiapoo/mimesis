@@ -9,14 +9,36 @@ When a step is done, tick its box and add the date: `- [x] Step (2026-11-06)`.
 
 ## Phase 0 — Setup and the riskiest test first
 
-- [ ] Git: `git init`, first commit, push to `github.com/jiapoo/mimesis`
-- [ ] Project laid out like Imago: XcodeGen `project.yml`, `Mac/` and `iOS/` targets, a `Packages/MimesisKit`
-      package for shared code, and `AreteMedia` pinned at a version (currently 1.8.0)
-- [ ] Empty app builds and runs on Mac, iPad and iPhone
-- [ ] **Masking test:** run Apple's person mask (`VNGeneratePersonInstanceMaskRequest`) and its lift-subject
-      mask (`VNGenerateForegroundInstanceMaskRequest`) over a few Alcaraz forehands and serves.
+- [x] Git: `git init`, first commit, push to `github.com/jiapoo/mimesis` (2026-11-06)
+- [x] Project laid out like Imago: XcodeGen `project.yml`, `Mac/` and `iOS/` targets, a `Packages/MimesisKit`
+      package for shared code, and `AreteMedia` pinned at a version (currently 1.8.0) (2026-11-06)
+- [x] Empty app builds and runs on Mac, iPad and iPhone (simulators; not yet on a real device) (2026-11-06)
+- [x] **Masking test:** run Apple's person mask (`VNGeneratePersonInstanceMaskRequest`) and its lift-subject
+      mask (`VNGenerateForegroundInstanceMaskRequest`) over tennis clips.
       Record whether the racket survives, mid-swing too, and how long a clip takes to process.
-      The answer decides how Phase 4 is built.
+      The answer decides how Phase 4 is built. (2026-11-06; findings below)
+- [ ] Repeat the masking test on a TV clip of Alcaraz: several people in frame (opponent, umpire, ball kids),
+      a far camera, and the score and logos drawn over the picture
+
+### Masking test findings (2026-11-06)
+
+Run with the app's masking test screen, or from the command line:
+`cd Packages/MimesisKit && swift run -c release mask-probe <video> --start 3 --seconds 2 --out <folder>`
+(writes `sheet.png`: frame | person mask | lift subject).
+
+Tested on two phone-filmed clips (1080×1920): a slice serve at 60 fps and a backhand slice at 30 fps, on an M-series Mac.
+
+| | Person mask | Lift subject |
+|---|---|---|
+| Racket | Faint or missing, often only a ghost | Kept, at the top of the serve too; sometimes partly lost in a fast blur |
+| Shadow | Sometimes cut out with the player | Left out |
+| Edges | Soft and blurry | Sharp |
+| Speed (Mac) | 22–65 ms a frame | 15–16 ms a frame |
+| Missed frames | 2 of 179 | 3 of 179 |
+
+**Decision: build Phase 4 on lift subject** (`VNGenerateForegroundInstanceMaskRequest`).
+Both methods also keep text and stickers drawn over the video (titles, a red ✗), so clips with overlays
+will need the "tap to choose" step, or cropping the overlay out.
 
 ## Phase 1 — The comparison core (the Kinovea part)
 
@@ -54,8 +76,8 @@ The five steps below build it.
 
 ### 4.1 Cut Alcaraz out of his video
 
-- [ ] Cut out every person in each frame with `VNGeneratePersonInstanceMaskRequest`, or with
-      `VNGenerateForegroundInstanceMaskRequest` if Phase 0 showed it keeps the racket better
+- [ ] Cut out the player in each frame with `VNGenerateForegroundInstanceMaskRequest` (lift subject),
+      which kept the racket far better in Phase 0
 - [ ] Tap Alcaraz to choose him when the opponent, umpire or ball kids are also in frame;
       follow him from frame to frame
 - [ ] Process the clip once, with a progress bar, and save the cutout (video with a transparent background),

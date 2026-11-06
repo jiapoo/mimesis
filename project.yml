@@ -1,0 +1,71 @@
+name: Mimesis
+options:
+  bundleIdPrefix: com.arc
+  deploymentTarget:
+    iOS: "18.0"
+    macOS: "15.0"
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "0.1"
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: 49Y2NVWNTQ
+packages:
+  MimesisKit:
+    path: Packages/MimesisKit
+  # Photo and video viewing and editing, shared with Arete and Imago at a version. Pinned here, since
+  # Mimesis.xcodeproj (and its Package.resolved) isn't kept in git: raise it to take an update.
+  # To change the package itself, see the README in github.com/jiapoo/apple-media.
+  AreteMedia:
+    url: https://github.com/jiapoo/apple-media
+    exactVersion: 1.8.0
+targets:
+  MimesisMac:
+    type: application
+    scheme: {}
+    platform: macOS
+    sources: [Mac]
+    dependencies:
+      - package: MimesisKit
+      - package: AreteMedia
+    info:
+      path: Mac/Info.plist
+      properties:
+        CFBundleDisplayName: Mimesis
+        LSApplicationCategoryType: public.app-category.sports
+    entitlements:
+      path: Mac/MimesisMac.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.files.user-selected.read-write: true
+    settings:
+      base:
+        # One bundle ID on every platform, so one purchase covers Mac, iPad and iPhone.
+        PRODUCT_BUNDLE_IDENTIFIER: com.arc.mimesis
+        PRODUCT_NAME: Mimesis
+        ENABLE_HARDENED_RUNTIME: YES
+  MimesisiOS:
+    type: application
+    scheme: {}
+    platform: iOS
+    sources: [iOS]
+    dependencies:
+      - package: MimesisKit
+      - package: AreteMedia
+    info:
+      path: iOS/Info.plist
+      properties:
+        CFBundleDisplayName: Mimesis
+        UILaunchScreen: {}
+        # Landscape too on iPhone: that's where two clips fit side by side.
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+        UISupportedInterfaceOrientations~ipad: [UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+        UIFileSharingEnabled: true
+        LSSupportsOpeningDocumentsInPlace: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.arc.mimesis
+        PRODUCT_NAME: Mimesis
+        # iPhone and iPad.
+        TARGETED_DEVICE_FAMILY: "1,2"

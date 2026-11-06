@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0" stop-color="#23264A"/>
+      <stop offset="1" stop-color="#0B0C1A"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.62" cy="0.38" r="0.6">
+      <stop offset="0" stop-color="#3B3F7A" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#3B3F7A" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="trailA" gradientUnits="userSpaceOnUse" x1="210" y1="780" x2="790" y2="280">
+      <stop offset="0" stop-color="#FF7A45" stop-opacity="0"/>
+      <stop offset="0.55" stop-color="#FF7A45" stop-opacity="0.75"/>
+      <stop offset="1" stop-color="#FFB25B"/>
+    </linearGradient>
+    <linearGradient id="trailB" gradientUnits="userSpaceOnUse" x1="250" y1="850" x2="720" y2="400">
+      <stop offset="0" stop-color="#2FD3E0" stop-opacity="0"/>
+      <stop offset="0.55" stop-color="#2FD3E0" stop-opacity="0.7"/>
+      <stop offset="1" stop-color="#8FF3F7"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <rect width="1024" height="1024" fill="url(#glow)"/>
+  <!-- ghost swing (the reference), lagging behind -->
+  <path d="M 250 860 C 300 600, 470 430, 720 400" fill="none" stroke="url(#trailB)" stroke-width="64" stroke-linecap="round"/>
+  <circle cx="720" cy="400" r="58" fill="#8FF3F7"/>
+  <!-- lead swing -->
+  <path d="M 200 790 C 250 520, 460 310, 790 280" fill="none" stroke="url(#trailA)" stroke-width="64" stroke-linecap="round"/>
+  <circle cx="790" cy="280" r="58" fill="#FFC56B"/>
+</svg>
