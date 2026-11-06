@@ -8,7 +8,8 @@ struct Transport: View {
     let comparison: Comparison
 
     var body: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 6) {
+            marks
             ruler
             HStack(spacing: 12) {
                 RoundButton(symbol: "link", active: comparison.linked, size: 34) {
@@ -53,9 +54,57 @@ struct Transport: View {
         .disabled(comparison.focused == nil)
     }
 
+    /// The clip on the ruler (A while linked, else the selected one), for its marks.
+    private var rulerClip: Clip? {
+        comparison.linked ? comparison.clips.first : comparison.focused
+    }
+
+    /// A strip over the ruler's progress bar: diamonds for sync points, dots for drawings. Tap one to go there.
+    @ViewBuilder private var marks: some View {
+        if let clip = rulerClip, clip.engine.duration > 0 {
+            let duration = clip.engine.duration
+            let drawingTimes = Array(Set(clip.drawings.map { ($0.time * 100).rounded() / 100 })).sorted()
+            GeometryReader { space in
+                let x = { (t: Double) in CGFloat(t / duration) * space.size.width }
+                ZStack(alignment: .topLeading) {
+                    ForEach(drawingTimes, id: \.self) { t in
+                        markButton(at: t, clip: clip) {
+                            Circle().fill(Color.white).frame(width: 6, height: 6)
+                        }
+                        .position(x: x(t), y: 7)
+                    }
+                    ForEach(Array(clip.syncs.enumerated()), id: \.offset) { _, t in
+                        markButton(at: t, clip: clip) {
+                            Image(systemName: "diamond.fill").font(.system(size: 10)).foregroundStyle(Theme.accent)
+                        }
+                        .position(x: x(t), y: 7)
+                    }
+                }
+            }
+            .frame(height: 14)
+            .help("Sync points and drawings: tap one to go there")
+        }
+    }
+
+    private func markButton(at time: Double, clip: Clip, @ViewBuilder label: () -> some View) -> some View {
+        Button {
+            if comparison.linked {
+                comparison.pause()
+                let u = (time - clip.syncTime) / clip.speed
+                Task { await comparison.seek(to: u) }
+            } else {
+                clip.engine.pause()
+                Task { await clip.engine.seekToTime(time) }
+            }
+        } label: {
+            label().frame(width: 22, height: 14).contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
     /// AreteMedia's FrameRulerTimeline, styled as in Arete's player.
     @ViewBuilder private var ruler: some View {
-        if comparison.linked, let lead = comparison.shown.first {
+        if comparison.linked, let lead = comparison.clips.first {
             // Clip A's own time; a seek on it moves the shared timeline, so B follows.
             let range = comparison.range
             areteRuler(
@@ -91,10 +140,19 @@ struct Transport: View {
 
     /// Which clip the controls move, and where the linked timeline is against the sync point.
     private var status: String {
-        if comparison.linked { return "A + B  ·  \(seconds(comparison.position)) from sync" }
+        if comparison.linked {
+            var parts = ["A + B", "\(seconds(comparison.position)) from sync"]
+            if let section = comparison.section {
+                parts.append("phase \(section.index) of \(section.count)")
+            }
+            let pace = comparison.sectionSpeed
+            if abs(pace - 1) > 0.005 { parts.append("B at \(speedText((pace * 100).rounded() / 100))") }
+            return parts.joined(separator: "  ·  ")
+        }
         guard let clip = comparison.focused else { return "" }
         let letter = clip === comparison.clips[0] ? "A" : "B"
-        return clip.sync.map { "\(letter)  ·  \(seconds(clip.engine.currentTime - $0)) from sync" } ?? letter
+        guard let first = clip.syncs.first else { return letter }
+        return "\(letter)  ·  \(seconds(clip.engine.currentTime - first)) from sync"
     }
 
     private var speed: Double {

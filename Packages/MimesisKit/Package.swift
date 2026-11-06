@@ -17,5 +17,6 @@ let package = Package(
         // The Phase 0 masking test from the command line (Mac):
         // swift run -c release mask-probe <video> [--start s] [--seconds s] [--out folder]
         .executableTarget(name: "mask-probe", dependencies: ["MimesisKit"]),
+        .testTarget(name: "MimesisKitTests", dependencies: ["MimesisKit"]),
     ]
 )

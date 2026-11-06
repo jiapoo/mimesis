@@ -7,7 +7,9 @@ struct ClipState: Codable {
     var bookmark: Data
     var trimStart: Double
     var trimEnd: Double?
+    /// The first sync point; comparisons saved before there could be several keep only this.
     var sync: Double?
+    var syncs: [Double]?
     var speed: Double
     var mirrored: Bool
     /// Nil in comparisons saved before drawing existed.
@@ -104,7 +106,7 @@ extension Clip {
     func state() -> ClipState? {
         guard let url, let bookmark = try? url.bookmarkData(options: bookmarkOptions) else { return nil }
         return ClipState(
-            bookmark: bookmark, trimStart: trimStart, trimEnd: trimEnd, sync: sync, speed: speed,
+            bookmark: bookmark, trimStart: trimStart, trimEnd: trimEnd, sync: syncs.first, syncs: syncs, speed: speed,
             mirrored: engine.mirroredHorizontally, drawings: drawings)
     }
 
@@ -121,7 +123,7 @@ extension Clip {
         await open(url)
         trimStart = state.trimStart
         trimEnd = state.trimEnd
-        sync = state.sync
+        syncs = state.syncs ?? state.sync.map { [$0] } ?? []
         speed = state.speed
         drawings = state.drawings ?? []
         if state.mirrored { await engine.setMirror(horizontal: true, vertical: false) }

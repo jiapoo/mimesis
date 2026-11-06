@@ -2,7 +2,7 @@ import AreteMedia
 import Foundation
 import Observation
 
-/// One side of a comparison: a video, how it's trimmed, its sync point, its speed, and how it's shown.
+/// One side of a comparison: a video, how it's trimmed, its sync points, its speed, and how it's shown.
 @MainActor @Observable
 public final class Clip {
     public let engine = VideoEngine()
@@ -11,8 +11,10 @@ public final class Clip {
     /// The trim, in the clip's own seconds. `trimEnd` nil is the clip's end.
     public var trimStart: Double = 0 { didSet { applyBounds() } }
     public var trimEnd: Double? { didSet { applyBounds() } }
-    /// The moment that lines up with the other clip's sync point (e.g. contact). Nil is the trim start.
-    public var sync: Double?
+    /// Moments that line up with the other clip's, in order (e.g. racket drop, contact, finish).
+    /// The first lines the clips up; with more, each section between them plays at the speed that
+    /// makes the other clip's matching section line up too. Sorted.
+    public var syncs: [Double] = []
     /// How fast this clip plays against the other, to match their motions (0.8× slows it down).
     public var speed: Double = 1
     /// Zoom (1 is the whole frame) and pan, in points; only how it's shown.
@@ -28,7 +30,12 @@ public final class Clip {
     public var isLoaded: Bool { url != nil }
     public var name: String { url?.deletingPathExtension().lastPathComponent ?? "" }
     public var end: Double { trimEnd ?? engine.duration }
-    public var syncTime: Double { sync ?? trimStart }
+    /// The first sync point: where the clips line up. The trim start when there's none.
+    public var syncTime: Double { syncs.first ?? trimStart }
+    /// The sync point at the playhead (within half a frame), if any.
+    public var syncHere: Int? {
+        syncs.firstIndex { abs($0 - engine.currentTime) <= frameLength / 2 }
+    }
     /// One frame, in the clip's own seconds.
     public var frameLength: Double { 1 / Double(engine.fps > 0 ? engine.fps : 30) }
 
@@ -39,7 +46,7 @@ public final class Clip {
         url = newURL
         trimStart = 0
         trimEnd = nil
-        sync = nil
+        syncs = []
         speed = 1
         zoom = 1
         pan = .zero
@@ -56,13 +63,13 @@ public final class Clip {
     /// Trim start or end at the playhead.
     public func setTrimStart() {
         trimStart = min(engine.currentTime, end - frameLength)
-        if let sync, sync < trimStart { self.sync = trimStart }
+        syncs.removeAll { $0 < trimStart }
     }
 
     public func setTrimEnd() {
         let at = max(engine.currentTime, trimStart + frameLength)
         trimEnd = at >= engine.duration - 0.01 ? nil : at
-        if let sync, sync > end { self.sync = end }
+        syncs.removeAll { $0 > end }
     }
 
     public func clearTrim() {
@@ -70,8 +77,14 @@ public final class Clip {
         trimEnd = nil
     }
 
-    public func setSync() {
-        sync = min(max(engine.currentTime, trimStart), end)
+    /// Adds a sync point at the playhead, or removes the one that's there.
+    public func toggleSync() {
+        if let here = syncHere {
+            syncs.remove(at: here)
+        } else {
+            syncs.append(min(max(engine.currentTime, trimStart), end))
+            syncs.sort()
+        }
     }
 
     public func toggleMirror() {
@@ -143,39 +156,76 @@ public final class Comparison {
 
     // MARK: - The linked timeline
     //
-    // Time on it is seconds of motion from the sync points: 0 is both sync points, and at `u`
-    // each clip shows `sync + u × speed` of its own time.
+    // Time on it is seconds of clip A's motion from its first sync point (A at its own speed), so A
+    // just plays. Clip B follows a warp through the paired sync points: between two of them it runs
+    // at whatever speed makes its section last as long as A's, and outside them at its own speed.
+
+    private var a: Clip { clips[0] }
+    private var b: Clip { clips[1] }
+
+    /// How many sync points pair up: the fewer of the two clips' counts.
+    public var pairs: Int { min(a.syncs.count, b.syncs.count) }
+
+    private func warp(_ clip: Clip) -> Warp {
+        let a0 = a.syncTime
+        if clip === a {
+            return Warp(u: [0], t: [a0], outside: a.speed)
+        }
+        let n = pairs
+        guard n > 0 else { return Warp(u: [0], t: [b.syncTime], outside: b.speed) }
+        var us: [Double] = [], ts: [Double] = []
+        for i in 0..<n {
+            let u = (a.syncs[i] - a0) / a.speed, t = b.syncs[i]
+            // Keep only points that move forward in both clips.
+            if let lastU = us.last, let lastT = ts.last, u <= lastU || t <= lastT { continue }
+            us.append(u)
+            ts.append(t)
+        }
+        return Warp(u: us, t: ts, outside: b.speed)
+    }
 
     public func clipTime(_ clip: Clip, at u: Double) -> Double {
-        clip.syncTime + u * clip.speed
+        warp(clip).time(at: u)
     }
 
-    /// Where the linked timeline is, read from the first clip shown.
+    /// Where the linked timeline is, read from clip A.
     public var position: Double {
-        guard let lead = shown.first ?? clips.first(where: \.isLoaded) else { return 0 }
-        return (lead.engine.currentTime - lead.syncTime) / lead.speed
+        warp(a).u(at: a.engine.currentTime)
     }
 
-    /// The span every shown clip covers, within its trim.
+    /// The span both clips cover, within their trims.
     public var range: ClosedRange<Double> {
-        let spans = shown.map { clip in
-            ((clip.trimStart - clip.syncTime) / clip.speed)...((clip.end - clip.syncTime) / clip.speed)
-        }
-        guard let first = spans.first else { return 0...0 }
-        let low = spans.map(\.lowerBound).max() ?? first.lowerBound
-        let high = spans.map(\.upperBound).min() ?? first.upperBound
+        guard a.isLoaded, b.isLoaded else { return 0...0 }
+        let wa = warp(a), wb = warp(b)
+        let low = max(wa.u(at: a.trimStart), wb.u(at: b.trimStart))
+        let high = min(wa.u(at: a.end), wb.u(at: b.end))
         return low...max(low, high)
+    }
+
+    /// How fast B runs against A in the section the playhead is in (1 is the same pace).
+    public var sectionSpeed: Double {
+        warp(b).slope(at: position) / a.speed
+    }
+
+    /// Which section the playhead is in (1-based) and how many there are, when there's more than one sync point.
+    public var section: (index: Int, count: Int)? {
+        let w = warp(b)
+        guard w.u.count > 1 else { return nil }
+        let u = position
+        guard u >= w.u[0], u <= w.u[w.u.count - 1] else { return nil }
+        let index = (w.u.lastIndex { $0 <= u } ?? 0) + 1
+        return (min(index, w.u.count - 1), w.u.count - 1)
     }
 
     /// The smallest step that still moves a clip by a frame.
     private var frameStep: Double {
-        shown.map { $0.frameLength / $0.speed }.min() ?? 1 / 30
+        min(a.frameLength / a.speed, b.frameLength / max(0.01, warp(b).slope(at: position)))
     }
 
     public func seek(to u: Double) async {
         let u = min(max(u, range.lowerBound), range.upperBound)
         // Both seeks at once, then wait for both.
-        let seeks = shown.map { clip in
+        let seeks = clips.map { clip in
             let time = clipTime(clip, at: u)
             return Task { await clip.engine.seekToTime(time) }
         }
@@ -185,7 +235,7 @@ public final class Comparison {
     /// While scrubbing: quick, roughly placed frames.
     public func scrub(to u: Double) {
         let u = min(max(u, range.lowerBound), range.upperBound)
-        for clip in shown { clip.engine.seekFast(clipTime(clip, at: u)) }
+        for clip in clips { clip.engine.seekFast(clipTime(clip, at: u)) }
     }
 
     /// The clip the shared controls act on while not linked.
@@ -223,7 +273,7 @@ public final class Comparison {
     }
 
     public func play() {
-        guard linked, !shown.isEmpty else { return }
+        guard linked, canLink else { return }
         isPlaying = true
         Task {
             // From the start again when at the end; and always from lined-up frames.
@@ -231,7 +281,7 @@ public final class Comparison {
             await seek(to: from)
             guard isPlaying else { return }
             applyRates()
-            for clip in shown {
+            for clip in clips {
                 clip.engine.loopPlayback = false
                 clip.engine.play()
             }
@@ -249,31 +299,38 @@ public final class Comparison {
         if wasPlaying { Task { await seek(to: position) } }
     }
 
+    /// A at its own speed; B at its speed for the section the playhead is in.
     private func applyRates() {
-        for clip in shown { clip.engine.playbackSpeed = Float(clip.speed * linkedSpeed) }
+        let u = position
+        for clip in clips {
+            let rate = Float(min(8, max(0.05, warp(clip).slope(at: u) * linkedSpeed)))
+            if abs(clip.engine.playbackSpeed - rate) > 0.005 { clip.engine.playbackSpeed = rate }
+        }
     }
 
-    /// While linked and playing: loops at the end of the span both cover, and pulls a clip that
-    /// drifted more than a frame and a half back in line.
+    /// While linked and playing: loops at the end of the span both cover, changes B's speed as it
+    /// enters each section, and pulls B back in line when it drifts more than a frame and a half.
     private func startTicker() {
         stopTicker()
         ticker = Task { [weak self] in
             while !Task.isCancelled {
                 try? await Task.sleep(for: .milliseconds(33))
-                guard let self, self.isPlaying, let lead = self.shown.first else { return }
+                guard let self, self.isPlaying else { return }
                 let u = self.position
                 if u >= self.range.upperBound - self.frameStep {
-                    for clip in self.shown { clip.engine.pause() }
+                    for clip in self.clips { clip.engine.pause() }
                     await self.seek(to: self.range.lowerBound)
                     guard self.isPlaying else { return }
-                    for clip in self.shown { clip.engine.play() }
+                    self.applyRates()
+                    for clip in self.clips { clip.engine.play() }
                     continue
                 }
-                for clip in self.shown where clip !== lead {
-                    let expected = self.clipTime(clip, at: u)
-                    if abs(clip.engine.currentTime - expected) > 1.5 * clip.frameLength * max(1, clip.speed) {
-                        clip.engine.seekFast(expected)
-                    }
+                self.applyRates()
+                let follower = self.b
+                let expected = self.clipTime(follower, at: u)
+                let rate = Double(follower.engine.playbackSpeed)
+                if abs(follower.engine.currentTime - expected) > 1.5 * follower.frameLength * max(1, rate) {
+                    follower.engine.seekFast(expected)
                 }
             }
         }
@@ -282,5 +339,38 @@ public final class Comparison {
     private func stopTicker() {
         ticker?.cancel()
         ticker = nil
+    }
+}
+
+/// A piecewise-straight map from linked time `u` to a clip's own time `t`, through matching points.
+/// Outside the first and last point it runs at `outside` (the clip's own speed).
+struct Warp {
+    let u: [Double]
+    let t: [Double]
+    let outside: Double
+
+    func time(at value: Double) -> Double {
+        guard let first = u.first, let last = u.last else { return value * outside }
+        if value <= first { return t[0] + (value - first) * outside }
+        if value >= last { return t[t.count - 1] + (value - last) * outside }
+        let i = (u.lastIndex { $0 <= value } ?? 0)
+        let share = (value - u[i]) / (u[i + 1] - u[i])
+        return t[i] + share * (t[i + 1] - t[i])
+    }
+
+    func u(at time: Double) -> Double {
+        guard let first = t.first, let last = t.last else { return time / outside }
+        if time <= first { return u[0] + (time - first) / outside }
+        if time >= last { return u[u.count - 1] + (time - last) / outside }
+        let i = (t.lastIndex { $0 <= time } ?? 0)
+        let share = (time - t[i]) / (t[i + 1] - t[i])
+        return u[i] + share * (u[i + 1] - u[i])
+    }
+
+    /// Clip seconds per second of linked time at `value`: the speed the clip plays at there.
+    func slope(at value: Double) -> Double {
+        guard u.count > 1, let first = u.first, let last = u.last, value >= first, value < last else { return outside }
+        let i = (u.lastIndex { $0 <= value } ?? 0)
+        return (t[i + 1] - t[i]) / (u[i + 1] - u[i])
     }
 }

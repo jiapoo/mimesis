@@ -189,8 +189,8 @@ struct ClipPane: View {
                 Divider()
                 Button("Clear trim", systemImage: "scissors", action: clip.clearTrim)
                     .disabled(clip.trimStart == 0 && clip.trimEnd == nil)
-                Button("Clear sync point", systemImage: "diamond") { clip.sync = nil }
-                    .disabled(clip.sync == nil || linked)
+                Button("Clear sync points", systemImage: "diamond") { clip.syncs = [] }
+                    .disabled(clip.syncs.isEmpty || linked)
                 Divider()
                 Button("Close", systemImage: "xmark", role: .destructive, action: clip.close)
                     .disabled(linked)
@@ -217,6 +217,16 @@ struct ClipPane: View {
 
     // MARK: - Tools
 
+    /// "Add sync", "Sync 2 of 3" when on one, "3 syncs" otherwise.
+    private var syncLabel: String {
+        if let here = clip.syncHere { return clip.syncs.count == 1 ? "Sync" : "Sync \(here + 1) of \(clip.syncs.count)" }
+        switch clip.syncs.count {
+        case 0: return "Add sync"
+        case 1: return "1 sync"
+        default: return "\(clip.syncs.count) syncs"
+        }
+    }
+
     /// Trim, sync point and speed: what lines this clip up with the other.
     private var tools: some View {
         HStack(spacing: 6) {
@@ -234,12 +244,13 @@ struct ClipPane: View {
 
             Spacer(minLength: 6)
 
-            Button { onFocus(); clip.setSync() } label: {
-                Label(clip.sync.map { "Sync \(clock($0))" } ?? "Set sync", systemImage: "diamond.fill")
+            Button { onFocus(); clip.toggleSync() } label: {
+                Label(syncLabel, systemImage: clip.syncHere == nil ? "diamond" : "diamond.fill")
             }
-            .buttonStyle(ChipStyle(active: clip.sync != nil))
+            .buttonStyle(ChipStyle(active: !clip.syncs.isEmpty))
             .disabled(linked)
-            .help("This frame lines up with the other clip's sync frame, e.g. the moment of contact (S)")
+            .help("Mark this frame as a sync point, or unmark it (S). Sync points pair up in order with the "
+                + "other clip's: the first lines the clips up, more make each phase in between line up too.")
 
             Menu {
                 ForEach([0.25, 0.5, 0.6, 0.7, 0.75, 0.8, 0.9, 1.0, 1.1, 1.25, 1.5, 2.0], id: \.self) { value in

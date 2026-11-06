@@ -69,15 +69,19 @@ will need the "tap to choose" step, or cropping the overlay out.
       shows the angle in degrees (2026-11-06)
 - ✅ Drawings stay on their frame, or on every frame ("This frame" / "Every frame") (2026-11-06; "This frame" tested)
 - ✅ Drawings are saved with the comparison (2026-11-06)
-- ⬜ Marks on the timeline where a clip has drawings, to jump to them
+- ✅ Marks over the ruler where a clip has drawings (dots) and sync points (diamonds); tap one to jump there (2026-11-06)
 - ⬜ Apple Pencil on iPad (drawing uses ordinary touch, so it should work; needs a real iPad to check)
 
 ## Phase 3 — Multi-point time matching (what sets Mimesis apart)
 
-- ⬜ Several marks in each clip (start of backswing, racket drop, contact, finish)
-- ⬜ Each section between marks is sped up or slowed separately, so every phase lines up
-      (`AVMutableComposition` with `scaleTimeRange`)
-- ⬜ Show each section's speed, and let it be adjusted by hand
+- ✅ Several sync points in each clip (racket drop, contact, finish…): "Add sync" adds one at the playhead,
+      tapping it on a sync point removes it (S on Mac); they pair up in order with the other clip's (2026-11-06)
+- ✅ Each section between paired sync points plays at its own speed, so every phase lines up: clip B follows
+      a warp through the paired points while A plays normally; B's speed changes as it enters each section,
+      and it's put back on the matching frame whenever it drifts or the clips pause (2026-11-06; unit-tested,
+      and checked on the iPad: A 1 s vs B 0.25 s between sync points → B at 0.25×, on the right frame)
+- ✅ Show which phase the playhead is in and B's speed there ("phase 1 of 2 · B at 0.82×") (2026-11-06)
+- ⬜ Adjust a sync point by dragging its diamond, instead of removing and adding it again
 
 ## Phase 4 — Overlay your idol on your clip (SimulCam)
 

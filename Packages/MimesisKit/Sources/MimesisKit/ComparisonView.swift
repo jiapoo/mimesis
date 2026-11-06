@@ -198,7 +198,7 @@ public struct ComparisonView: View {
     /// Everything a saved comparison keeps, so a change to any of it is remembered.
     private var snapshot: String {
         let clips = comparison.clips.map { clip in
-            "\(clip.url?.path ?? "-")|\(clip.trimStart)|\(clip.trimEnd ?? -1)|\(clip.sync ?? -1)|\(clip.speed)|\(clip.engine.mirroredHorizontally)|\(clip.drawings.hashValue)"
+            "\(clip.url?.path ?? "-")|\(clip.trimStart)|\(clip.trimEnd ?? -1)|\(clip.syncs)|\(clip.speed)|\(clip.engine.mirroredHorizontally)|\(clip.drawings.hashValue)"
         }
         return clips.joined(separator: ";") + "|\(comparison.layout)|\(comparison.linked)|\(comparison.linkedSpeed)"
     }
@@ -216,7 +216,7 @@ public struct ComparisonView: View {
             if let clip = comparison.focused, !comparison.linked {
                 key("[") { clip.setTrimStart() }
                 key("]") { clip.setTrimEnd() }
-                key("s") { clip.setSync() }
+                key("s") { clip.toggleSync() }
                 key("\t") { comparison.focus = 1 - comparison.focus }
             }
             key("l") { if comparison.canLink { comparison.linked.toggle() } }
