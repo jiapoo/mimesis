@@ -71,6 +71,7 @@ extension Comparison {
         let hips = fromCentre(t.hips), target = inBase(b.hips)
         let centre = CGPoint(x: target.x - scale * hips.x, y: target.y - scale * hips.y)
         overlayScale = scale
+        overlayRotation = 0
         overlayOffset = CGSize(
             width: (centre.x - baseSize.width / 2) / baseSize.width,
             height: (centre.y - baseSize.height / 2) / baseSize.height)

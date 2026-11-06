@@ -129,7 +129,9 @@ The five steps below build it.
 
 - ✅ Drag to move, pinch to resize, double-tap or ↺ to put back (2026-11-06)
 - ✅ − / + buttons to resize (for a Mac without a trackpad, and small steps) (2026-11-06)
-- ⬜ Rotate slightly if the cameras were tilted
+- ✅ Rotate the top clip if the cameras were tilted: twist with two fingers, or ±1° buttons showing the angle;
+      kept with the comparison and used by export and player picking (2026-11-06; checked on the iPad, and the
+      export turns the same way)
 - ✅ Auto-align (the figure button): finds hips, feet and neck in both clips' frames on screen with
       `VNDetectHumanBodyPoseRequest`, then moves and resizes the top clip so its hips land on the other's and
       its hips-to-feet height matches (hips-to-neck when the feet are out of view); mirroring is taken into
@@ -171,7 +173,8 @@ The five steps below build it.
 ## Phase 8 — Release
 
 - ✅ Export a comparison as a video, side by side (1920×1080) or overlaid, at 30 fps (2026-11-06)
-- ⬜ Include drawings in exported videos
+- ✅ Include drawings in exported videos (each clip's marks on its frames, the overlay's top clip's after its
+      cutout) (2026-11-06; checked on an export of two real clips)
 - ⬜ Check "Mimesis" in the App Store and the USPTO software classes (9 and 42); choose the store name
       (e.g. "Mimesis: Motion Compare") while the icon says "Mimesis"
 - ⬜ Icon, screenshots, privacy details

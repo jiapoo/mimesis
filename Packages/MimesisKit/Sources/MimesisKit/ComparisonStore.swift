@@ -35,6 +35,8 @@ struct OverlayState: Codable {
     var opacity: Double
     var offset: CGSize
     var scale: Double
+    /// Nil in comparisons saved before rotation existed.
+    var rotation: Double?
 }
 
 /// A comparison the user saved by name.
@@ -158,7 +160,8 @@ extension Comparison {
         guard clips.contains(where: { $0 != nil }) else { return nil }
         return ComparisonState(
             clips: clips, layout: layout.rawValue, linked: linked, linkedSpeed: linkedSpeed,
-            overlay: OverlayState(top: overlayTop, opacity: overlayOpacity, offset: overlayOffset, scale: overlayScale))
+            overlay: OverlayState(top: overlayTop, opacity: overlayOpacity, offset: overlayOffset, scale: overlayScale,
+                                  rotation: overlayRotation))
     }
 
     func restore(_ state: ComparisonState) async {
@@ -177,6 +180,7 @@ extension Comparison {
             overlayOpacity = overlay.opacity
             overlayOffset = overlay.offset
             overlayScale = overlay.scale
+            overlayRotation = overlay.rotation ?? 0
         }
         if state.linked, canLink { linked = true }
     }

@@ -60,6 +60,8 @@ private struct Plan: @unchecked Sendable {
         let times: [Double]
         let mirrored: Bool
         let size: CGSize
+        let drawings: [Drawing]
+        let frameLength: Double
     }
 
     let style: Exporter.Style
@@ -70,6 +72,8 @@ private struct Plan: @unchecked Sendable {
     let opacity: Double
     let offset: CGSize
     let scale: CGFloat
+    /// Degrees clockwise, as on screen.
+    let rotation: Double
     let masks: [CGImage?]
     let tinted: Bool
     let name: String
@@ -84,7 +88,8 @@ private struct Plan: @unchecked Sendable {
         func side(_ clip: Clip) -> Side? {
             guard let url = clip.url else { return nil }
             return Side(url: url, times: us.map { comparison.clipTime(clip, at: $0) },
-                        mirrored: clip.engine.mirroredHorizontally, size: clip.engine.videoSize)
+                        mirrored: clip.engine.mirroredHorizontally, size: clip.engine.videoSize,
+                        drawings: clip.drawings, frameLength: clip.frameLength)
         }
         guard let a = side(comparison.clips[0]), let b = side(comparison.clips[1]) else { return nil }
         self.style = style
@@ -94,6 +99,7 @@ private struct Plan: @unchecked Sendable {
         opacity = comparison.overlayOpacity
         offset = comparison.overlayOffset
         scale = comparison.overlayScale
+        rotation = comparison.overlayRotation
         let top = comparison.clips[comparison.overlayTop]
         let topTimes = topIsA ? a.times : b.times
         if style == .overlay, let cutout = top.cutout, cutout.state == .ready, cutout.enabled {
@@ -137,9 +143,14 @@ private struct Plan: @unchecked Sendable {
             try Task.checkCancellation()
             let frameA = try await Self.frame(generatorA, at: a.times[index], mirrored: a.mirrored)
             let frameB = try await Self.frame(generatorB, at: b.times[index], mirrored: b.mirrored)
+            // Each clip's marks on its own frame; the top clip's in the overlay go on after its cutout.
+            let marksA = Self.marks(a, index: index, over: frameA)
+            let marksB = Self.marks(b, index: index, over: frameB)
             let image = style == .sideBySide
-                ? sideBySide(frameA, frameB, in: size)
-                : overlay(frameA, frameB, index: index, in: size)
+                ? sideBySide(marksA.composited(over: frameA), marksB.composited(over: frameB), in: size)
+                : overlay(topIsA ? frameA : marksA.composited(over: frameA),
+                          topIsA ? marksB.composited(over: frameB) : frameB,
+                          topMarks: topIsA ? marksA : marksB, index: index, in: size)
 
             while !input.isReadyForMoreMediaData { try await Task.sleep(for: .milliseconds(5)) }
             guard let pool = adaptor.pixelBufferPool else { throw writer.error ?? CocoaError(.fileWriteUnknown) }
@@ -175,7 +186,7 @@ private struct Plan: @unchecked Sendable {
         return r.composited(over: l).composited(over: Self.black(size))
     }
 
-    private func overlay(_ frameA: CIImage, _ frameB: CIImage, index: Int, in size: CGSize) -> CIImage {
+    private func overlay(_ frameA: CIImage, _ frameB: CIImage, topMarks: CIImage, index: Int, in size: CGSize) -> CIImage {
         let base = topIsA ? frameB : frameA
         var top = topIsA ? frameA : frameB
         let canvas = CGRect(origin: .zero, size: size)
@@ -199,11 +210,14 @@ private struct Plan: @unchecked Sendable {
                 kCIInputBackgroundImageKey: CIImage.empty(), kCIInputMaskImageKey: mask,
             ])
         }
+        top = topMarks.composited(over: top)
         // Fitted into the picture underneath, then resized about its centre and moved, as in the overlay.
         var placed = Self.fit(top, in: canvas)
         let centre = CGPoint(x: canvas.midX, y: canvas.midY)
         placed = placed.transformed(by: CGAffineTransform(translationX: -centre.x, y: -centre.y)
             .concatenating(CGAffineTransform(scaleX: scale, y: scale))
+            // Clockwise on screen is a negative turn where y counts up.
+            .concatenating(CGAffineTransform(rotationAngle: -rotation * .pi / 180))
             .concatenating(CGAffineTransform(translationX: centre.x + offset.width * size.width,
                                              y: centre.y - offset.height * size.height)))
         placed = placed.applyingFilter("CIColorMatrix", parameters: [
@@ -220,6 +234,13 @@ private struct Plan: @unchecked Sendable {
             .transformed(by: CGAffineTransform(translationX: -extent.minX, y: -extent.minY))
             .transformed(by: CGAffineTransform(scaleX: scale, y: scale))
             .transformed(by: CGAffineTransform(translationX: rect.minX + (rect.width - w) / 2, y: rect.minY + (rect.height - h) / 2))
+    }
+
+    /// A clip's marks for one output frame, as an image the size of that frame (empty when there are none).
+    private static func marks(_ side: Side, index: Int, over frame: CIImage) -> CIImage {
+        let shown = DrawingImage.visible(side.drawings, at: side.times[index], frameLength: side.frameLength)
+        guard let image = DrawingImage.image(shown, size: frame.extent.size, mirrored: side.mirrored) else { return .empty() }
+        return CIImage(cgImage: image)
     }
 
     private static func black(_ size: CGSize) -> CIImage {

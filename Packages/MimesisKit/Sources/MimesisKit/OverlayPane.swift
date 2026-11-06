@@ -8,6 +8,7 @@ struct OverlayPane: View {
 
     @State private var offsetBase: CGSize?
     @State private var scaleBase: CGFloat?
+    @State private var rotationBase: Double?
     @State private var aligning = false
     @State private var picking = false
     @State private var alignProblem: String?
@@ -40,6 +41,7 @@ struct OverlayPane: View {
                 VideoPlayerRepresentable(player: top.engine.player)
                     .frame(width: picture.width, height: picture.height)
                     .scaleEffect(comparison.overlayScale)
+                    .rotationEffect(.degrees(comparison.overlayRotation))
                     .position(
                         x: picture.midX + comparison.overlayOffset.width * picture.width,
                         y: picture.midY + comparison.overlayOffset.height * picture.height)
@@ -49,6 +51,7 @@ struct OverlayPane: View {
                     CutoutLayer(clip: top, cutout: cutout)
                         .frame(width: picture.width, height: picture.height)
                         .scaleEffect(comparison.overlayScale)
+                        .rotationEffect(.degrees(comparison.overlayRotation))
                         .position(
                             x: picture.midX + comparison.overlayOffset.width * picture.width,
                             y: picture.midY + comparison.overlayOffset.height * picture.height)
@@ -78,6 +81,15 @@ struct OverlayPane: View {
                         comparison.overlayScale = min(4, max(0.25, start * pinch.magnification))
                     }
                     .onEnded { _ in scaleBase = nil })
+            .simultaneousGesture(
+                RotateGesture()
+                    .onChanged { turn in
+                        guard !picking else { return }
+                        let start = rotationBase ?? comparison.overlayRotation
+                        rotationBase = start
+                        comparison.overlayRotation = start + turn.rotation.degrees
+                    }
+                    .onEnded { _ in rotationBase = nil })
             .onTapGesture(count: 2) {
                 withAnimation(.easeOut(duration: 0.2)) { comparison.resetOverlay() }
             }
@@ -153,7 +165,7 @@ struct OverlayPane: View {
             .help("Swap which clip is on top")
             RoundButton(symbol: "arrow.counterclockwise", action: comparison.resetOverlay)
                 .help("Put the top clip back where it started (or double-tap)")
-                .disabled(comparison.overlayOffset == .zero && comparison.overlayScale == 1)
+                .disabled(comparison.overlayOffset == .zero && comparison.overlayScale == 1 && comparison.overlayRotation == 0)
         }
     }
 
@@ -167,6 +179,15 @@ struct OverlayPane: View {
             Text("\(topLetter) \(Int((comparison.overlayOpacity * 100).rounded()))%")
                 .font(.system(size: 12, weight: .semibold).monospacedDigit())
                 .frame(width: 52, alignment: .leading)
+            HStack(spacing: 4) {
+                RoundButton(symbol: "rotate.left", size: 26) { comparison.overlayRotation -= 1 }
+                    .help("Turn \(topLetter) 1° anticlockwise (or twist with two fingers)")
+                Text("\(Int(comparison.overlayRotation.rounded()))°")
+                    .font(.system(size: 12, weight: .semibold).monospacedDigit())
+                    .frame(minWidth: 30)
+                RoundButton(symbol: "rotate.right", size: 26) { comparison.overlayRotation += 1 }
+                    .help("Turn \(topLetter) 1° clockwise")
+            }
             Spacer(minLength: 8)
             cutoutControls
         }
@@ -180,10 +201,12 @@ struct OverlayPane: View {
         let centre = CGPoint(
             x: picture.midX + comparison.overlayOffset.width * picture.width,
             y: picture.midY + comparison.overlayOffset.height * picture.height)
-        // Where the tap falls in the top clip's frame (the size of the picture underneath), unscaled.
+        // Where the tap falls in the top clip's frame (the size of the picture underneath), unturned and unscaled.
+        let angle = -comparison.overlayRotation * .pi / 180
+        let dx = location.x - centre.x, dy = location.y - centre.y
         let local = CGPoint(
-            x: (location.x - centre.x) / scale + picture.width / 2,
-            y: (location.y - centre.y) / scale + picture.height / 2)
+            x: (dx * cos(angle) - dy * sin(angle)) / scale + picture.width / 2,
+            y: (dx * sin(angle) + dy * cos(angle)) / scale + picture.height / 2)
         let shown = fitted(top.engine.videoSize, in: CGRect(origin: .zero, size: picture.size))
         var point = CGPoint(x: (local.x - shown.minX) / shown.width, y: (local.y - shown.minY) / shown.height)
         if top.engine.mirroredHorizontally { point.x = 1 - point.x }

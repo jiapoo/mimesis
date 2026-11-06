@@ -149,10 +149,13 @@ public final class Comparison {
     public var overlayOffset: CGSize = .zero
     /// The top clip's size against the picture underneath (1 fits it).
     public var overlayScale: CGFloat = 1
+    /// The top clip turned about its centre, in degrees clockwise (for a camera that wasn't level).
+    public var overlayRotation: Double = 0
 
     public func resetOverlay() {
         overlayOffset = .zero
         overlayScale = 1
+        overlayRotation = 0
     }
 
     /// Linked: one play button, one timeline; both clips move together.
