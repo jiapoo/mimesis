@@ -276,8 +276,14 @@ public final class Comparison {
     }
 
     /// The clip the shared controls act on while not linked.
+    /// A only or B only on screen: that one. Both: the one last tapped (or the one that's open).
     public var focused: Clip? {
-        clips.indices.contains(focus) && clips[focus].isLoaded ? clips[focus] : clips.first(where: \.isLoaded)
+        switch layout {
+        case .left: return clips[0].isLoaded ? clips[0] : nil
+        case .right: return clips[1].isLoaded ? clips[1] : nil
+        default:
+            return clips.indices.contains(focus) && clips[focus].isLoaded ? clips[focus] : clips.first(where: \.isLoaded)
+        }
     }
 
     /// Frame steps: both clips while linked, else the focused one.
@@ -299,14 +305,17 @@ public final class Comparison {
     public func togglePlay() {
         if linked {
             isPlaying ? pause() : play()
+        } else if clips.contains(where: { $0.engine.isPlaying }) {
+            // Something is playing, even the clip not in focus: pause stops it.
+            for clip in clips { clip.engine.pause() }
         } else {
-            focused?.engine.togglePlayPause()
+            focused?.engine.play()
         }
     }
 
-    /// Playing, linked or the focused clip.
+    /// Playing: both while linked, else either clip.
     public var anyPlaying: Bool {
-        linked ? isPlaying : focused?.engine.isPlaying ?? false
+        linked ? isPlaying : clips.contains { $0.engine.isPlaying }
     }
 
     public func play() {

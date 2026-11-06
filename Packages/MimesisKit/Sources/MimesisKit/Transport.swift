@@ -9,9 +9,24 @@ struct Transport: View {
     @Environment(Library.self) private var library
 
     var body: some View {
+        // While playing, only the play controls: the tools and timelines come back on pause.
+        let full = !comparison.anyPlaying
         VStack(spacing: 6) {
-            marks
-            ruler
+            if full, let clip = comparison.focused {
+                HStack(spacing: 8) {
+                    Text(clip === comparison.clips[0] ? "A" : "B")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(Theme.onAccent)
+                        .frame(width: 20, height: 20)
+                        .background(Theme.accent, in: Circle())
+                        .help("The tools are clip \(clip === comparison.clips[0] ? "A" : "B")'s: tap the other clip to switch")
+                    ClipTools(clip: clip, linked: comparison.linked)
+                }
+            }
+            if full {
+                marks
+                ruler
+            }
             HStack(spacing: 12) {
                 RoundButton(symbol: "link", active: comparison.linked, size: 34) {
                     comparison.linked.toggle()
@@ -48,10 +63,12 @@ struct Transport: View {
             }
         }
         .padding(12)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(Theme.line))
-        .shadow(color: .black.opacity(0.35), radius: 16, y: 6)
+        // See-through, floating over the videos.
+        .background(Color.black.opacity(0.38), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .background(.ultraThinMaterial.opacity(0.55), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(Color.white.opacity(0.1)))
         .frame(maxWidth: 900)
+        .animation(.easeOut(duration: 0.2), value: full)
         .disabled(comparison.focused == nil)
     }
 
@@ -250,6 +267,13 @@ private struct SyncDiamond: View {
             .frame(width: 22, height: 14)
             .contentShape(Rectangle())
             .onTapGesture(perform: onJump)
+            // Right-click (Mac) or press and hold (iPhone, iPad): remove it.
+            .contextMenu {
+                Button("Go to sync point", systemImage: "arrow.right.to.line") { onJump() }
+                Button("Remove sync point", systemImage: "trash", role: .destructive) {
+                    if clip.syncs.indices.contains(index) { clip.syncs.remove(at: index) }
+                }
+            }
             .gesture(
                 DragGesture(minimumDistance: 3)
                     .onChanged { drag in

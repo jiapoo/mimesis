@@ -9,6 +9,8 @@ struct ClipPane: View {
     let letter: String
     let linked: Bool
     let focused: Bool
+    /// Two clips on screen, so the focused one is outlined.
+    var showsFocus = true
     let onFocus: () -> Void
     let onOpenFile: () -> Void
     let onOpenPhotos: () -> Void
@@ -27,27 +29,21 @@ struct ClipPane: View {
     @State private var ink: Drawing.Ink = .crimson
     @State private var always = false
     @State private var stroMotion = false
-    @State private var naming = false
-    @State private var newTag = ""
-    @Environment(Library.self) private var library
     @State private var dropping = false
 
     var body: some View {
         Group {
             if clip.isLoaded {
-                VStack(spacing: 8) {
-                    video
-                    tools
-                }
-                .padding(8)
+                video
             } else {
-                empty
+                empty.background(Theme.card)
             }
         }
-        .background(Theme.card, in: RoundedRectangle(cornerRadius: Theme.corner + 4, style: .continuous))
+        // The focused clip: a thin crimson edge (only worth showing with two clips on screen).
         .overlay(
-            RoundedRectangle(cornerRadius: Theme.corner + 4, style: .continuous)
-                .strokeBorder(focused || dropping ? Theme.accent : Theme.line, lineWidth: focused || dropping ? 2 : 1))
+            Rectangle()
+                .strokeBorder(Theme.accent, lineWidth: 2)
+                .opacity((focused && showsFocus) || dropping ? 1 : 0))
         .contentShape(Rectangle())
         .onTapGesture(perform: onFocus)
         .dropDestination(for: URL.self) { urls, _ in
@@ -136,28 +132,28 @@ struct ClipPane: View {
                 .onTapGesture(perform: onFocus)
         }
         .background(Color.black)
-        .clipShape(RoundedRectangle(cornerRadius: Theme.corner, style: .continuous))
         .overlay(alignment: .top) {
-            // The badge gives way to the buttons: full, then shorter, then just the letter.
-            HStack(alignment: .top, spacing: 8) {
-                ViewThatFits(in: .horizontal) {
-                    badge(name: true, time: true)
-                    badge(name: false, time: true)
-                    badge(name: false, time: false)
+            // The letter and time always; the clip's buttons only on the focused clip.
+            VStack(spacing: 8) {
+                HStack(alignment: .top, spacing: 8) {
+                    ViewThatFits(in: .horizontal) {
+                        badge(name: false, time: true)
+                        badge(name: false, time: false)
+                    }
+                    Spacer(minLength: 0)
+                    if focused || drawing {
+                        actions.transition(.opacity)
+                    }
                 }
-                Spacer(minLength: 0)
-                actions
+                if drawing {
+                    DrawingTools(clip: clip, tool: $tool, ink: $ink, always: $always) { drawing = false }
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
             }
             .padding(10)
         }
-        .overlay(alignment: .bottom) {
-            if drawing {
-                DrawingTools(clip: clip, tool: $tool, ink: $ink, always: $always) { drawing = false }
-                    .padding(10)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-        }
         .animation(.easeOut(duration: 0.18), value: drawing)
+        .animation(.easeOut(duration: 0.15), value: focused)
     }
 
     private func badge(name: Bool, time: Bool) -> some View {
@@ -252,7 +248,21 @@ struct ClipPane: View {
         panBase = .zero
     }
 
-    // MARK: - Tools
+}
+
+/// The focused clip's own tools, in the floating panel: trim In / Out, sync points, a tag, and its speed
+/// against the other clip.
+struct ClipTools: View {
+    let clip: Clip
+    let linked: Bool
+    @Environment(Library.self) private var library
+    @State private var naming = false
+    @State private var newTag = ""
+
+    var body: some View { tools }
+
+    private func onFocus() {}
+
 
     /// Tag the moment at the playhead ("Forehand", "Fault"…), to find it again in the library.
     private var tagMenu: some View {
@@ -293,13 +303,11 @@ struct ClipPane: View {
         library.tag(url, at: clip.engine.currentTime, label: label)
     }
 
-    /// "Add sync", "Sync 2 of 3" when on one, "3 syncs" otherwise.
+    /// "Add sync", or "Add sync (2)" once there are some.
     private var syncLabel: String {
-        if let here = clip.syncHere { return clip.syncs.count == 1 ? "Sync" : "Sync \(here + 1) of \(clip.syncs.count)" }
         switch clip.syncs.count {
         case 0: return "Add sync"
-        case 1: return "1 sync"
-        default: return "\(clip.syncs.count) syncs"
+        default: return "Add sync (\(clip.syncs.count))"
         }
     }
 
@@ -310,14 +318,17 @@ struct ClipPane: View {
 
     private func syncButton(labelled: Bool) -> some View {
         Button { onFocus(); clip.toggleSync() } label: {
-            if labelled {
-                Label(syncLabel, systemImage: clip.syncHere == nil ? "diamond" : "diamond.fill")
+            if clip.syncHere != nil {
+                // On a sync point: the same button takes it away, and says so.
+                Label(labelled ? "Remove sync" : "", systemImage: "xmark")
+            } else if labelled {
+                Label(syncLabel, systemImage: "diamond")
             } else {
                 // Narrow: the diamond, and how many there are.
-                Label(clip.syncs.isEmpty ? "" : "\(clip.syncs.count)", systemImage: clip.syncHere == nil ? "diamond" : "diamond.fill")
+                Label(clip.syncs.isEmpty ? "" : "\(clip.syncs.count)", systemImage: "diamond")
             }
         }
-        .buttonStyle(ChipStyle(active: !clip.syncs.isEmpty))
+        .buttonStyle(ChipStyle(active: clip.syncHere != nil))
         .disabled(linked)
         .fixedSize()
         .help("Mark this frame as a sync point, or unmark it (S). Sync points pair up in order with the "

@@ -71,42 +71,26 @@ below 50 frames a second and slow motion will look jumpy. See [Filming tips](#fi
 
 ## The screen
 
-```
-┌─────────────────────────────────────────────────────────┐
-│ M Mimesis        [ A | B ][ A ][ B ][ Overlay ]     ⋯   │  ← top bar
-├──────────────────────────┬──────────────────────────────┤
-│ (A) serve 0.50 s 60 fps  │ (B) serve2 0.00 s 60 fps     │  ← clip badge
-│                ✏ ⇋ ⋯     │                  ✏ ⇋ ⋯       │  ← draw, mirror, more
-│          video           │          video               │
-│ In  Out     ◇ Add sync 🏷 1× │ In  Out   ◇ Add sync 🏷 1×   │  ← clip tools
-├──────────────────────────┴──────────────────────────────┤
-│  ◆      ◆   🏷                                           │  ← marks: sync, tags, drawings
-│  0:00.500 ━━━━●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 0:12.375  │  ← progress bar
-│  |||||||||||||||||||▼|||||||||||||||||||||||||||||       │  ← frame ruler
-│  🔗  A · +0.20 s from sync     ◀▮  ▶  ▮▶            1×   │  ← link, status, play, speed
-└─────────────────────────────────────────────────────────┘
-```
+- **The videos fill the screen, touching.** Side by side when the window is wide, one above the other when it's
+  tall (an iPhone held upright; turn it sideways for left/right).
+- **Each clip** shows only its letter and time (top left). The **focused** clip — the one you tapped last — has
+  a thin crimson edge and its buttons top right: **✏ Draw**, **⇋ Mirror**, **⋯** (Sound, Open video, From Photos,
+  Clear trim, Clear sync points, StroMotion, Close).
+- **The floating panel** at the bottom is see-through, over the videos. From the top:
+  - the focused clip's tools: its letter, **In / Out** (trim), **Add sync**, **🏷 tag**, its **speed**;
+  - **marks**: crimson ◆ sync points, yellow 🏷 tags, white • drawings (tap one to jump there);
+  - the **progress bar** and the **frame ruler** (drag it sideways to move frame by frame);
+  - **🔗 Link**, a status line, **frame back / play / frame forward**, and the playback **speed**.
+- **While playing**, the panel shrinks to its last row so it covers less of the videos; pause to get the tools
+  and timelines back.
+- **Top bar**: **A | B / A / B / Overlay**, and **⋯** (Save comparison, Saved comparisons, Library, Court mode,
+  Export video).
 
-- **Top bar**
-  - **A | B / A / B / Overlay** — show both clips, only A, only B, or one on top of the other.
-    Side by side is left/right when the window is wide, one above the other when it's tall (e.g. iPhone
-    held upright). Turn an iPhone sideways for left/right.
-  - **⋯** — Save comparison, Saved comparisons, Library, Court mode, Export video.
-- **Each clip** (a rounded card)
-  - **Badge** (top left): the letter, the file name, the time in the clip, the frame rate. On a narrow
-    screen it shortens to fit.
-  - **✏ Draw**, **⇋ Mirror**, **⋯** (top right). The ⋯ menu has: Sound on/off, Open video, From Photos,
-    Clear trim, Clear sync points, StroMotion, Close.
-  - **Tools row** (under the video): **In / Out** (trim), **Add sync**, **🏷 tag**, **speed**.
-- **The bottom panel** — appears once a clip is open.
-  - **Marks** above the timeline: crimson **◆** sync points, yellow **🏷** tags, white **•** drawings.
-    Tap one to jump there.
-  - **Progress bar**: the whole clip. **Frame ruler**: drag it sideways to move frame by frame, precisely.
-  - **🔗 Link**, a **status** line, **frame back / play / frame forward**, and the **speed**.
+**Which clip do the panel and play button move?** When the clips are linked: both. Otherwise:
 
-**Which clip do the controls move?** When the clips are *not* linked, the bottom panel moves the
-**selected** clip — the one with the crimson outline. Tap a clip to select it. When they *are* linked,
-the panel moves both.
+- showing **A only** or **B only** → that clip;
+- showing **both** → the **focused** clip (tap a clip to focus it; the panel's letter says which);
+- **pause** always stops whatever is playing, even the clip that isn't focused.
 
 ---
 
@@ -137,9 +121,10 @@ To undo: the clip's ⋯ › **Clear trim**.
 
 A **sync point** is a moment that should line up between the two clips — usually **contact**.
 
-- **Add one**: move a clip to the moment, tap **Add sync** (or **S** on Mac). The button then reads
-  *Sync* (or *Sync 2 of 3* when there are several), and a crimson diamond appears over the timeline.
-- **Remove one**: go to it (tap its diamond) and tap the sync button again.
+- **Add one**: move a clip to the moment, tap **Add sync** (or **S** on Mac). A crimson diamond appears over
+  the timeline.
+- **Remove one**: tap its diamond to go there — the sync button turns into **✕ Remove sync**; tap it. Or
+  right-click the diamond (Mac) or press and hold it (iPhone, iPad) › **Remove sync point**.
 - **Move one**: drag its diamond sideways over the timeline (only while not linked). It moves a frame at a
   time and shows the frame as you drag.
 - **Remove all**: ⋯ › **Clear sync points**.

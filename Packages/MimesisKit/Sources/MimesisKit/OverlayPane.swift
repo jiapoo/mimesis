@@ -20,14 +20,8 @@ struct OverlayPane: View {
     private var baseLetter: String { comparison.overlayTop == 0 ? "B" : "A" }
 
     var body: some View {
-        VStack(spacing: 8) {
-            video
-            tools
-        }
-        .padding(8)
-        .background(Theme.card, in: RoundedRectangle(cornerRadius: Theme.corner + 4, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: Theme.corner + 4, style: .continuous).strokeBorder(Theme.line))
+        // Edge to edge like the clips; its own tools float at the top, clear of the panel at the bottom.
+        video
     }
 
     private var video: some View {
@@ -99,9 +93,21 @@ struct OverlayPane: View {
             }
         }
         .background(Color.black)
-        .clipShape(RoundedRectangle(cornerRadius: Theme.corner, style: .continuous))
-        .overlay(alignment: .topLeading) { badge.padding(10) }
-        .overlay(alignment: .topTrailing) { actions.padding(10) }
+        .clipped()
+        .overlay(alignment: .top) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .top, spacing: 8) {
+                    badge
+                    Spacer(minLength: 0)
+                    actions
+                }
+                tools
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color.black.opacity(0.45), in: Capsule())
+            }
+            .padding(10)
+        }
         .overlay(alignment: .bottom) {
             if let alignProblem {
                 Text(alignProblem)
@@ -125,11 +131,6 @@ struct OverlayPane: View {
             letter(topLetter, on: true)
             Text("over").font(.system(size: 12, weight: .medium)).foregroundStyle(Theme.secondary)
             letter(baseLetter, on: false)
-            Text("\(top.name) over \(base.name)")
-                .font(.system(size: 12, weight: .medium))
-                .lineLimit(1).truncationMode(.middle)
-                .frame(maxWidth: 260)
-                .fixedSize(horizontal: true, vertical: false)
         }
         .foregroundStyle(.white)
         .padding(.leading, 4)

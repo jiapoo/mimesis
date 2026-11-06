@@ -41,43 +41,44 @@ public struct ComparisonView: View {
                     onCourt: { court = true },
                     onLibrary: library.clips.isEmpty ? nil : { showingLibrary = true })
             } else {
-            GeometryReader { space in
-                let wide = space.size.width >= space.size.height
-                let layout = wide ? AnyLayout(HStackLayout(spacing: 10)) : AnyLayout(VStackLayout(spacing: 10))
-                layout {
-                    if comparison.layout == .overlay {
-                        OverlayPane(comparison: comparison)
+            // The videos edge to edge, touching; the panel floats over them, see-through.
+            ZStack(alignment: .bottom) {
+                GeometryReader { space in
+                    let wide = space.size.width >= space.size.height
+                    let layout = wide ? AnyLayout(HStackLayout(spacing: 1)) : AnyLayout(VStackLayout(spacing: 1))
+                    layout {
+                        if comparison.layout == .overlay {
+                            OverlayPane(comparison: comparison)
+                        }
+                        ForEach(paneIndices, id: \.self) { index in
+                            ClipPane(
+                                clip: comparison.clips[index],
+                                letter: index == 0 ? "A" : "B",
+                                linked: comparison.linked,
+                                focused: comparison.focused === comparison.clips[index],
+                                showsFocus: paneIndices.count == 2,
+                                onFocus: { comparison.focus = index },
+                                onOpenFile: { importing = index },
+                                onOpenPhotos: { photoTarget = index },
+                                onDropped: { url in open(url, in: index) },
+                                onJog: { frames in
+                                    if !comparison.linked { comparison.focus = index }
+                                    comparison.step(frames)
+                                })
+                        }
                     }
-                    ForEach(paneIndices, id: \.self) { index in
-                        ClipPane(
-                            clip: comparison.clips[index],
-                            letter: index == 0 ? "A" : "B",
-                            linked: comparison.linked,
-                            focused: comparison.focus == index && !comparison.linked && comparison.clips[index].isLoaded,
-                            onFocus: { comparison.focus = index },
-                            onOpenFile: { importing = index },
-                            onOpenPhotos: { photoTarget = index },
-                            onDropped: { url in open(url, in: index) },
-                            onJog: { frames in
-                                if !comparison.linked { comparison.focus = index }
-                                comparison.step(frames)
-                            })
+                    .background(Color.white.opacity(0.08))
+                }
+                VStack(spacing: 6) {
+                    if let reel, reel.running {
+                        ReelBar(reel: reel)
                     }
+                    Transport(comparison: comparison)
                 }
                 .padding(.horizontal, 12)
-                .padding(.bottom, 4)
-            }
-            if let reel, reel.running {
-                ReelBar(reel: reel)
-                    .padding(.horizontal, 12)
-                    .padding(.top, 6)
-            }
-            // The timelines only once there's a clip to move through.
-            Transport(comparison: comparison)
-                .padding(.horizontal, 12)
-                .padding(.top, 6)
-                .padding(.bottom, 12)
+                .padding(.bottom, 10)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
             }
         }
         .animation(.easeOut(duration: 0.25), value: anyLoaded)
@@ -241,7 +242,11 @@ public struct ComparisonView: View {
                     let on = comparison.layout == layout
                     let unavailable = layout == .overlay && !comparison.canLink
                     Button {
-                        withAnimation(.easeOut(duration: 0.2)) { comparison.layout = layout }
+                        withAnimation(.easeOut(duration: 0.2)) {
+                            comparison.layout = layout
+                            if layout == .left { comparison.focus = 0 }
+                            if layout == .right { comparison.focus = 1 }
+                        }
                     } label: {
                         Text(layout.label)
                             .font(.system(size: 12, weight: .semibold))
