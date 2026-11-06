@@ -101,7 +101,12 @@ The five steps below build it.
 - ✅ Process the clip once, with a progress bar: a small mask per frame of the trim (up to 600 frames),
       then each frame the player shows is cut out live (2026-11-06; masks are kept in memory, so it's made
       again after reopening; not yet watched playing)
-- ⬜ Save the cutout with the comparison, so it doesn't have to be made again
+- ✅ Save the cutout, so it doesn't have to be made again: each one is kept in Application Support
+      (masks as PNG, who-is-where maps compressed), named after the clip file, its size and date, and the
+      span; "Cut out" loads it at once, ↻ always makes it fresh (2026-11-06; checked on the Mac: about
+      10 s the first time, under a second after relaunching)
+- ✅ A saved comparison remembers that a clip had a cutout and which player was picked, and brings both
+      back on reopening (2026-11-06; save/load unit-tested, reopening not yet tried by hand)
 - ✅ Soften the cutout's edge so it doesn't flicker (2026-11-06)
 - ⬜ Fallback if the racket gets cut off: a soft-edged box around him instead of an exact cutout
 

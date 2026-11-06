@@ -95,10 +95,11 @@ public final class Clip {
         Task { await engine.setMirror(horizontal: !engine.mirroredHorizontally, vertical: false) }
     }
 
-    /// Starts cutting the player out of the trimmed clip, for the overlay.
-    public func makeCutout() {
+    /// Starts cutting the player out of the trimmed clip, for the overlay: from the saved copy when
+    /// there is one, unless `fresh`; then picks the player tapped at `pickAt`, if given.
+    public func makeCutout(fresh: Bool = false, pickAt: (time: Double, point: CGPoint)? = nil) {
         dropCutout()
-        cutout = Cutout(clip: self)
+        cutout = Cutout(clip: self, fresh: fresh, pickAt: pickAt)
     }
 
     public func dropCutout() {

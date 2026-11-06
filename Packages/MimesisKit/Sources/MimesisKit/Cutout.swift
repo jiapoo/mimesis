@@ -1,5 +1,7 @@
 import AVFoundation
 import CoreImage
+import CryptoKit
+import ImageIO
 import CoreImage.CIFilterBuiltins
 import QuartzCore
 import SwiftUI
@@ -49,7 +51,14 @@ public final class Cutout {
     private var task: Task<Void, Never>?
     let url: URL
 
-    init(clip: Clip) {
+    /// Where on the clip the picked player was tapped (clip time, and 0–1 as filmed), to pick them again
+    /// when a saved comparison is reopened.
+    public private(set) var pickedAt: (time: Double, point: CGPoint)?
+
+    /// - Parameters:
+    ///   - fresh: make the masks again even when a saved copy exists.
+    ///   - pickAt: once ready, pick the player at this tap (from a saved comparison).
+    init(clip: Clip, fresh: Bool = false, pickAt: (time: Double, point: CGPoint)? = nil) {
         url = clip.url ?? URL(fileURLWithPath: "/")
         let fps = Double(clip.engine.fps > 0 ? clip.engine.fps : 30)
         let length = clip.end - clip.trimStart
@@ -57,14 +66,18 @@ public final class Cutout {
         shortened = length > limit
         span = clip.trimStart...(clip.trimStart + min(length, limit))
         let (url, start, duration) = (url, span.lowerBound, span.upperBound - span.lowerBound)
+        let file = Self.cacheFile(for: url, start: start, duration: duration)
         task = Task { [weak self] in
             do {
                 let result = try await Task.detached(priority: .userInitiated) {
-                    try await Cutout.makeMasks(url: url, start: start, duration: duration) { done in
+                    if !fresh, let file, let saved = Cutout.load(file) { return saved }
+                    let made = try await Cutout.makeMasks(url: url, start: start, duration: duration) { done in
                         Task { @MainActor in
                             if case .preparing = self?.state { self?.state = .preparing(done) }
                         }
                     }
+                    if let file { Cutout.save(made, to: file) }
+                    return made
                 }.value
                 guard let self else { return }
                 self.masks = result.masks
@@ -72,6 +85,7 @@ public final class Cutout {
                 self.frameRate = result.frameRate
                 self.hasSeveral = result.labels.values.contains { Set($0).subtracting([0]).count > 1 }
                 self.state = result.masks.isEmpty ? .failed("Nobody was found to cut out.") : .ready
+                if let pickAt { _ = self.pick(at: pickAt.time, point: pickAt.point) }
             } catch is CancellationError {
             } catch {
                 #if targetEnvironment(simulator)
@@ -126,6 +140,7 @@ public final class Cutout {
             }
         }
         picked = chosen
+        pickedAt = (time, point)
         pickedMasks = [:]
         return true
     }
@@ -133,6 +148,7 @@ public final class Cutout {
     /// Back to everyone found.
     func pickEveryone() {
         picked = nil
+        pickedAt = nil
         pickedMasks = [:]
     }
 
@@ -279,6 +295,60 @@ public final class Cutout {
             }
         }
         return out
+    }
+
+    // MARK: - Saved copies
+
+    /// What a saved cutout holds: each frame's mask as a PNG and its who-is-where map compressed.
+    private struct SavedMasks: Codable {
+        var frameRate: Double
+        var masks: [Int: Data]
+        var labels: [Int: Data]
+    }
+
+    /// The saved copy for this clip and span, in Application Support/Mimesis/Cutouts. The clip's
+    /// size and modification date are part of the name, so an edited file is cut out again.
+    nonisolated static func cacheFile(for url: URL, start: Double, duration: Double) -> URL? {
+        let values = try? url.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey])
+        let key = [
+            url.standardizedFileURL.path,
+            String(values?.fileSize ?? 0),
+            String(values?.contentModificationDate?.timeIntervalSince1970 ?? 0),
+            String(format: "%.3f-%.3f", start, duration),
+            "v1",
+        ].joined(separator: "|")
+        let name = SHA256.hash(data: Data(key.utf8)).map { String(format: "%02x", $0) }.joined().prefix(32)
+        let folder = ComparisonStore.supportFolder.appendingPathComponent("Cutouts", isDirectory: true)
+        guard (try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)) != nil else { return nil }
+        return folder.appendingPathComponent("\(name).cutout")
+    }
+
+    nonisolated static func save(_ made: Masks, to file: URL) {
+        var saved = SavedMasks(frameRate: made.frameRate, masks: [:], labels: [:])
+        for (frame, mask) in made.masks {
+            if let png = MaskProbe.png(mask) { saved.masks[frame] = png }
+        }
+        for (frame, map) in made.labels {
+            if let packed = try? (Data(map) as NSData).compressed(using: .lzfse) { saved.labels[frame] = packed as Data }
+        }
+        guard let data = try? PropertyListEncoder().encode(saved) else { return }
+        try? data.write(to: file, options: .atomic)
+    }
+
+    nonisolated static func load(_ file: URL) -> Masks? {
+        guard let data = try? Data(contentsOf: file),
+              let saved = try? PropertyListDecoder().decode(SavedMasks.self, from: data) else { return nil }
+        var made = Masks(masks: [:], labels: [:], frameRate: saved.frameRate)
+        for (frame, png) in saved.masks {
+            guard let source = CGImageSourceCreateWithData(png as CFData, nil),
+                  let image = CGImageSourceCreateImageAtIndex(source, 0, nil) else { return nil }
+            made.masks[frame] = image
+        }
+        for (frame, packed) in saved.labels {
+            guard let map = try? (packed as NSData).decompressed(using: .lzfse) else { return nil }
+            made.labels[frame] = [UInt8](map as Data)
+        }
+        return made.masks.isEmpty ? nil : made
     }
 
     nonisolated static func orientation(of transform: CGAffineTransform) -> CGImagePropertyOrientation {

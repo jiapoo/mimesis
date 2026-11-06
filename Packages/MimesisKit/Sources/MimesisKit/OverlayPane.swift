@@ -254,7 +254,7 @@ struct OverlayPane: View {
                     .buttonStyle(ChipStyle(active: picking || cutout.picked != nil))
                     .help("Keep only one player when \(topLetter) has others in frame (an opponent, a coach): tap them")
                 }
-                RoundButton(symbol: "arrow.clockwise") { top.makeCutout() }
+                RoundButton(symbol: "arrow.clockwise") { top.makeCutout(fresh: true) }
                     .help("Cut out again, e.g. after changing \(topLetter)'s trim")
             }
         case .failed(let why)?:

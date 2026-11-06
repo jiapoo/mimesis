@@ -14,6 +14,10 @@ struct ClipState: Codable {
     var mirrored: Bool
     /// Nil in comparisons saved before drawing existed.
     var drawings: [Drawing]?
+    /// The clip had a cutout (made again from its saved copy on reopening), and the player picked in it:
+    /// clip time, then 0–1 across and down as filmed.
+    var cutout: Bool?
+    var pick: [Double]?
 }
 
 /// A comparison as saved: both clips, and how they're shown and played.
@@ -116,7 +120,9 @@ extension Clip {
         guard let url, let bookmark = try? url.bookmarkData(options: bookmarkOptions) else { return nil }
         return ClipState(
             bookmark: bookmark, trimStart: trimStart, trimEnd: trimEnd, sync: syncs.first, syncs: syncs, speed: speed,
-            mirrored: engine.mirroredHorizontally, drawings: drawings)
+            mirrored: engine.mirroredHorizontally, drawings: drawings,
+            cutout: cutout?.state == .ready ? true : nil,
+            pick: cutout?.pickedAt.map { [$0.time, $0.point.x, $0.point.y] })
     }
 
     /// Opens the clip's file again and puts back its trim, sync point, speed and mirror.
@@ -136,6 +142,10 @@ extension Clip {
         speed = state.speed
         drawings = state.drawings ?? []
         if state.mirrored { await engine.setMirror(horizontal: true, vertical: false) }
+        if state.cutout == true {
+            let pick = state.pick.flatMap { $0.count == 3 ? (time: $0[0], point: CGPoint(x: $0[1], y: $0[2])) : nil }
+            makeCutout(pickAt: pick)
+        }
         await engine.seekToTime(syncTime)
         return true
     }
