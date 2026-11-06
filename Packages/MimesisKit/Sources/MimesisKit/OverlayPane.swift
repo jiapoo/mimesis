@@ -154,6 +154,9 @@ struct OverlayPane: View {
             RoundButton(symbol: aligning ? "hourglass" : "figure.stand") { align() }
                 .help("Auto-align: put \(topLetter)'s hips and feet on \(baseLetter)'s, from the frames on screen")
                 .disabled(aligning)
+            RoundButton(symbol: aligning ? "hourglass" : "square.on.square.dashed") { align(byBackground: true) }
+                .help("Line up the backgrounds: for two clips filmed at the same place, so the court lines match")
+                .disabled(aligning)
             RoundButton(symbol: "minus.magnifyingglass") { resize(by: 1 / 1.1) }
                 .help("Make the top clip smaller")
             RoundButton(symbol: "plus.magnifyingglass") { resize(by: 1.1) }
@@ -221,12 +224,16 @@ struct OverlayPane: View {
         }
     }
 
-    private func align() {
+    private func align(byBackground: Bool = false) {
         aligning = true
         alignProblem = nil
         Task {
             do {
-                try await comparison.autoAlign()
+                if byBackground {
+                    try await comparison.alignBackgrounds()
+                } else {
+                    try await comparison.autoAlign()
+                }
             } catch {
                 #if targetEnvironment(simulator)
                 alignProblem = "Auto-align needs a real iPhone or iPad (Vision can't run it in Simulator)."

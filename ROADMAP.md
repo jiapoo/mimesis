@@ -140,7 +140,12 @@ The five steps below build it.
       account; you nudge from there (2026-11-06; checked on the Mac: B's cutout landed on A's hips and feet.
       Vision can't run it in Simulator, which says so)
 - ✅ Keep the position and size for the whole clip, saved with the comparison (2026-11-06)
-- ⬜ Automatic background alignment for clips filmed at the same place (`VNHomographicImageRegistrationRequest`)
+- ✅ Automatic background alignment for clips filmed at the same place (the dashed-squares button): tries sizes
+      0.7×–1.4× and, at each, the shift where the two pictures differ least; refuses clips from different places.
+      Vision's own registration was tried first and dropped: its homography was unreliable, and its shift went
+      wrong on the repeating net and fence (2026-11-06; opt-in tests: a known 1.15× zoom and shift are found to
+      within 0.01× and 1 px, and two different courts are refused; on the iPad a clip dragged off its twin
+      snapped back exactly)
 
 ### 4.5 Keep it in time using the sync points
 
