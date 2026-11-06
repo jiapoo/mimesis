@@ -6,6 +6,8 @@ struct LibraryView: View {
     let library: Library
     /// Open this clip as A (0) or B (1), at this time.
     let onOpen: (URL, Int, Double?) -> Void
+    /// Play every moment with this tag back to back.
+    let onPlayAll: (String) -> Void
 
     @State private var filter: String?
     @State private var missing: String?
@@ -28,6 +30,12 @@ struct LibraryView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } }
                 ToolbarItem(placement: .primaryAction) { filterMenu }
+                if let filter {
+                    ToolbarItem(placement: .primaryAction) {
+                        Button { onPlayAll(filter) } label: { Label("Play all", systemImage: "play.rectangle.on.rectangle") }
+                            .help("Play every \(filter) moment back to back in clip A")
+                    }
+                }
             }
             .alert("Clip not found", isPresented: Binding(get: { missing != nil }, set: { if !$0 { missing = nil } })) {
                 Button("OK", role: .cancel) {}

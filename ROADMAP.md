@@ -187,8 +187,13 @@ The five steps below build it.
       new tag of your own; tags show as yellow marks over the ruler (2026-11-06; checked on the iPad)
 - ✅ Filter the library by a tag to see that moment across every clip, and open any clip, or a tagged moment, as
       A or B (2026-11-06; opening a clip as B checked on the iPad; opening at a tag's time not yet)
-- ⬜ Play every moment with a tag back to back
-- ⬜ Sync the library across devices (iCloud)
+- ✅ Play every moment with a tag back to back: filter the library by a tag, then Play all; each moment plays
+      in clip A from 1.5 s before to 1.5 s after, with "Serve 1 of 2" and Stop (2026-11-06; checked on the iPad)
+- ✅ Sync the library's notes and tags across devices through iCloud's key-value store, matching clips by file
+      name and size; tags from every device are kept, a removed tag stays removed, the newer notes win
+      (2026-11-06; merge rules unit-tested. Not switched on yet: the iCloud capability needs the Apple Developer
+      Program License Agreement accepted in your developer account; then uncomment CODE_SIGN_ENTITLEMENTS in
+      project.yml and add the same key to the Mac entitlements. Untested across real devices)
 
 ## Phase 8 — Release
 

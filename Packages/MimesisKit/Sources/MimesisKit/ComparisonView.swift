@@ -19,6 +19,7 @@ public struct ComparisonView: View {
     @State private var court = false
     @State private var library = Library()
     @State private var showingLibrary = false
+    @State private var reel: Reel?
     @Environment(\.scenePhase) private var scenePhase
 
     private let preload: [URL?]
@@ -57,6 +58,11 @@ public struct ComparisonView: View {
                 .padding(.horizontal, 12)
                 .padding(.bottom, 4)
             }
+            if let reel, reel.running {
+                ReelBar(reel: reel)
+                    .padding(.horizontal, 12)
+                    .padding(.top, 6)
+            }
             Transport(comparison: comparison)
                 .padding(.horizontal, 12)
                 .padding(.top, 6)
@@ -76,6 +82,7 @@ public struct ComparisonView: View {
                 // Carry on where the last session left off.
                 await store.restoreLast(into: comparison)
             }
+            if let sync = LibrarySync() { library.startSync(sync) }
         }
         // Remember the comparison a second after it last changed, and when the app goes to the background.
         .task(id: snapshot) {
@@ -107,10 +114,13 @@ public struct ComparisonView: View {
         }
         #endif
         .sheet(isPresented: $showingLibrary) {
-            LibraryView(library: library) { url, side, time in
+            LibraryView(library: library, onOpen: { url, side, time in
                 showingLibrary = false
                 open(url, in: side, at: time)
-            }
+            }, onPlayAll: { label in
+                showingLibrary = false
+                playAll(label)
+            })
         }
         .sheet(isPresented: $exporting) {
             ExportView(comparison: comparison)
@@ -229,6 +239,21 @@ public struct ComparisonView: View {
         .foregroundStyle(.white)
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
+    }
+
+    /// Every moment tagged `label`, back to back in clip A, shown alone.
+    private func playAll(_ label: String) {
+        let items = library.moments(labelled: label).compactMap { moment in
+            moment.clip.resolve().map { Reel.Item(url: $0, name: moment.clip.name, time: moment.tag.time) }
+        }
+        guard !items.isEmpty else { return }
+        reel?.stop()
+        comparison.linked = false
+        comparison.focus = 0
+        comparison.layout = .left
+        let made = Reel(label: label, items: items)
+        reel = made
+        made.start(in: comparison.clips[0])
     }
 
     /// "serve vs serve2"
@@ -369,5 +394,29 @@ struct SavedComparisonsView: View {
         .frame(minWidth: 420, minHeight: 360)
         .preferredColorScheme(.dark)
         .tint(Theme.accent)
+    }
+}
+
+/// While a reel plays: which moment of how many, and Stop.
+struct ReelBar: View {
+    let reel: Reel
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "play.rectangle.on.rectangle").foregroundStyle(Theme.accent)
+            Text("\(reel.label) \(reel.index + 1) of \(reel.items.count)")
+                .font(.system(size: 13, weight: .semibold).monospacedDigit())
+            if reel.items.indices.contains(reel.index) {
+                Text("\(reel.items[reel.index].name) at \(clock(reel.items[reel.index].time))")
+                    .font(.system(size: 13)).foregroundStyle(Theme.secondary).lineLimit(1)
+            }
+            Spacer()
+            Button("Stop") { reel.stop() }.buttonStyle(ChipStyle(active: true))
+        }
+        .foregroundStyle(.white)
+        .padding(.horizontal, 14).padding(.vertical, 8)
+        .background(Theme.card, in: Capsule())
+        .overlay(Capsule().strokeBorder(Theme.line))
+        .frame(maxWidth: 900)
     }
 }

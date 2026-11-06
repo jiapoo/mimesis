@@ -71,5 +71,9 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.arc.mimesis
         PRODUCT_NAME: Mimesis
+        # iCloud sync of the library's notes and tags needs the iCloud key-value capability, which needs the
+        # Apple Developer Program License Agreement accepted first. Then uncomment this, add the same
+        # com.apple.developer.ubiquity-kvstore-identifier key to Mac/MimesisMac*.entitlements, and build.
+        # CODE_SIGN_ENTITLEMENTS: iOS/Mimesis.entitlements
         # iPhone and iPad.
         TARGETED_DEVICE_FAMILY: "1,2"

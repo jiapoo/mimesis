@@ -45,3 +45,43 @@ struct LibraryTests {
         #expect(library.labels.last == "Split step")
     }
 }
+
+/// Merging notes and tags from another device.
+@MainActor
+struct LibraryMergeTests {
+    func clip(tags: [MomentTag] = [], notes: String = "", changed: Date? = nil, removed: [UUID]? = nil) -> LibraryClip {
+        var clip = LibraryClip(bookmark: Data(), path: "/x", name: "serve", added: .distantPast)
+        clip.tags = tags
+        clip.notes = notes
+        clip.changed = changed
+        clip.removedTags = removed
+        return clip
+    }
+
+    @Test func tagsFromBothDevicesAreKept() {
+        let mine = MomentTag(time: 1, label: "Serve"), theirs = MomentTag(time: 2, label: "Fault")
+        var local = clip(tags: [mine])
+        Library.merge(.init(notes: "", tags: [theirs], removed: [], changed: .now), into: &local)
+        #expect(local.tags.map(\.label) == ["Serve", "Fault"])
+    }
+
+    @Test func aTagRemovedAnywhereStaysRemoved() {
+        let tag = MomentTag(time: 1, label: "Serve")
+        var local = clip(removed: [tag.id])
+        Library.merge(.init(notes: "", tags: [tag], removed: [], changed: .now), into: &local)
+        #expect(local.tags.isEmpty)
+        var other = clip(tags: [tag])
+        Library.merge(.init(notes: "", tags: [], removed: [tag.id], changed: .now), into: &other)
+        #expect(other.tags.isEmpty)
+    }
+
+    @Test func theNewerNotesWin() {
+        let old = Date(timeIntervalSince1970: 1000), new = Date(timeIntervalSince1970: 2000)
+        var local = clip(notes: "toss too low", changed: old)
+        Library.merge(.init(notes: "toss better", tags: [], removed: [], changed: new), into: &local)
+        #expect(local.notes == "toss better")
+        var newer = clip(notes: "mine is newer", changed: new)
+        Library.merge(.init(notes: "older", tags: [], removed: [], changed: old), into: &newer)
+        #expect(newer.notes == "mine is newer")
+    }
+}
