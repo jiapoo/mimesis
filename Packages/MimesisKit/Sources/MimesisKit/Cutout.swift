@@ -40,6 +40,9 @@ public final class Cutout {
     public private(set) var picked: [Int: UInt8]? { didSet { pickGeneration += 1 } }
     /// Changes with every pick, so the frame on screen is drawn again.
     private(set) var pickGeneration = 0
+    /// A soft-edged box around the player instead of their outline: for when the outline loses the racket.
+    public var boxed = false { didSet { pickGeneration += 1 } }
+    private var boxMasks: [Int: CGImage] = [:]
 
     private var masks: [Int: CGImage] = [:]
     /// For each frame, which subject each cell of the picture belongs to (0 is nobody).
@@ -106,6 +109,13 @@ public final class Cutout {
     func mask(at time: Double) -> CGImage? {
         let index = Int((time * frameRate).rounded())
         guard let frame = [index, index - 1, index + 1].first(where: { masks[$0] != nil }) else { return nil }
+        if boxed {
+            if let made = boxMasks[frame] { return made }
+            guard let map = labels[frame], let all = masks[frame] else { return nil }
+            let made = Self.box(around: picked?[frame], labels: map, width: all.width, height: all.height, context: context)
+            boxMasks[frame] = made
+            return made
+        }
         guard let picked else { return masks[frame] }
         if let made = pickedMasks[frame] { return made }
         guard let label = picked[frame], let all = masks[frame], let map = labels[frame] else { return nil }
@@ -142,6 +152,7 @@ public final class Cutout {
         picked = chosen
         pickedAt = (time, point)
         pickedMasks = [:]
+        boxMasks = [:]
         return true
     }
 
@@ -149,6 +160,7 @@ public final class Cutout {
     func pickEveryone() {
         picked = nil
         pickedAt = nil
+        boxMasks = [:]
         pickedMasks = [:]
     }
 
@@ -191,6 +203,33 @@ public final class Cutout {
             count += 1
         }
         return count == 0 ? nil : CGPoint(x: Double(x) / Double(count), y: Double(y) / Double(count))
+    }
+
+    /// A soft-edged box around `label` (or everyone found, for nil), padded so a swing's racket fits:
+    /// a mask `width` × `height`, white inside.
+    nonisolated static func box(around label: UInt8?, labels map: [UInt8], width: Int, height: Int,
+                                context: CIContext) -> CGImage? {
+        let side = labelSide
+        var minX = side, minY = side, maxX = -1, maxY = -1
+        for i in map.indices where label.map({ map[i] == $0 }) ?? (map[i] != 0) {
+            let x = i % side, y = i / side
+            minX = min(minX, x); maxX = max(maxX, x)
+            minY = min(minY, y); maxY = max(maxY, y)
+        }
+        guard maxX >= minX else { return nil }
+        // Cells to the mask's pixels (counting down from the top), padded by a quarter of the box's size.
+        let sx = CGFloat(width) / CGFloat(side), sy = CGFloat(height) / CGFloat(side)
+        var rect = CGRect(x: CGFloat(minX) * sx, y: CGFloat(minY) * sy,
+                          width: CGFloat(maxX - minX + 1) * sx, height: CGFloat(maxY - minY + 1) * sy)
+        rect = rect.insetBy(dx: -rect.width * 0.25, dy: -rect.height * 0.12)
+        let extent = CGRect(x: 0, y: 0, width: width, height: height)
+        // Core Image counts up from the bottom.
+        let flipped = CGRect(x: rect.minX, y: CGFloat(height) - rect.maxY, width: rect.width, height: rect.height)
+        let soft = min(rect.width, rect.height) * 0.08
+        let box = CIImage(color: .white).cropped(to: flipped.intersection(extent))
+            .composited(over: CIImage(color: .black).cropped(to: extent))
+            .clampedToExtent().applyingGaussianBlur(sigma: soft).cropped(to: extent)
+        return context.createCGImage(box, from: extent, format: .L8, colorSpace: CGColorSpaceCreateDeviceGray())
     }
 
     /// Everyone's mask, kept only where `label` is: their area from the who-is-where map, widened a

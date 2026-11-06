@@ -261,6 +261,10 @@ struct OverlayPane: View {
                     .buttonStyle(ChipStyle(active: cutout.enabled))
                     .help(cutout.shortened ? "Only the first \(Cutout.frameLimit) frames of the trim are cut out: trim \(topLetter) to the swing"
                           : "Show \(topLetter) cut out, or whole")
+                Button { cutout.boxed.toggle() } label: { Label("Box", systemImage: "rectangle.dashed") }
+                    .buttonStyle(ChipStyle(active: cutout.boxed))
+                    .disabled(!cutout.enabled)
+                    .help("A soft box around \(topLetter)'s player instead of their outline, for when the outline loses the racket")
                 Button { cutout.tinted.toggle() } label: { Label("Tint", systemImage: "paintbrush") }
                     .buttonStyle(ChipStyle(active: cutout.tinted))
                     .disabled(!cutout.enabled)

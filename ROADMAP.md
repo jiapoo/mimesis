@@ -108,7 +108,9 @@ The five steps below build it.
 - ✅ A saved comparison remembers that a clip had a cutout and which player was picked, and brings both
       back on reopening (2026-11-06; save/load unit-tested, reopening not yet tried by hand)
 - ✅ Soften the cutout's edge so it doesn't flicker (2026-11-06)
-- ⬜ Fallback if the racket gets cut off: a soft-edged box around him instead of an exact cutout
+- ✅ Fallback if the racket gets cut off: "Box" draws a soft-edged box around the player (or the picked one),
+      padded so a swing fits, instead of their outline; kept with the comparison, used in export
+      (2026-11-06; unit-tested, not yet looked at in the app)
 
 ### 4.2 Mirror him
 

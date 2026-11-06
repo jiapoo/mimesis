@@ -1,5 +1,6 @@
 @testable import MimesisKit
 import CoreGraphics
+import CoreImage
 import Testing
 
 /// Picking one player in a cutout, and following them from frame to frame.
@@ -36,5 +37,22 @@ struct PickTests {
         let before = map([(1, 0..<10)])
         let after = map([(1, 30..<40), (2, 110..<120)])
         #expect(Cutout.follow(1, from: before, into: after) == 1)
+    }
+
+    @Test func boxCoversThePlayerWithRoomToSwing() throws {
+        // A player in columns 20–40, rows 40–100, in a 128 × 128 map; the mask is 256 × 256.
+        let frame = map([(1, 20..<40), (2, 90..<110)])
+        let image = try #require(Cutout.box(around: 1, labels: frame, width: 256, height: 256, context: CIContext()))
+        var pixels = [UInt8](repeating: 0, count: 256 * 256)
+        let context = try #require(CGContext(data: &pixels, width: 256, height: 256, bitsPerComponent: 8, bytesPerRow: 256,
+                                             space: CGColorSpaceCreateDeviceGray(), bitmapInfo: 0))
+        context.draw(image, in: CGRect(x: 0, y: 0, width: 256, height: 256))
+        // Drawn into a bitmap, row 0 is the top. The player's middle is solid; a bit beside them still in;
+        // the other player and the far corner out.
+        func at(_ x: Int, _ y: Int) -> UInt8 { pixels[y * 256 + x] }
+        #expect(at(60, 140) > 250)
+        #expect(at(36, 140) > 100)
+        #expect(at(200, 140) < 5)
+        #expect(at(250, 5) < 5)
     }
 }

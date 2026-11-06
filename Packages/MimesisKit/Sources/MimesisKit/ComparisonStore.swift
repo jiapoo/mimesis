@@ -18,6 +18,8 @@ struct ClipState: Codable {
     /// clip time, then 0–1 across and down as filmed.
     var cutout: Bool?
     var pick: [Double]?
+    /// The cutout drawn as a soft box rather than an outline.
+    var box: Bool?
 }
 
 /// A comparison as saved: both clips, and how they're shown and played.
@@ -124,7 +126,8 @@ extension Clip {
             bookmark: bookmark, trimStart: trimStart, trimEnd: trimEnd, sync: syncs.first, syncs: syncs, speed: speed,
             mirrored: engine.mirroredHorizontally, drawings: drawings,
             cutout: cutout?.state == .ready ? true : nil,
-            pick: cutout?.pickedAt.map { [$0.time, $0.point.x, $0.point.y] })
+            pick: cutout?.pickedAt.map { [$0.time, $0.point.x, $0.point.y] },
+            box: cutout?.boxed == true ? true : nil)
     }
 
     /// Opens the clip's file again and puts back its trim, sync point, speed and mirror.
@@ -147,6 +150,7 @@ extension Clip {
         if state.cutout == true {
             let pick = state.pick.flatMap { $0.count == 3 ? (time: $0[0], point: CGPoint(x: $0[1], y: $0[2])) : nil }
             makeCutout(pickAt: pick)
+            cutout?.boxed = state.box ?? false
         }
         await engine.seekToTime(syncTime)
         return true
