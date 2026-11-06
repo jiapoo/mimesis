@@ -15,8 +15,8 @@ M = "M 250 760 L 250 290 L 512 600 L 774 290 L 774 760"
 STROKE = 'fill="none" stroke-width="96" stroke-linecap="round" stroke-linejoin="round"'
 # (offset, opacity at top, opacity at bottom) for each echo, farthest first
 ECHOES = [(108, 0.25, 0.0), (72, 0.40, 0.02), (36, 0.65, 0.05)]
-# Moves M plus trail so the whole mark sits at the optical centre.
-CENTER = "translate(-54 -62)"
+# Puts the solid M (strokes span x 202-822, y 242-808) at the centre; the trail hangs off its lower right.
+CENTER = "translate(0 -13)"
 
 
 def defs():

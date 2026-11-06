@@ -14,7 +14,8 @@ struct ClipPane: View {
     let onFocus: () -> Void
     let onOpenFile: () -> Void
     let onOpenPhotos: () -> Void
-    let onDropped: (URL) -> Void
+    /// Videos dropped on this clip (two at once fill A and B).
+    let onDropped: ([URL]) -> Void
     /// A sideways drag on the video: move this many frames (both clips while linked).
     let onJog: (Int) -> Void
 
@@ -47,8 +48,9 @@ struct ClipPane: View {
         .contentShape(Rectangle())
         .onTapGesture(perform: onFocus)
         .dropDestination(for: URL.self) { urls, _ in
-            guard let url = urls.first else { return false }
-            onDropped(url)
+            let videos = urls.filter(isVideo)
+            guard !videos.isEmpty else { return false }
+            onDropped(videos)
             return true
         } isTargeted: { dropping = $0 }
         .animation(.easeOut(duration: 0.15), value: focused)
@@ -392,7 +394,7 @@ struct EchoMark: View {
             func m(_ offset: CGFloat) -> Path {
                 var path = Path()
                 let points: [CGPoint] = [(250, 760), (250, 290), (512, 600), (774, 290), (774, 760)]
-                    .map { CGPoint(x: ($0.0 - 54 + offset) * scale, y: ($0.1 - 62 + offset) * scale) }
+                    .map { CGPoint(x: ($0.0 + offset) * scale, y: ($0.1 - 13 + offset) * scale) }
                 path.addLines(points)
                 return path
             }
@@ -408,4 +410,9 @@ struct EchoMark: View {
 /// A clip's own time: "1.23 s".
 func clock(_ value: Double) -> String {
     value.formatted(.number.precision(.fractionLength(2))) + " s"
+}
+
+/// A file that plays as a video (by its extension), for drops.
+func isVideo(_ url: URL) -> Bool {
+    url.isFileURL && (UTType(filenameExtension: url.pathExtension)?.conforms(to: .movie) ?? false)
 }

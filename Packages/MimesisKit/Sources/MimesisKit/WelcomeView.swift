@@ -2,8 +2,12 @@ import SwiftUI
 
 /// The first screen, before any clip is open: what Mimesis does, and the ways to start.
 struct WelcomeView: View {
+    @State private var droppingOnScreen = false
+    @State private var droppingOn: Int?
     let onOpenFile: (Int) -> Void
     let onOpenPhotos: (Int) -> Void
+    /// Videos dropped on a clip's card (its side) or anywhere else on the screen (nil).
+    let onDropped: ([URL], Int?) -> Void
     let onCourt: () -> Void
     /// Nil until the library has clips.
     let onLibrary: (() -> Void)?
@@ -42,6 +46,11 @@ struct WelcomeView: View {
                         }
                         .buttonStyle(WideButtonStyle())
                     }
+                    #if os(macOS)
+                    Label("Or drop one or two videos here", systemImage: "arrow.down.doc")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Theme.secondary.opacity(0.8))
+                    #endif
                     Label("Film in Slo-mo (240 fps), or at least 60 fps, for smooth slow motion", systemImage: "lightbulb")
                         .font(.system(size: 12))
                         .foregroundStyle(Theme.secondary.opacity(0.8))
@@ -56,6 +65,21 @@ struct WelcomeView: View {
             .frame(maxWidth: .infinity)
         }
         .scrollBounceBehavior(.basedOnSize)
+        // Dropped anywhere but a card: into the first empty side (two: A and B).
+        .dropDestination(for: URL.self) { urls, _ in
+            let videos = urls.filter(isVideo)
+            guard !videos.isEmpty else { return false }
+            onDropped(videos, nil)
+            return true
+        } isTargeted: { droppingOnScreen = $0 }
+        .overlay {
+            if droppingOnScreen {
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .strokeBorder(Theme.accent, style: StrokeStyle(lineWidth: 2, dash: [8, 6]))
+                    .padding(8)
+                    .allowsHitTesting(false)
+            }
+        }
     }
 
     @ViewBuilder private var slots: some View {
@@ -91,7 +115,15 @@ struct WelcomeView: View {
         .padding(16)
         .frame(minWidth: 260, maxWidth: .infinity)
         .background(Theme.card, in: RoundedRectangle(cornerRadius: Theme.corner + 4, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: Theme.corner + 4, style: .continuous).strokeBorder(Theme.line))
+        .overlay(RoundedRectangle(cornerRadius: Theme.corner + 4, style: .continuous)
+            .strokeBorder(droppingOn == side ? Theme.accent : Theme.line, lineWidth: droppingOn == side ? 2 : 1))
+        // Drop a video on this card: it goes in as this clip.
+        .dropDestination(for: URL.self) { urls, _ in
+            let videos = urls.filter(isVideo)
+            guard !videos.isEmpty else { return false }
+            onDropped(videos, videos.count >= 2 ? nil : side)
+            return true
+        } isTargeted: { droppingOn = $0 ? side : (droppingOn == side ? nil : droppingOn) }
     }
 }
 

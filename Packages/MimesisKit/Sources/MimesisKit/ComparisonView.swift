@@ -38,6 +38,7 @@ public struct ComparisonView: View {
                 WelcomeView(
                     onOpenFile: { importing = $0 },
                     onOpenPhotos: { photoTarget = $0 },
+                    onDropped: { urls, side in dropped(urls, on: side) },
                     onCourt: { court = true },
                     onLibrary: library.clips.isEmpty ? nil : { showingLibrary = true })
             } else {
@@ -49,6 +50,12 @@ public struct ComparisonView: View {
                     layout {
                         if comparison.layout == .overlay {
                             OverlayPane(comparison: comparison)
+                                .dropDestination(for: URL.self) { urls, _ in
+                                    let videos = urls.filter(isVideo)
+                                    guard !videos.isEmpty else { return false }
+                                    dropped(videos, on: nil)
+                                    return true
+                                }
                         }
                         ForEach(paneIndices, id: \.self) { index in
                             ClipPane(
@@ -60,7 +67,7 @@ public struct ComparisonView: View {
                                 onFocus: { comparison.focus = index },
                                 onOpenFile: { importing = index },
                                 onOpenPhotos: { photoTarget = index },
-                                onDropped: { url in open(url, in: index) },
+                                onDropped: { urls in dropped(urls, on: index) },
                                 onJog: { frames in
                                     if !comparison.linked { comparison.focus = index }
                                     comparison.step(frames)
@@ -301,6 +308,17 @@ public struct ComparisonView: View {
             .buttonStyle(.plain)
             .menuIndicator(.hidden)
             .fixedSize()
+    }
+
+    /// Videos dropped on the window: two fill A and B; one goes on the side it was dropped on, or, with
+    /// no side, into an empty one (else Mimesis asks which).
+    private func dropped(_ urls: [URL], on side: Int?) {
+        if urls.count >= 2 {
+            open(urls[0], in: 0)
+            open(urls[1], in: 1)
+        } else if let url = urls.first {
+            if let side { open(url, in: side) } else { receive(url) }
+        }
     }
 
     private var bothLoaded: Bool { comparison.clips.allSatisfy(\.isLoaded) }
