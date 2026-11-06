@@ -22,6 +22,8 @@ public final class Clip {
     public var pan: CGSize = .zero
     /// Lines, arrows, circles and angles drawn on the clip.
     public var drawings: [Drawing] = []
+    /// The player cut out of this clip for the overlay, once asked for (not saved: it's made again).
+    public private(set) var cutout: Cutout?
 
     public init() {
         engine.isMuted = true
@@ -51,10 +53,12 @@ public final class Clip {
         zoom = 1
         pan = .zero
         drawings = []
+        dropCutout()
         await engine.loadVideo(url: newURL)
     }
 
     public func close() {
+        dropCutout()
         engine.cleanup()
         url?.stopAccessingSecurityScopedResource()
         url = nil
@@ -89,6 +93,17 @@ public final class Clip {
 
     public func toggleMirror() {
         Task { await engine.setMirror(horizontal: !engine.mirroredHorizontally, vertical: false) }
+    }
+
+    /// Starts cutting the player out of the trimmed clip, for the overlay.
+    public func makeCutout() {
+        dropCutout()
+        cutout = Cutout(clip: self)
+    }
+
+    public func dropCutout() {
+        cutout?.cancel()
+        cutout = nil
     }
 
     public func resetView() {

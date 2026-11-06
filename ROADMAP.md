@@ -91,13 +91,16 @@ The five steps below build it.
 
 ### 4.1 Cut Alcaraz out of his video
 
-- ⬜ Cut out the player in each frame with `VNGenerateForegroundInstanceMaskRequest` (lift subject),
-      which kept the racket far better in Phase 0
+- ✅ Cut out the player in each frame with `VNGenerateForegroundInstanceMaskRequest` (lift subject),
+      which kept the racket far better in Phase 0: "Cut out B" in the overlay (2026-11-06; works on the Mac,
+      and should on iPhone/iPad; Vision can't run it in Simulator, which says so)
 - ⬜ Tap Alcaraz to choose him when the opponent, umpire or ball kids are also in frame;
       follow him from frame to frame
-- ⬜ Process the clip once, with a progress bar, and save the cutout (video with a transparent background),
-      so playback and frame-stepping stay smooth
-- ⬜ Soften the cutout's edge so it doesn't flicker
+- ✅ Process the clip once, with a progress bar: a small mask per frame of the trim (up to 600 frames),
+      then each frame the player shows is cut out live (2026-11-06; masks are kept in memory, so it's made
+      again after reopening; not yet watched playing)
+- ⬜ Save the cutout with the comparison, so it doesn't have to be made again
+- ✅ Soften the cutout's edge so it doesn't flicker (2026-11-06)
 - ⬜ Fallback if the racket gets cut off: a soft-edged box around him instead of an exact cutout
 
 ### 4.2 Mirror him
@@ -110,7 +113,7 @@ The five steps below build it.
 
 - ✅ "Overlay" view: the top clip drawn over the other, with an opacity slider (10–90%) and a button to swap
       which clip is on top (2026-11-06; the whole picture for now, the cutout comes with 4.1)
-- ⬜ Optional: tint him one colour (e.g. red) so his body is easy to tell from yours
+- ✅ Tint the cut-out player crimson so their body is easy to tell from yours ("Tint") (2026-11-06)
 - ✅ Switch between overlay and side by side with one tap (A | B, A, B, Overlay) (2026-11-06)
 - ✅ Plain overlay without a cutout (the whole clip semi-transparent), useful when both clips
       were filmed at the same place (2026-11-06)
@@ -118,7 +121,8 @@ The five steps below build it.
 ### 4.4 Drag and resize him until his feet and hips sit on yours
 
 - ✅ Drag to move, pinch to resize, double-tap or ↺ to put back (2026-11-06)
-- ⬜ Rotate slightly if the cameras were tilted; scroll to resize on Mac
+- ✅ − / + buttons to resize (for a Mac without a trackpad, and small steps) (2026-11-06)
+- ⬜ Rotate slightly if the cameras were tilted
 - ⬜ Auto-align: find hips, knees and ankles in both clips with `VNDetectHumanBodyPoseRequest`,
       then move and resize him so his hips and feet land on yours; you nudge from there
 - ✅ Keep the position and size for the whole clip, saved with the comparison (2026-11-06)

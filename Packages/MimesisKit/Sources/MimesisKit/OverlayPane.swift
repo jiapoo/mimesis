@@ -12,6 +12,7 @@ struct OverlayPane: View {
     private var top: Clip { comparison.clips[comparison.overlayTop] }
     private var base: Clip { comparison.clips[1 - comparison.overlayTop] }
     private var topLetter: String { comparison.overlayTop == 0 ? "A" : "B" }
+    private var readyCutout: Cutout? { top.cutout?.state == .ready ? top.cutout : nil }
     private var baseLetter: String { comparison.overlayTop == 0 ? "B" : "A" }
 
     var body: some View {
@@ -31,15 +32,26 @@ struct OverlayPane: View {
             ZStack {
                 VideoPlayerRepresentable(player: base.engine.player)
                     .frame(width: space.size.width, height: space.size.height)
-                // The top clip, fitted into the picture underneath, then moved and resized.
+                // The top clip, fitted into the picture underneath, then moved and resized: whole, or
+                // cut out once its cutout is ready (the player keeps decoding underneath, unseen).
                 VideoPlayerRepresentable(player: top.engine.player)
                     .frame(width: picture.width, height: picture.height)
                     .scaleEffect(comparison.overlayScale)
                     .position(
                         x: picture.midX + comparison.overlayOffset.width * picture.width,
                         y: picture.midY + comparison.overlayOffset.height * picture.height)
-                    .opacity(comparison.overlayOpacity)
+                    .opacity(readyCutout == nil ? comparison.overlayOpacity : 0)
                     .allowsHitTesting(false)
+                if let cutout = readyCutout {
+                    CutoutLayer(clip: top, cutout: cutout)
+                        .frame(width: picture.width, height: picture.height)
+                        .scaleEffect(comparison.overlayScale)
+                        .position(
+                            x: picture.midX + comparison.overlayOffset.width * picture.width,
+                            y: picture.midY + comparison.overlayOffset.height * picture.height)
+                        .opacity(comparison.overlayOpacity)
+                        .allowsHitTesting(false)
+                }
             }
             .frame(width: space.size.width, height: space.size.height)
             .clipped()
@@ -103,6 +115,10 @@ struct OverlayPane: View {
             RoundButton(symbol: "arrow.left.and.right.righttriangle.left.righttriangle.right",
                         active: top.engine.mirroredHorizontally, action: top.toggleMirror)
                 .help("Mirror the top clip side to side, e.g. a right-hander to match a left-hander")
+            RoundButton(symbol: "minus.magnifyingglass") { resize(by: 1 / 1.1) }
+                .help("Make the top clip smaller")
+            RoundButton(symbol: "plus.magnifyingglass") { resize(by: 1.1) }
+                .help("Make the top clip bigger")
             RoundButton(symbol: "arrow.up.arrow.down") {
                 comparison.overlayTop = 1 - comparison.overlayTop
                 comparison.resetOverlay()
@@ -125,13 +141,45 @@ struct OverlayPane: View {
                 .font(.system(size: 12, weight: .semibold).monospacedDigit())
                 .frame(width: 52, alignment: .leading)
             Spacer(minLength: 8)
-            Text(comparison.linked ? "Drag to move \(topLetter), pinch to resize"
-                 : "Link the clips to play them together")
-                .font(.system(size: 12))
-                .foregroundStyle(Theme.secondary)
-                .lineLimit(1)
+            cutoutControls
         }
         .foregroundStyle(.white)
+    }
+
+    private func resize(by factor: CGFloat) {
+        withAnimation(.easeOut(duration: 0.12)) {
+            comparison.overlayScale = min(4, max(0.25, comparison.overlayScale * factor))
+        }
+    }
+
+    /// Cut the top player out: a button to start, progress while it works, then on/off and tint.
+    @ViewBuilder private var cutoutControls: some View {
+        switch top.cutout?.state {
+        case nil:
+            Button { top.makeCutout() } label: { Label("Cut out \(topLetter)", systemImage: "person.crop.rectangle") }
+                .buttonStyle(ChipStyle(active: true))
+                .help("Find the player in every frame of \(topLetter)'s trim, so only the player shows over the other clip")
+        case .preparing(let done)?:
+            ProgressView(value: done).frame(width: 120)
+            Text("Cutting out… \(Int(done * 100))%").font(.system(size: 12)).foregroundStyle(Theme.secondary)
+            Button("Stop") { top.dropCutout() }.buttonStyle(ChipStyle())
+        case .ready?:
+            if let cutout = top.cutout {
+                Button { cutout.enabled.toggle() } label: { Label("Cutout", systemImage: "person.crop.rectangle") }
+                    .buttonStyle(ChipStyle(active: cutout.enabled))
+                    .help(cutout.shortened ? "Only the first \(Cutout.frameLimit) frames of the trim are cut out: trim \(topLetter) to the swing"
+                          : "Show \(topLetter) cut out, or whole")
+                Button { cutout.tinted.toggle() } label: { Label("Tint", systemImage: "paintbrush") }
+                    .buttonStyle(ChipStyle(active: cutout.tinted))
+                    .disabled(!cutout.enabled)
+                    .help("Colour \(topLetter)'s player crimson, to tell the two bodies apart")
+                RoundButton(symbol: "arrow.clockwise") { top.makeCutout() }
+                    .help("Cut out again, e.g. after changing \(topLetter)'s trim")
+            }
+        case .failed(let why)?:
+            Text(why).font(.system(size: 12)).foregroundStyle(Theme.secondary).lineLimit(1)
+            Button("Try again") { top.makeCutout() }.buttonStyle(ChipStyle())
+        }
     }
 
     /// The video picture inside `rect`, as AVPlayer shows it (fit, centred).
