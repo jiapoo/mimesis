@@ -45,6 +45,10 @@ will need the "tap to choose" step, or cropping the overlay out.
 - ✅ Design: dark studio canvas, the icon's crimson as the one accent, clip A and clip B as rounded cards
       with controls floating over the video, and one transport panel at the bottom using Arete's two
       timelines (progress bar + frame ruler, AreteMedia's `FrameRulerTimeline`) (2026-11-06)
+- ✅ Redesign for iPhone (2026-11-06): a welcome screen until a clip is open (Clip A / Clip B with Photos and
+      Files, Film at the court, Open from your library) with no timelines; the top bar shows the mark alone when
+      narrow; each clip's badge, buttons and tools shorten to fit (sound moved into the clip's ⋯); every sheet
+      fits the phone and shares the dark canvas; the masking test only in Debug builds
 - ⬜ Open two clips as A and B: file picker (built), drag and drop (built), Photos (built);
       only tested by opening clips at launch so far
 - ✅ Show only one clip, or both (A | B, A, B); side by side in landscape, one above the other in portrait (2026-11-06)

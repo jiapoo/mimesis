@@ -114,3 +114,19 @@ struct Timeline: View {
         .frame(height: 30)
     }
 }
+
+extension View {
+    /// Every sheet's look: the dark canvas, the accent, and on the Mac a sensible minimum size
+    /// (on iPhone and iPad the sheet takes the screen's own size).
+    func themedSheet(width: CGFloat, height: CGFloat? = nil) -> some View {
+        self
+            .scrollContentBackground(.hidden)
+            .background(Theme.canvas)
+            .presentationBackground(Theme.canvas)
+            .preferredColorScheme(.dark)
+            .tint(Theme.accent)
+            #if os(macOS)
+            .frame(minWidth: width, minHeight: height)
+            #endif
+    }
+}

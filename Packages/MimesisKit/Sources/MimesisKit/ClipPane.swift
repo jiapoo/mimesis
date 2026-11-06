@@ -137,8 +137,19 @@ struct ClipPane: View {
         }
         .background(Color.black)
         .clipShape(RoundedRectangle(cornerRadius: Theme.corner, style: .continuous))
-        .overlay(alignment: .topLeading) { badge.padding(10) }
-        .overlay(alignment: .topTrailing) { actions.padding(10) }
+        .overlay(alignment: .top) {
+            // The badge gives way to the buttons: full, then shorter, then just the letter.
+            HStack(alignment: .top, spacing: 8) {
+                ViewThatFits(in: .horizontal) {
+                    badge(name: true, time: true)
+                    badge(name: false, time: true)
+                    badge(name: false, time: false)
+                }
+                Spacer(minLength: 0)
+                actions
+            }
+            .padding(10)
+        }
         .overlay(alignment: .bottom) {
             if drawing {
                 DrawingTools(clip: clip, tool: $tool, ink: $ink, always: $always) { drawing = false }
@@ -149,24 +160,28 @@ struct ClipPane: View {
         .animation(.easeOut(duration: 0.18), value: drawing)
     }
 
-    private var badge: some View {
+    private func badge(name: Bool, time: Bool) -> some View {
         HStack(spacing: 8) {
             Text(letter)
                 .font(.system(size: 12, weight: .bold))
                 .foregroundStyle(focused ? Theme.onAccent : .white)
                 .frame(width: 22, height: 22)
                 .background(focused ? Theme.accent : Color.white.opacity(0.18), in: Circle())
-            Text(clip.name)
-                .font(.system(size: 12, weight: .medium))
-                .lineLimit(1).truncationMode(.middle)
-                .frame(maxWidth: 200)
-                .fixedSize(horizontal: true, vertical: false)
-            Text(clock(clip.engine.currentTime))
-                .font(.system(size: 12, weight: .medium).monospacedDigit())
-                .foregroundStyle(Theme.secondary)
-            if clip.engine.duration > 0 {
-                // Slow motion needs frames: below 50 a second it jumps, so say so.
-                let fps = Int(clip.engine.fps.rounded())
+            if name {
+                Text(clip.name)
+                    .font(.system(size: 12, weight: .medium))
+                    .lineLimit(1).truncationMode(.middle)
+                    .frame(maxWidth: 200)
+                    .fixedSize(horizontal: true, vertical: false)
+            }
+            if time {
+                Text(clock(clip.engine.currentTime))
+                    .font(.system(size: 12, weight: .medium).monospacedDigit())
+                    .foregroundStyle(Theme.secondary)
+            }
+            // Slow motion needs frames: below 50 a second it jumps, so always say so; above, only with room.
+            let fps = Int(clip.engine.fps.rounded())
+            if clip.engine.duration > 0, time, name || fps < 50 {
                 Text("\(fps) fps")
                     .font(.system(size: 11, weight: .semibold).monospacedDigit())
                     .foregroundStyle(fps < 50 ? Color(red: 1, green: 0.84, blue: 0.2) : Theme.secondary)
@@ -176,9 +191,10 @@ struct ClipPane: View {
         }
         .foregroundStyle(.white)
         .padding(.leading, 4)
-        .padding(.trailing, 10)
+        .padding(.trailing, name || time ? 10 : 4)
         .padding(.vertical, 4)
         .background(Color.black.opacity(0.45), in: Capsule())
+        .fixedSize()
     }
 
     private var actions: some View {
@@ -196,11 +212,12 @@ struct ClipPane: View {
             RoundButton(symbol: "arrow.left.and.right.righttriangle.left.righttriangle.right",
                         active: clip.engine.mirroredHorizontally, action: clip.toggleMirror)
                 .help("Mirror side to side (⇧⌘H)")
-            RoundButton(symbol: clip.engine.isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill") {
-                clip.engine.isMuted.toggle()
-            }
-            .help("Sound (M)")
             Menu {
+                Button(clip.engine.isMuted ? "Sound on" : "Sound off",
+                       systemImage: clip.engine.isMuted ? "speaker.wave.2" : "speaker.slash") {
+                    clip.engine.isMuted.toggle()
+                }
+                Divider()
                 Button("Open video…", systemImage: "folder", action: onOpenFile)
                 Button("From Photos…", systemImage: "photo.on.rectangle", action: onOpenPhotos)
                 Divider()
@@ -226,6 +243,7 @@ struct ClipPane: View {
             .menuIndicator(.hidden)
             .fixedSize()
         }
+        .fixedSize()
     }
 
     private func resetView() {
@@ -285,30 +303,48 @@ struct ClipPane: View {
         }
     }
 
+    /// "1.27"
+    private func short(_ value: Double) -> String {
+        value.formatted(.number.precision(.fractionLength(2)))
+    }
+
+    private func syncButton(labelled: Bool) -> some View {
+        Button { onFocus(); clip.toggleSync() } label: {
+            if labelled {
+                Label(syncLabel, systemImage: clip.syncHere == nil ? "diamond" : "diamond.fill")
+            } else {
+                // Narrow: the diamond, and how many there are.
+                Label(clip.syncs.isEmpty ? "" : "\(clip.syncs.count)", systemImage: clip.syncHere == nil ? "diamond" : "diamond.fill")
+            }
+        }
+        .buttonStyle(ChipStyle(active: !clip.syncs.isEmpty))
+        .disabled(linked)
+        .fixedSize()
+        .help("Mark this frame as a sync point, or unmark it (S). Sync points pair up in order with the "
+            + "other clip's: the first lines the clips up, more make each phase in between line up too.")
+    }
+
     /// Trim, sync point and speed: what lines this clip up with the other.
     private var tools: some View {
         HStack(spacing: 6) {
-            Button { onFocus(); clip.setTrimStart() } label: { Text("In") }
-                .buttonStyle(ChipStyle(active: clip.trimStart > 0))
-                .help("Start the clip at the playhead ([)")
-            Button { onFocus(); clip.setTrimEnd() } label: { Text("Out") }
-                .buttonStyle(ChipStyle(active: clip.trimEnd != nil))
-                .help("End the clip at the playhead (])")
-            Text("\(clock(clip.trimStart)) – \(clock(clip.end))")
-                .font(.system(size: 11, weight: .medium).monospacedDigit())
-                .foregroundStyle(Theme.secondary)
-                .lineLimit(1)
-                .layoutPriority(-1)
+            // In / Out show where the trim is once it's set.
+            Button { onFocus(); clip.setTrimStart() } label: {
+                Text(clip.trimStart > 0 ? "In \(short(clip.trimStart))" : "In")
+            }
+            .buttonStyle(ChipStyle(active: clip.trimStart > 0))
+            .help("Start the clip at the playhead ([)")
+            Button { onFocus(); clip.setTrimEnd() } label: {
+                Text(clip.trimEnd.map { "Out \(short($0))" } ?? "Out")
+            }
+            .buttonStyle(ChipStyle(active: clip.trimEnd != nil))
+            .help("End the clip at the playhead (])")
 
             Spacer(minLength: 6)
 
-            Button { onFocus(); clip.toggleSync() } label: {
-                Label(syncLabel, systemImage: clip.syncHere == nil ? "diamond" : "diamond.fill")
+            ViewThatFits(in: .horizontal) {
+                syncButton(labelled: true)
+                syncButton(labelled: false)
             }
-            .buttonStyle(ChipStyle(active: !clip.syncs.isEmpty))
-            .disabled(linked)
-            .help("Mark this frame as a sync point, or unmark it (S). Sync points pair up in order with the "
-                + "other clip's: the first lines the clips up, more make each phase in between line up too.")
 
             tagMenu
 

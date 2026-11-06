@@ -32,6 +32,13 @@ public struct ComparisonView: View {
     public var body: some View {
         VStack(spacing: 0) {
             topBar
+            if !anyLoaded {
+                WelcomeView(
+                    onOpenFile: { importing = $0 },
+                    onOpenPhotos: { photoTarget = $0 },
+                    onCourt: { court = true },
+                    onLibrary: library.clips.isEmpty ? nil : { showingLibrary = true })
+            } else {
             GeometryReader { space in
                 let wide = space.size.width >= space.size.height
                 let layout = wide ? AnyLayout(HStackLayout(spacing: 10)) : AnyLayout(VStackLayout(spacing: 10))
@@ -63,11 +70,15 @@ public struct ComparisonView: View {
                     .padding(.horizontal, 12)
                     .padding(.top, 6)
             }
+            // The timelines only once there's a clip to move through.
             Transport(comparison: comparison)
                 .padding(.horizontal, 12)
                 .padding(.top, 6)
                 .padding(.bottom, 12)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
         }
+        .animation(.easeOut(duration: 0.25), value: anyLoaded)
         .environment(library)
         .background(Theme.canvas.ignoresSafeArea())
         .preferredColorScheme(.dark)
@@ -157,7 +168,7 @@ public struct ComparisonView: View {
                     .navigationTitle("Masking test")
                     .toolbar { Button("Done") { maskTest = false } }
             }
-            .frame(minWidth: 800, minHeight: 600)
+            .themedSheet(width: 800, height: 600)
         }
     }
 
@@ -170,15 +181,35 @@ public struct ComparisonView: View {
         }
     }
 
+    private var anyLoaded: Bool { comparison.clips.contains(where: \.isLoaded) }
+
     private var topBar: some View {
         HStack(spacing: 12) {
-            HStack(spacing: 8) {
-                EchoMark().frame(width: 22, height: 22)
-                Text("Mimesis").font(.system(size: 15, weight: .semibold))
+            // The name beside the mark when there's room; the mark alone on a phone.
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) {
+                    EchoMark().frame(width: 22, height: 22)
+                    Text("Mimesis").font(.system(size: 17, weight: .semibold)).fixedSize()
+                }
+                EchoMark().frame(width: 24, height: 24)
             }
+            .frame(minWidth: 24, alignment: .leading)
+            .layoutPriority(-1)
 
-            Spacer()
+            Spacer(minLength: 0)
 
+            if anyLoaded { layoutSwitch }
+
+            Spacer(minLength: 0)
+
+            menu
+        }
+        .foregroundStyle(.white)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+    }
+
+    private var layoutSwitch: some View {
             HStack(spacing: 2) {
                 ForEach(Comparison.Layout.allCases) { layout in
                     let on = comparison.layout == layout
@@ -189,7 +220,8 @@ public struct ComparisonView: View {
                         Text(layout.label)
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(on ? Color.black : Color.white.opacity(0.75))
-                            .frame(width: layout == .overlay ? 72 : 52, height: 26)
+                            .padding(.horizontal, 12)
+                            .frame(minWidth: 40, minHeight: 30)
                             .background(on ? Color.white : .clear, in: Capsule())
                             .contentShape(Capsule())
                     }
@@ -202,9 +234,10 @@ public struct ComparisonView: View {
             .padding(3)
             .background(Theme.raised, in: Capsule())
             .focusEffectDisabled()
+            .fixedSize()
+    }
 
-            Spacer()
-
+    private var menu: some View {
             Menu {
                 Button("Save comparison…", systemImage: "square.and.arrow.down") {
                     newName = defaultName
@@ -222,23 +255,21 @@ public struct ComparisonView: View {
                 Button("Export video…", systemImage: "film") { exporting = true }
                     .disabled(!comparison.canLink)
                     .keyboardShortcut("e", modifiers: .command)
+                #if DEBUG
                 Divider()
                 Button("Masking test…", systemImage: "person.crop.rectangle") { maskTest = true }
+                #endif
             } label: {
                 Image(systemName: "ellipsis")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(.white)
-                    .frame(width: 32, height: 32)
+                    .frame(width: 36, height: 36)
                     .background(Theme.raised, in: Circle())
             }
             .menuStyle(.button)
             .buttonStyle(.plain)
             .menuIndicator(.hidden)
             .fixedSize()
-        }
-        .foregroundStyle(.white)
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
     }
 
     /// Every moment tagged `label`, back to back in clip A, shown alone.
@@ -381,6 +412,7 @@ struct SavedComparisonsView: View {
                             .contextMenu {
                                 Button("Delete", systemImage: "trash", role: .destructive) { store.delete(item) }
                             }
+                            .listRowBackground(Theme.card)
                         }
                         .onDelete { offsets in
                             for index in offsets { store.delete(store.saved[index]) }
@@ -391,9 +423,7 @@ struct SavedComparisonsView: View {
             .navigationTitle("Saved comparisons")
             .toolbar { Button("Done") { dismiss() } }
         }
-        .frame(minWidth: 420, minHeight: 360)
-        .preferredColorScheme(.dark)
-        .tint(Theme.accent)
+        .themedSheet(width: 420, height: 360)
     }
 }
 

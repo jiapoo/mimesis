@@ -43,9 +43,7 @@ struct LibraryView: View {
                 Text("\(missing ?? "The clip") has been moved or deleted.")
             }
         }
-        .frame(minWidth: 520, minHeight: 480)
-        .preferredColorScheme(.dark)
-        .tint(Theme.accent)
+        .themedSheet(width: 520, height: 480)
     }
 
     private var filterMenu: some View {
@@ -90,6 +88,7 @@ struct LibraryView: View {
                 .contextMenu {
                     Button("Remove from library", systemImage: "trash", role: .destructive) { library.remove(clip) }
                 }
+                .listRowBackground(Theme.card)
             }
             .onDelete { offsets in
                 for index in offsets { library.remove(library.clips[index]) }
@@ -129,6 +128,7 @@ struct LibraryView: View {
                     Spacer()
                     openButtons(moment.clip, time: moment.tag.time)
                 }
+                .listRowBackground(Theme.card)
             }
         }
     }

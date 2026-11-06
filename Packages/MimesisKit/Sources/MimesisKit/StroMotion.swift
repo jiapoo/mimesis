@@ -122,9 +122,8 @@ struct StroMotionView: View {
             }
         }
         .padding(24)
-        .frame(minWidth: 480, minHeight: 360)
-        .preferredColorScheme(.dark)
-        .tint(Theme.accent)
+        .frame(maxHeight: .infinity, alignment: .top)
+        .themedSheet(width: 480, height: 360)
     }
 
     private var chosenSpan: ClosedRange<Double> {

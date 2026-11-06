@@ -315,9 +315,9 @@ struct ExportView: View {
             }
         }
         .padding(24)
-        .frame(minWidth: 440)
-        .preferredColorScheme(.dark)
-        .tint(Theme.accent)
+        .frame(maxHeight: .infinity, alignment: .top)
+        .themedSheet(width: 440)
+        .presentationDetents([.medium, .large])
         .onAppear { if comparison.layout == .overlay { style = .overlay } }
     }
 }
