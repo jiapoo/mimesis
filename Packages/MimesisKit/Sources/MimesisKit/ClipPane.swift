@@ -40,11 +40,23 @@ struct ClipPane: View {
                 empty.background(Theme.card)
             }
         }
-        // The focused clip: a thin crimson edge (only worth showing with two clips on screen).
-        .overlay(
-            Rectangle()
-                .strokeBorder(Theme.accent, lineWidth: 2)
-                .opacity((focused && showsFocus) || dropping ? 1 : 0))
+        // Focus, with two clips on screen: the other clip steps back (dimmed), and the focused one gets a
+        // soft crimson ring, inset and rounded, with a faint glow.
+        .overlay {
+            Color.black
+                .opacity(showsFocus && !focused && !dropping ? 0.32 : 0)
+                .allowsHitTesting(false)
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(Theme.accent.opacity(0.95), lineWidth: 2.5)
+                .shadow(color: Theme.accent.opacity(0.55), radius: 8)
+                .padding(4)
+                .opacity((focused && showsFocus) || dropping ? 1 : 0)
+                .scaleEffect((focused && showsFocus) || dropping ? 1 : 0.985)
+                .allowsHitTesting(false)
+        }
+        .animation(.spring(response: 0.3, dampingFraction: 0.85), value: focused)
         .contentShape(Rectangle())
         .onTapGesture(perform: onFocus)
         .dropDestination(for: URL.self) { urls, _ in
@@ -95,6 +107,11 @@ struct ClipPane: View {
                 VideoPlayerRepresentable(player: clip.engine.player)
                 // In the same frame as the video, so drawings zoom and pan with it.
                 DrawingLayer(clip: clip, editing: drawing, tool: tool, ink: ink, always: always)
+                // On the Mac the video's own view takes the clicks; a clear layer over it gives them to
+                // the gestures below (focus on click, double-click to fit, drag to step or pan).
+                if !drawing {
+                    Color.clear.contentShape(Rectangle())
+                }
             }
                 .scaleEffect(clip.zoom)
                 .offset(clip.pan)
