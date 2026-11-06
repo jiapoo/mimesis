@@ -15,6 +15,7 @@ public struct ComparisonView: View {
     @State private var naming = false
     @State private var newName = ""
     @State private var browsing = false
+    @State private var exporting = false
     @Environment(\.scenePhase) private var scenePhase
 
     private let preload: [URL?]
@@ -89,6 +90,9 @@ public struct ComparisonView: View {
             }
         } message: {
             Text("Both clips, with their trims, sync points, speeds, mirroring and drawings.")
+        }
+        .sheet(isPresented: $exporting) {
+            ExportView(comparison: comparison)
         }
         .sheet(isPresented: $browsing) {
             SavedComparisonsView(store: store) { item in
@@ -179,6 +183,10 @@ public struct ComparisonView: View {
                 .keyboardShortcut("s", modifiers: .command)
                 Button("Saved comparisons…", systemImage: "list.bullet.rectangle") { browsing = true }
                     .keyboardShortcut("o", modifiers: [.command, .shift])
+                Divider()
+                Button("Export video…", systemImage: "film") { exporting = true }
+                    .disabled(!comparison.canLink)
+                    .keyboardShortcut("e", modifiers: .command)
                 Divider()
                 Button("Masking test…", systemImage: "person.crop.rectangle") { maskTest = true }
             } label: {

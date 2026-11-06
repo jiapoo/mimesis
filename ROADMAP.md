@@ -144,7 +144,10 @@ The five steps below build it.
       checked paused on a sync frame, not yet watched playing)
 - ✅ Frame-stepping moves both clips together in the overlay (2026-11-06)
 - ✅ Uses the Phase 3 section speeds, so every phase of the stroke lines up, not only contact (2026-11-06)
-- ⬜ Export the overlay as a video to share
+- ✅ Export the overlay as a video to share: ⋯ → "Export video…" (⌘E), the linked span at the transport's
+      speed, the top clip placed, mirrored, cut out and tinted as on screen, then Share or save (2026-11-06;
+      an opt-in test exports two real clips and checks length, size and frames; the cutout in an export
+      isn't tested yet)
 
 ## Phase 5 — At the court (iPad and iPhone)
 
@@ -167,7 +170,8 @@ The five steps below build it.
 
 ## Phase 8 — Release
 
-- ⬜ Export a comparison as a video (side by side or overlaid, drawings included)
+- ✅ Export a comparison as a video, side by side (1920×1080) or overlaid, at 30 fps (2026-11-06)
+- ⬜ Include drawings in exported videos
 - ⬜ Check "Mimesis" in the App Store and the USPTO software classes (9 and 42); choose the store name
       (e.g. "Mimesis: Motion Compare") while the icon says "Mimesis"
 - ⬜ Icon, screenshots, privacy details
