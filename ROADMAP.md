@@ -123,8 +123,11 @@ The five steps below build it.
 - ✅ Drag to move, pinch to resize, double-tap or ↺ to put back (2026-11-06)
 - ✅ − / + buttons to resize (for a Mac without a trackpad, and small steps) (2026-11-06)
 - ⬜ Rotate slightly if the cameras were tilted
-- ⬜ Auto-align: find hips, knees and ankles in both clips with `VNDetectHumanBodyPoseRequest`,
-      then move and resize him so his hips and feet land on yours; you nudge from there
+- ✅ Auto-align (the figure button): finds hips, feet and neck in both clips' frames on screen with
+      `VNDetectHumanBodyPoseRequest`, then moves and resizes the top clip so its hips land on the other's and
+      its hips-to-feet height matches (hips-to-neck when the feet are out of view); mirroring is taken into
+      account; you nudge from there (2026-11-06; checked on the Mac: B's cutout landed on A's hips and feet.
+      Vision can't run it in Simulator, which says so)
 - ✅ Keep the position and size for the whole clip, saved with the comparison (2026-11-06)
 - ⬜ Automatic background alignment for clips filmed at the same place (`VNHomographicImageRegistrationRequest`)
 

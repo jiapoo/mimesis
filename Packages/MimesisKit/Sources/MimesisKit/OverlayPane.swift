@@ -8,6 +8,8 @@ struct OverlayPane: View {
 
     @State private var offsetBase: CGSize?
     @State private var scaleBase: CGFloat?
+    @State private var aligning = false
+    @State private var alignProblem: String?
 
     private var top: Clip { comparison.clips[comparison.overlayTop] }
     private var base: Clip { comparison.clips[1 - comparison.overlayTop] }
@@ -82,6 +84,22 @@ struct OverlayPane: View {
         .clipShape(RoundedRectangle(cornerRadius: Theme.corner, style: .continuous))
         .overlay(alignment: .topLeading) { badge.padding(10) }
         .overlay(alignment: .topTrailing) { actions.padding(10) }
+        .overlay(alignment: .bottom) {
+            if let alignProblem {
+                Text(alignProblem)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color.black.opacity(0.6), in: Capsule())
+                    .padding(10)
+                    .onTapGesture { self.alignProblem = nil }
+                    .task {
+                        try? await Task.sleep(for: .seconds(5))
+                        self.alignProblem = nil
+                    }
+            }
+        }
     }
 
     private var badge: some View {
@@ -115,6 +133,9 @@ struct OverlayPane: View {
             RoundButton(symbol: "arrow.left.and.right.righttriangle.left.righttriangle.right",
                         active: top.engine.mirroredHorizontally, action: top.toggleMirror)
                 .help("Mirror the top clip side to side, e.g. a right-hander to match a left-hander")
+            RoundButton(symbol: aligning ? "hourglass" : "figure.stand") { align() }
+                .help("Auto-align: put \(topLetter)'s hips and feet on \(baseLetter)'s, from the frames on screen")
+                .disabled(aligning)
             RoundButton(symbol: "minus.magnifyingglass") { resize(by: 1 / 1.1) }
                 .help("Make the top clip smaller")
             RoundButton(symbol: "plus.magnifyingglass") { resize(by: 1.1) }
@@ -144,6 +165,23 @@ struct OverlayPane: View {
             cutoutControls
         }
         .foregroundStyle(.white)
+    }
+
+    private func align() {
+        aligning = true
+        alignProblem = nil
+        Task {
+            do {
+                try await comparison.autoAlign()
+            } catch {
+                #if targetEnvironment(simulator)
+                alignProblem = "Auto-align needs a real iPhone or iPad (Vision can't run it in Simulator)."
+                #else
+                alignProblem = error.localizedDescription
+                #endif
+            }
+            aligning = false
+        }
     }
 
     private func resize(by factor: CGFloat) {
