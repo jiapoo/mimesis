@@ -34,6 +34,20 @@ final class CourtCamera {
 
     private static func keep(for delay: Double) -> Double { delay + saveSpan + 1 }
 
+    /// 60 frames a second when the camera can at 720p, for smoother slow motion of what's saved.
+    private static func preferSixty(_ device: AVCaptureDevice) {
+        let candidates = device.formats.filter { format in
+            let size = CMVideoFormatDescriptionGetDimensions(format.formatDescription)
+            return size.width == 1280 && size.height == 720
+                && format.videoSupportedFrameRateRanges.contains { $0.maxFrameRate >= 60 }
+        }
+        guard let format = candidates.first, (try? device.lockForConfiguration()) != nil else { return }
+        device.activeFormat = format
+        device.activeVideoMinFrameDuration = CMTime(value: 1, timescale: 60)
+        device.activeVideoMaxFrameDuration = CMTime(value: 1, timescale: 60)
+        device.unlockForConfiguration()
+    }
+
     func start() async {
         guard await AVCaptureDevice.requestAccess(for: .video) else {
             state = .unavailable("Mimesis needs the camera for court mode: allow it in Settings › Privacy › Camera.")
@@ -48,8 +62,17 @@ final class CourtCamera {
             state = .unavailable("No camera found.")
             return
         }
+        Self.preferSixty(device)
         session.beginConfiguration()
-        session.sessionPreset = .hd1280x720
+        // With a 60 fps format chosen, the session keeps it (inputPriority); otherwise 720p.
+        if device.activeVideoMinFrameDuration == CMTime(value: 1, timescale: 60) {
+            #if os(iOS)
+            session.sessionPreset = .inputPriority
+            #endif
+            // On the Mac, leaving the preset alone keeps the device's format.
+        } else {
+            session.sessionPreset = .hd1280x720
+        }
         if session.canAddInput(input) { session.addInput(input) }
         let output = AVCaptureVideoDataOutput()
         output.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA]

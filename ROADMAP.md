@@ -167,13 +167,18 @@ The five steps below build it.
 - ✅ Save the last 6 s you watched as clip A or B, straight into the comparison (2026-11-06; writing frames to a
       clip is tested: 3 s of frames make a 3.0 s clip)
 - ⬜ Try court mode on a real iPhone or iPad at the court: picture, delay, memory, battery
-- ⬜ Remind to film at 240 fps (slow-mo) or at least 60 fps
+- ✅ Remind to film at 240 fps (Slo-mo) or at least 60 fps: each clip shows its frame rate, yellow below 50, and
+      the empty clip suggests Slo-mo; court mode records at 60 fps when the camera can (2026-11-06; the 60 fps
+      camera setting is untested without a camera)
 
 ## Phase 6 — StroMotion
 
-- ⬜ One image of a whole motion: the athlete in several positions in one frame (reuses the Phase 4 cutout)
-- ⬜ Choose how many positions and which span
-- ⬜ Export it as an image to share
+- ✅ One image of a whole motion: the player cut out at several moments over one background, earlier ones
+      fainter (a clip's ⋯ → StroMotion…) (2026-11-06; an opt-in test makes one from a real serve and it reads
+      well; the sheet itself not yet tried in the app)
+- ✅ Choose how many moments (3–12) over the clip's trim; the cutout and picked player are reused (2026-11-06)
+- ✅ Share or save it as an image (2026-11-06)
+- ⬜ Choose the span by sync points (e.g. racket drop to finish) instead of the trim
 
 ## Phase 7 — Library and tagging
 

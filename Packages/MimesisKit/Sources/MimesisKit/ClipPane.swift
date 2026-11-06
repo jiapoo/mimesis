@@ -26,6 +26,7 @@ struct ClipPane: View {
     @State private var tool: Drawing.Kind = .line
     @State private var ink: Drawing.Ink = .crimson
     @State private var always = false
+    @State private var stroMotion = false
     @State private var dropping = false
 
     var body: some View {
@@ -52,6 +53,7 @@ struct ClipPane: View {
             return true
         } isTargeted: { dropping = $0 }
         .animation(.easeOut(duration: 0.15), value: focused)
+        .sheet(isPresented: $stroMotion) { StroMotionView(clip: clip, letter: letter) }
     }
 
     // MARK: - Empty
@@ -72,6 +74,9 @@ struct ClipPane: View {
                     .buttonStyle(ChipStyle())
             }
             Text("or drop a video here").font(.system(size: 12)).foregroundStyle(Theme.secondary.opacity(0.7))
+            Label("Film in Slo-mo (240 fps), or at least 60 fps, for smooth slow motion", systemImage: "lightbulb")
+                .font(.system(size: 12)).foregroundStyle(Theme.secondary.opacity(0.7))
+                .multilineTextAlignment(.center)
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -156,6 +161,15 @@ struct ClipPane: View {
             Text(clock(clip.engine.currentTime))
                 .font(.system(size: 12, weight: .medium).monospacedDigit())
                 .foregroundStyle(Theme.secondary)
+            if clip.engine.duration > 0 {
+                // Slow motion needs frames: below 50 a second it jumps, so say so.
+                let fps = Int(clip.engine.fps.rounded())
+                Text("\(fps) fps")
+                    .font(.system(size: 11, weight: .semibold).monospacedDigit())
+                    .foregroundStyle(fps < 50 ? Color(red: 1, green: 0.84, blue: 0.2) : Theme.secondary)
+                    .help(fps < 50 ? "Filmed at \(fps) frames a second: slow motion will jump. Film in Slo-mo (240 fps) or at least 60 fps."
+                          : "Filmed at \(fps) frames a second")
+            }
         }
         .foregroundStyle(.white)
         .padding(.leading, 4)
@@ -191,6 +205,8 @@ struct ClipPane: View {
                     .disabled(clip.trimStart == 0 && clip.trimEnd == nil)
                 Button("Clear sync points", systemImage: "diamond") { clip.syncs = [] }
                     .disabled(clip.syncs.isEmpty || linked)
+                Divider()
+                Button("StroMotion…", systemImage: "figure.run") { stroMotion = true }
                 Divider()
                 Button("Close", systemImage: "xmark", role: .destructive, action: clip.close)
                     .disabled(linked)
