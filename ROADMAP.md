@@ -94,8 +94,10 @@ The five steps below build it.
 - ✅ Cut out the player in each frame with `VNGenerateForegroundInstanceMaskRequest` (lift subject),
       which kept the racket far better in Phase 0: "Cut out B" in the overlay (2026-11-06; works on the Mac,
       and should on iPhone/iPad; Vision can't run it in Simulator, which says so)
-- ⬜ Tap Alcaraz to choose him when the opponent, umpire or ball kids are also in frame;
-      follow him from frame to frame
+- ✅ Tap to choose one player when others are also in frame (opponent, umpire, ball kids): "Pick player",
+      then tap them; they're followed frame to frame by overlap, even when Vision renumbers who is who;
+      "Everyone" undoes it (2026-11-06; unit-tested, and on a real two-player clip: after picking the left
+      player, nothing of the right one is kept in any frame. The tap on the overlay itself isn't tested yet)
 - ✅ Process the clip once, with a progress bar: a small mask per frame of the trim (up to 600 frames),
       then each frame the player shows is cut out live (2026-11-06; masks are kept in memory, so it's made
       again after reopening; not yet watched playing)

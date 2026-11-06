@@ -9,6 +9,7 @@ struct OverlayPane: View {
     @State private var offsetBase: CGSize?
     @State private var scaleBase: CGFloat?
     @State private var aligning = false
+    @State private var picking = false
     @State private var alignProblem: String?
 
     private var top: Clip { comparison.clips[comparison.overlayTop] }
@@ -61,6 +62,7 @@ struct OverlayPane: View {
             .gesture(
                 DragGesture(minimumDistance: 2)
                     .onChanged { drag in
+                        guard !picking else { return }
                         let start = offsetBase ?? comparison.overlayOffset
                         offsetBase = start
                         comparison.overlayOffset = CGSize(
@@ -78,6 +80,10 @@ struct OverlayPane: View {
                     .onEnded { _ in scaleBase = nil })
             .onTapGesture(count: 2) {
                 withAnimation(.easeOut(duration: 0.2)) { comparison.resetOverlay() }
+            }
+            .onTapGesture { location in
+                guard picking else { return }
+                pick(at: location, picture: picture)
             }
         }
         .background(Color.black)
@@ -167,6 +173,31 @@ struct OverlayPane: View {
         .foregroundStyle(.white)
     }
 
+    /// Picks the top clip's subject under a tap: back from the view to the top picture, as filmed.
+    private func pick(at location: CGPoint, picture: CGRect) {
+        guard let cutout = top.cutout else { return }
+        let scale = comparison.overlayScale
+        let centre = CGPoint(
+            x: picture.midX + comparison.overlayOffset.width * picture.width,
+            y: picture.midY + comparison.overlayOffset.height * picture.height)
+        // Where the tap falls in the top clip's frame (the size of the picture underneath), unscaled.
+        let local = CGPoint(
+            x: (location.x - centre.x) / scale + picture.width / 2,
+            y: (location.y - centre.y) / scale + picture.height / 2)
+        let shown = fitted(top.engine.videoSize, in: CGRect(origin: .zero, size: picture.size))
+        var point = CGPoint(x: (local.x - shown.minX) / shown.width, y: (local.y - shown.minY) / shown.height)
+        if top.engine.mirroredHorizontally { point.x = 1 - point.x }
+        guard (0...1).contains(point.x), (0...1).contains(point.y) else {
+            alignProblem = "Tap on \(topLetter)'s player."
+            return
+        }
+        if cutout.pick(at: top.engine.currentTime, point: point) {
+            picking = false
+        } else {
+            alignProblem = "Nobody there: tap on \(topLetter)'s player."
+        }
+    }
+
     private func align() {
         aligning = true
         alignProblem = nil
@@ -211,6 +242,18 @@ struct OverlayPane: View {
                     .buttonStyle(ChipStyle(active: cutout.tinted))
                     .disabled(!cutout.enabled)
                     .help("Colour \(topLetter)'s player crimson, to tell the two bodies apart")
+                if cutout.hasSeveral && cutout.enabled {
+                    if cutout.picked != nil {
+                        Button { cutout.pickEveryone() } label: { Label("Everyone", systemImage: "person.2") }
+                            .buttonStyle(ChipStyle())
+                            .help("Show everyone found in \(topLetter), not only the player picked")
+                    }
+                    Button { picking.toggle() } label: {
+                        Label(picking ? "Tap a player" : "Pick player", systemImage: "hand.tap")
+                    }
+                    .buttonStyle(ChipStyle(active: picking || cutout.picked != nil))
+                    .help("Keep only one player when \(topLetter) has others in frame (an opponent, a coach): tap them")
+                }
                 RoundButton(symbol: "arrow.clockwise") { top.makeCutout() }
                     .help("Cut out again, e.g. after changing \(topLetter)'s trim")
             }

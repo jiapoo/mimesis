@@ -204,8 +204,9 @@ public enum MaskProbe {
     public static func summary(_ report: ProbeReport) -> [String] {
         MaskMethod.allCases.map { method in
             let ms = report.millisecondsPerFrame(method).formatted(.number.precision(.fractionLength(0)))
+            let most = report.frames.compactMap { $0.instances[method] }.max() ?? 0
             return "\(method.title): \(ms) ms a frame, nobody found in "
-                + "\(report.emptyFrames(method)) of \(report.frames.count)"
+                + "\(report.emptyFrames(method)) of \(report.frames.count), up to \(most) found in a frame"
         }
     }
 
