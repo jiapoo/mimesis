@@ -193,9 +193,10 @@ public final class Comparison {
     /// Frame steps: both clips while linked, else the focused one.
     public func step(_ frames: Int) {
         guard linked else {
-            guard let engine = focused?.engine else { return }
-            engine.pause()
-            Task { frames < 0 ? await engine.stepBackward() : await engine.stepForward() }
+            guard let clip = focused else { return }
+            clip.engine.pause()
+            let target = clip.engine.currentTime + Double(frames) * clip.frameLength
+            Task { await clip.engine.seekToTime(target) }
             return
         }
         pause()

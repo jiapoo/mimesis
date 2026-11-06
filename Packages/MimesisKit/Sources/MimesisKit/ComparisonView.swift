@@ -11,6 +11,11 @@ public struct ComparisonView: View {
     @State private var photoPick: PhotosPickerItem?
     @State private var photoTarget: Int?
     @State private var maskTest = false
+    @State private var store = ComparisonStore()
+    @State private var naming = false
+    @State private var newName = ""
+    @State private var browsing = false
+    @Environment(\.scenePhase) private var scenePhase
 
     private let preload: [URL?]
 
@@ -35,7 +40,11 @@ public struct ComparisonView: View {
                             onFocus: { comparison.focus = index },
                             onOpenFile: { importing = index },
                             onOpenPhotos: { photoTarget = index },
-                            onDropped: { url in open(url, in: index) })
+                            onDropped: { url in open(url, in: index) },
+                            onJog: { frames in
+                                if !comparison.linked { comparison.focus = index }
+                                comparison.step(frames)
+                            })
                     }
                 }
                 .padding(.horizontal, 12)
@@ -51,8 +60,37 @@ public struct ComparisonView: View {
         .tint(Theme.accent)
         .background(keys)
         .task {
-            for (index, url) in preload.prefix(2).enumerated() {
-                if let url { await comparison.clips[index].open(url) }
+            if preload.contains(where: { $0 != nil }) {
+                for (index, url) in preload.prefix(2).enumerated() {
+                    if let url { await comparison.clips[index].open(url) }
+                }
+            } else {
+                // Carry on where the last session left off.
+                await store.restoreLast(into: comparison)
+            }
+        }
+        // Remember the comparison a second after it last changed, and when the app goes to the background.
+        .task(id: snapshot) {
+            try? await Task.sleep(for: .seconds(1))
+            if !Task.isCancelled { store.remember(comparison) }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase != .active { store.remember(comparison) }
+        }
+        .alert("Save comparison", isPresented: $naming) {
+            TextField("Name", text: $newName)
+            Button("Cancel", role: .cancel) {}
+            Button("Save") {
+                let name = newName.trimmingCharacters(in: .whitespaces)
+                store.save(comparison, as: name.isEmpty ? defaultName : name)
+            }
+        } message: {
+            Text("Both clips, with their trims, sync points, speeds and mirroring.")
+        }
+        .sheet(isPresented: $browsing) {
+            SavedComparisonsView(store: store) { item in
+                browsing = false
+                Task { await store.open(item, into: comparison) }
             }
         }
         .fileImporter(
@@ -125,6 +163,15 @@ public struct ComparisonView: View {
             Spacer()
 
             Menu {
+                Button("Save comparison…", systemImage: "square.and.arrow.down") {
+                    newName = defaultName
+                    naming = true
+                }
+                .disabled(!comparison.clips.contains(where: \.isLoaded))
+                .keyboardShortcut("s", modifiers: .command)
+                Button("Saved comparisons…", systemImage: "list.bullet.rectangle") { browsing = true }
+                    .keyboardShortcut("o", modifiers: [.command, .shift])
+                Divider()
                 Button("Masking test…", systemImage: "person.crop.rectangle") { maskTest = true }
             } label: {
                 Image(systemName: "ellipsis")
@@ -141,6 +188,19 @@ public struct ComparisonView: View {
         .foregroundStyle(.white)
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
+    }
+
+    /// "serve vs serve2"
+    private var defaultName: String {
+        comparison.clips.filter(\.isLoaded).map(\.name).joined(separator: " vs ")
+    }
+
+    /// Everything a saved comparison keeps, so a change to any of it is remembered.
+    private var snapshot: String {
+        let clips = comparison.clips.map { clip in
+            "\(clip.url?.path ?? "-")|\(clip.trimStart)|\(clip.trimEnd ?? -1)|\(clip.sync ?? -1)|\(clip.speed)|\(clip.engine.mirroredHorizontally)"
+        }
+        return clips.joined(separator: ";") + "|\(comparison.layout)|\(comparison.linked)|\(comparison.linkedSpeed)"
     }
 
     private func open(_ url: URL, in index: Int) {
@@ -203,18 +263,64 @@ func speedText(_ speed: Double) -> String {
     speed.formatted(.number.precision(.fractionLength(0...2))) + "×"
 }
 
-/// A video picked from Photos, copied to a file the app can open.
+/// A video picked from Photos, copied to a file the app can open (and open again later).
 struct PickedMovie: Transferable {
     let url: URL
 
     static var transferRepresentation: some TransferRepresentation {
         FileRepresentation(contentType: .movie) { SentTransferredFile($0.url) } importing: { received in
-            let folder = FileManager.default.temporaryDirectory.appendingPathComponent("Picked", isDirectory: true)
+            // Kept in Application Support, so a saved comparison can open it again later.
+            let folder = ComparisonStore.supportFolder.appendingPathComponent("Clips", isDirectory: true)
             try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
             let copy = folder.appendingPathComponent(UUID().uuidString)
                 .appendingPathExtension(received.file.pathExtension)
             try FileManager.default.copyItem(at: received.file, to: copy)
             return Self(url: copy)
         }
+    }
+}
+
+/// The saved comparisons: tap one to open it, swipe (or Delete) to remove it.
+struct SavedComparisonsView: View {
+    let store: ComparisonStore
+    let onOpen: (SavedComparison) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if store.saved.isEmpty {
+                    ContentUnavailableView(
+                        "No saved comparisons", systemImage: "list.bullet.rectangle",
+                        description: Text("Save one from the ⋯ menu to come back to it later."))
+                } else {
+                    List {
+                        ForEach(store.saved) { item in
+                            Button { onOpen(item) } label: {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(item.name).font(.body.weight(.medium))
+                                    Text(item.date.formatted(date: .abbreviated, time: .shortened))
+                                        .font(.caption).foregroundStyle(.secondary)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .contextMenu {
+                                Button("Delete", systemImage: "trash", role: .destructive) { store.delete(item) }
+                            }
+                        }
+                        .onDelete { offsets in
+                            for index in offsets { store.delete(store.saved[index]) }
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Saved comparisons")
+            .toolbar { Button("Done") { dismiss() } }
+        }
+        .frame(minWidth: 420, minHeight: 360)
+        .preferredColorScheme(.dark)
+        .tint(Theme.accent)
     }
 }

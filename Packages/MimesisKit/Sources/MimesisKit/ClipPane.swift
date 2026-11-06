@@ -13,9 +13,15 @@ struct ClipPane: View {
     let onOpenFile: () -> Void
     let onOpenPhotos: () -> Void
     let onDropped: (URL) -> Void
+    /// A sideways drag on the video: move this many frames (both clips while linked).
+    let onJog: (Int) -> Void
+
+    /// How far a finger moves for one frame.
+    static let pointsPerFrame: CGFloat = 12
 
     @State private var zoomBase: CGFloat = 1
     @State private var panBase: CGSize = .zero
+    @State private var jogged = 0
     @State private var dropping = false
 
     var body: some View {
@@ -89,14 +95,25 @@ struct ClipPane: View {
                             if clip.zoom == 1 { clip.pan = .zero; panBase = .zero }
                         })
                 .simultaneousGesture(
+                    // Zoomed in: drag to pan. Otherwise drag sideways to move frame by frame.
                     DragGesture(minimumDistance: 4)
                         .onChanged { drag in
-                            guard clip.zoom > 1 else { return }
-                            clip.pan = CGSize(
-                                width: panBase.width + drag.translation.width,
-                                height: panBase.height + drag.translation.height)
+                            if clip.zoom > 1 {
+                                clip.pan = CGSize(
+                                    width: panBase.width + drag.translation.width,
+                                    height: panBase.height + drag.translation.height)
+                            } else {
+                                let frames = Int((drag.translation.width / Self.pointsPerFrame).rounded(.towardZero))
+                                if frames != jogged {
+                                    onJog(frames - jogged)
+                                    jogged = frames
+                                }
+                            }
                         }
-                        .onEnded { _ in panBase = clip.pan })
+                        .onEnded { _ in
+                            panBase = clip.pan
+                            jogged = 0
+                        })
                 .onTapGesture(count: 2) { resetView() }
                 .onTapGesture(perform: onFocus)
         }
