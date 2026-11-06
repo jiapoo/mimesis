@@ -8,8 +8,12 @@ let package = Package(
     products: [
         .library(name: "MimesisKit", targets: ["MimesisKit"]),
     ],
+    dependencies: [
+        // Shared with Arete and Imago; the same version as project.yml pins.
+        .package(url: "https://github.com/jiapoo/apple-media", exact: "1.8.0"),
+    ],
     targets: [
-        .target(name: "MimesisKit"),
+        .target(name: "MimesisKit", dependencies: [.product(name: "AreteMedia", package: "apple-media")]),
         // The Phase 0 masking test from the command line (Mac):
         // swift run -c release mask-probe <video> [--start s] [--seconds s] [--out folder]
         .executableTarget(name: "mask-probe", dependencies: ["MimesisKit"]),

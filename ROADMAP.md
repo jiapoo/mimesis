@@ -42,16 +42,21 @@ will need the "tap to choose" step, or cropping the overlay out.
 
 ## Phase 1 — The comparison core (the Kinovea part)
 
-- [ ] Open two clips into a left pane and a right pane (file picker, drag and drop, Photos on iOS)
-- [ ] Show only one pane full-width, or both
-- [ ] **Independent** playback: each pane has its own play, scrub and frame-step
-- [ ] **Linked** playback: one play button, one scrubber; a frame step moves both
-- [ ] Trim each clip
-- [ ] A sync point in each clip (e.g. the moment of contact); linking lines up the two sync points
-- [ ] A speed for each clip (e.g. 0.8× and 1.0×) that still plays in step when linked
-- [ ] Mirror each clip on its own (from AreteMedia)
-- [ ] Zoom and pan each clip on its own
-- [ ] Keys on Mac (AreteMedia's `MovistKeys`) and touch on iOS: swipe to frame-step, pinch to zoom
+- [x] Design: dark studio canvas, the icon's crimson as the one accent, clip A and clip B as rounded cards
+      with controls floating over the video, and one transport panel at the bottom using Arete's two
+      timelines (progress bar + frame ruler, AreteMedia's `FrameRulerTimeline`) (2026-11-06)
+- [ ] Open two clips as A and B: file picker (built), drag and drop (built), Photos (built);
+      only tested by opening clips at launch so far
+- [x] Show only one clip, or both (A | B, A, B); side by side in landscape, one above the other in portrait (2026-11-06)
+- [x] **Independent** playback: the transport plays, scrubs and frame-steps the selected clip (2026-11-06)
+- [x] **Linked** playback: one play button and one ruler; a frame step or a drag moves both (2026-11-06)
+- [ ] Trim each clip (In / Out at the playhead; built, not yet tested)
+- [x] A sync point in each clip (e.g. the moment of contact); linking lines up the two sync points (2026-11-06)
+- [x] A speed for each clip (e.g. 0.5× and 1.0×) that still plays in step when linked (2026-11-06)
+- [x] Mirror each clip on its own (from AreteMedia) (2026-11-06)
+- [ ] Zoom and pan each clip on its own (pinch, drag, double-tap to reset; built, not yet tested)
+- [ ] Keys on Mac: Movist's keys for the selected clip, Space / , . / ← → for both when linked, [ ] S L Tab
+      (built, not yet tested); touch on iOS: swipe to frame-step
 - [ ] Save a comparison (the two clips, trims, sync points, speeds, mirrors) and reopen it later
 
 ## Phase 2 — Drawing and measuring

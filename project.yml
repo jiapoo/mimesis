@@ -11,6 +11,8 @@ settings:
     CURRENT_PROJECT_VERSION: "1"
     CODE_SIGN_STYLE: Automatic
     DEVELOPMENT_TEAM: 49Y2NVWNTQ
+    # Crimson #DD1B3F, the colour Arete and Imago use (Assets.xcassets/AccentColor in Mac/ and iOS/).
+    ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
 packages:
   MimesisKit:
     path: Packages/MimesisKit
@@ -28,7 +30,6 @@ targets:
     sources: [Mac]
     dependencies:
       - package: MimesisKit
-      - package: AreteMedia
     info:
       path: Mac/Info.plist
       properties:
@@ -52,7 +53,6 @@ targets:
     sources: [iOS]
     dependencies:
       - package: MimesisKit
-      - package: AreteMedia
     info:
       path: iOS/Info.plist
       properties:
