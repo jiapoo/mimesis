@@ -27,6 +27,9 @@ struct ClipPane: View {
     @State private var ink: Drawing.Ink = .crimson
     @State private var always = false
     @State private var stroMotion = false
+    @State private var naming = false
+    @State private var newTag = ""
+    @Environment(Library.self) private var library
     @State private var dropping = false
 
     var body: some View {
@@ -233,6 +236,45 @@ struct ClipPane: View {
 
     // MARK: - Tools
 
+    /// Tag the moment at the playhead ("Forehand", "Fault"…), to find it again in the library.
+    private var tagMenu: some View {
+        Menu {
+            ForEach(library.labels, id: \.self) { label in
+                Button(label) { tag(label) }
+            }
+            Divider()
+            Button("New tag…", systemImage: "plus") {
+                newTag = ""
+                naming = true
+            }
+        } label: {
+            Image(systemName: "tag")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 34, height: 28)
+                .background(Theme.raised, in: Capsule())
+        }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .help("Tag this moment (a forehand, a fault…) to find it in the library")
+        .alert("New tag", isPresented: $naming) {
+            TextField("Split step, Kick serve…", text: $newTag)
+            Button("Cancel", role: .cancel) {}
+            Button("Tag") {
+                let label = newTag.trimmingCharacters(in: .whitespaces)
+                if !label.isEmpty { tag(label) }
+            }
+        }
+    }
+
+    private func tag(_ label: String) {
+        guard let url = clip.url else { return }
+        onFocus()
+        library.tag(url, at: clip.engine.currentTime, label: label)
+    }
+
     /// "Add sync", "Sync 2 of 3" when on one, "3 syncs" otherwise.
     private var syncLabel: String {
         if let here = clip.syncHere { return clip.syncs.count == 1 ? "Sync" : "Sync \(here + 1) of \(clip.syncs.count)" }
@@ -267,6 +309,8 @@ struct ClipPane: View {
             .disabled(linked)
             .help("Mark this frame as a sync point, or unmark it (S). Sync points pair up in order with the "
                 + "other clip's: the first lines the clips up, more make each phase in between line up too.")
+
+            tagMenu
 
             Menu {
                 ForEach([0.25, 0.5, 0.6, 0.7, 0.75, 0.8, 0.9, 1.0, 1.1, 1.25, 1.5, 2.0], id: \.self) { value in

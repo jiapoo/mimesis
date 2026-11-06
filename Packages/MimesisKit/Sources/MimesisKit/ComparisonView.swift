@@ -17,6 +17,8 @@ public struct ComparisonView: View {
     @State private var browsing = false
     @State private var exporting = false
     @State private var court = false
+    @State private var library = Library()
+    @State private var showingLibrary = false
     @Environment(\.scenePhase) private var scenePhase
 
     private let preload: [URL?]
@@ -60,6 +62,7 @@ public struct ComparisonView: View {
                 .padding(.top, 6)
                 .padding(.bottom, 12)
         }
+        .environment(library)
         .background(Theme.canvas.ignoresSafeArea())
         .preferredColorScheme(.dark)
         .tint(Theme.accent)
@@ -76,6 +79,8 @@ public struct ComparisonView: View {
         }
         // Remember the comparison a second after it last changed, and when the app goes to the background.
         .task(id: snapshot) {
+            // Every clip opened goes into the library.
+            for url in comparison.clips.compactMap(\.url) { library.record(url) }
             try? await Task.sleep(for: .seconds(1))
             if !Task.isCancelled { store.remember(comparison) }
         }
@@ -101,6 +106,12 @@ public struct ComparisonView: View {
             CourtView { url, side in open(url, in: side) }
         }
         #endif
+        .sheet(isPresented: $showingLibrary) {
+            LibraryView(library: library) { url, side, time in
+                showingLibrary = false
+                open(url, in: side, at: time)
+            }
+        }
         .sheet(isPresented: $exporting) {
             ExportView(comparison: comparison)
         }
@@ -193,6 +204,8 @@ public struct ComparisonView: View {
                 .keyboardShortcut("s", modifiers: .command)
                 Button("Saved comparisons…", systemImage: "list.bullet.rectangle") { browsing = true }
                     .keyboardShortcut("o", modifiers: [.command, .shift])
+                Button("Library…", systemImage: "books.vertical") { showingLibrary = true }
+                    .keyboardShortcut("l", modifiers: .command)
                 Divider()
                 Button("Court mode…", systemImage: "camera.viewfinder") { court = true }
                     .keyboardShortcut("k", modifiers: .command)
@@ -232,10 +245,14 @@ public struct ComparisonView: View {
             + "|\(comparison.overlayTop)|\(comparison.overlayOpacity)|\(comparison.overlayOffset.width),\(comparison.overlayOffset.height)|\(comparison.overlayScale)|\(comparison.overlayRotation)"
     }
 
-    private func open(_ url: URL, in index: Int) {
+    private func open(_ url: URL, in index: Int, at time: Double? = nil) {
         comparison.linked = false
         comparison.focus = index
-        Task { await comparison.clips[index].open(url) }
+        Task {
+            let clip = comparison.clips[index]
+            if clip.url?.standardizedFileURL != url.standardizedFileURL { await clip.open(url) }
+            if let time { await clip.engine.seekToTime(time) }
+        }
     }
 
     /// Keys, as in Movist, for both clips while linked, else the selected one;

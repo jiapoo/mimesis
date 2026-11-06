@@ -65,6 +65,8 @@ struct StroMotionView: View {
     let clip: Clip
     let letter: String
     @State private var count = 6
+    /// Between the first and last sync point (e.g. racket drop to finish) rather than the whole trim.
+    @State private var bySyncs = false
     @State private var image: CGImage?
     @State private var file: URL?
     @State private var making = false
@@ -74,9 +76,19 @@ struct StroMotionView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("StroMotion").font(.title2.weight(.semibold))
-            Text("Clip \(letter)'s player at \(count) moments across its trim (\(clock(clip.trimStart)) – \(clock(clip.end))), "
-                 + "in one picture. Trim the clip to the stroke first; pick a player in the overlay if others are in frame.")
+            Text("Clip \(letter)'s player at \(count) moments across \(bySyncs ? "its sync points" : "its trim") "
+                 + "(\(clock(chosenSpan.lowerBound)) – \(clock(chosenSpan.upperBound))), in one picture. "
+                 + "Pick a player in the overlay if others are in frame.")
                 .font(.callout).foregroundStyle(.secondary)
+            if clip.syncs.count >= 2 {
+                Picker("Span", selection: $bySyncs) {
+                    Text("Whole trim").tag(false)
+                    Text("First to last sync point").tag(true)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .disabled(making)
+            }
 
             Stepper(value: $count, in: 3...12) {
                 Text("\(count) moments").monospacedDigit()
@@ -115,6 +127,11 @@ struct StroMotionView: View {
         .tint(Theme.accent)
     }
 
+    private var chosenSpan: ClosedRange<Double> {
+        if bySyncs, let first = clip.syncs.first, let last = clip.syncs.last, last > first { return first...last }
+        return clip.trimStart...max(clip.trimStart, clip.end)
+    }
+
     private func make() {
         guard let url = clip.url else { return }
         making = true
@@ -130,7 +147,9 @@ struct StroMotionView: View {
                 if case .failed(let why)? = clip.cutout?.state { problem = why } else { problem = "The player couldn't be found." }
                 return
             }
-            let span = max(clip.trimStart, cutout.span.lowerBound)...min(clip.end, cutout.span.upperBound)
+            let wanted = chosenSpan
+            let span = max(wanted.lowerBound, cutout.span.lowerBound)...max(max(wanted.lowerBound, cutout.span.lowerBound),
+                                                                              min(wanted.upperBound, cutout.span.upperBound))
             let times = StroMotion.times(in: span, count: count)
             let masks = times.map { cutout.mask(at: $0) }
             do {

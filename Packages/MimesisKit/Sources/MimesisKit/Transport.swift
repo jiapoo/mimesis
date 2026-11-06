@@ -6,6 +6,7 @@ import SwiftUI
 /// Linked, it moves both clips, the ruler counting clip A's frames; otherwise the selected clip.
 struct Transport: View {
     let comparison: Comparison
+    @Environment(Library.self) private var library
 
     var body: some View {
         VStack(spacing: 6) {
@@ -67,6 +68,15 @@ struct Transport: View {
             GeometryReader { space in
                 let x = { (t: Double) in CGFloat(t / duration) * space.size.width }
                 ZStack(alignment: .topLeading) {
+                    // Tagged moments: small yellow tags.
+                    ForEach(clip.url.flatMap { library.entry(for: $0)?.tags } ?? []) { tag in
+                        markButton(at: tag.time, clip: clip) {
+                            Image(systemName: "tag.fill").font(.system(size: 8))
+                                .foregroundStyle(Color(red: 1, green: 0.84, blue: 0.2))
+                        }
+                        .position(x: x(tag.time), y: 7)
+                        .help(tag.label)
+                    }
                     ForEach(drawingTimes, id: \.self) { t in
                         markButton(at: t, clip: clip) {
                             Circle().fill(Color.white).frame(width: 6, height: 6)
@@ -82,7 +92,7 @@ struct Transport: View {
                 }
             }
             .frame(height: 14)
-            .help("Sync points and drawings: tap one to go there")
+            .help("Sync points, tags and drawings: tap one to go there")
         }
     }
 

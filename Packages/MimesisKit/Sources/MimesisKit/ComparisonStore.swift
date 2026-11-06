@@ -112,11 +112,11 @@ public final class ComparisonStore {
 // MARK: - Turning a comparison into a state and back
 
 #if os(macOS)
-private let bookmarkOptions: URL.BookmarkCreationOptions = [.withSecurityScope, .securityScopeAllowOnlyReadAccess]
-private let resolveOptions: URL.BookmarkResolutionOptions = [.withSecurityScope]
+let bookmarkOptions: URL.BookmarkCreationOptions = [.withSecurityScope, .securityScopeAllowOnlyReadAccess]
+let resolveOptions: URL.BookmarkResolutionOptions = [.withSecurityScope]
 #else
-private let bookmarkOptions: URL.BookmarkCreationOptions = []
-private let resolveOptions: URL.BookmarkResolutionOptions = []
+let bookmarkOptions: URL.BookmarkCreationOptions = []
+let resolveOptions: URL.BookmarkResolutionOptions = []
 #endif
 
 extension Clip {

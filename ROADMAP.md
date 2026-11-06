@@ -178,13 +178,16 @@ The five steps below build it.
       well; the sheet itself not yet tried in the app)
 - ✅ Choose how many moments (3–12) over the clip's trim; the cutout and picked player are reused (2026-11-06)
 - ✅ Share or save it as an image (2026-11-06)
-- ⬜ Choose the span by sync points (e.g. racket drop to finish) instead of the trim
+- ✅ Choose the span by sync points (first to last, e.g. racket drop to finish) instead of the trim (2026-11-06)
 
 ## Phase 7 — Library and tagging
 
-- ⬜ A library of clips with names and notes
-- ⬜ Tag moments ("forehand", "double fault", "good contact")
-- ⬜ Search by tag across all clips and play the results back to back
+- ✅ A library of every clip opened, newest first, with notes (⋯ → Library…, ⌘L) (2026-11-06; checked on the iPad)
+- ✅ Tag moments with the tag button on a clip: Forehand, Backhand, Serve, Return, Volley, Smash, Good, Fault, or a
+      new tag of your own; tags show as yellow marks over the ruler (2026-11-06; checked on the iPad)
+- ✅ Filter the library by a tag to see that moment across every clip, and open any clip, or a tagged moment, as
+      A or B (2026-11-06; opening a clip as B checked on the iPad; opening at a tag's time not yet)
+- ⬜ Play every moment with a tag back to back
 - ⬜ Sync the library across devices (iCloud)
 
 ## Phase 8 — Release
