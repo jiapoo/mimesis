@@ -160,8 +160,13 @@ The five steps below build it.
 
 ## Phase 5 — At the court (iPad and iPhone)
 
-- ⬜ Delayed playback: the camera records and shows you N seconds later
-- ⬜ Record a clip from that and drop it straight into a comparison
+- ✅ Court mode (⋯ → Court mode…, ⌘K): the camera shown 1–10 s late (or live), so you watch the stroke you just
+      hit; keeps the last seconds at 854 px wide (about 0.6 MB a frame) (2026-11-06; the delay buffer is
+      unit-tested and the screen opens and asks for the camera, but no camera has been watched through it yet:
+      Simulator has none. Also on the Mac, with its camera, untested)
+- ✅ Save the last 6 s you watched as clip A or B, straight into the comparison (2026-11-06; writing frames to a
+      clip is tested: 3 s of frames make a 3.0 s clip)
+- ⬜ Try court mode on a real iPhone or iPad at the court: picture, delay, memory, battery
 - ⬜ Remind to film at 240 fps (slow-mo) or at least 60 fps
 
 ## Phase 6 — StroMotion

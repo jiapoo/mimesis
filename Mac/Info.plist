@@ -22,5 +22,7 @@
 	<string>1</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.sports</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Court mode shows the camera a few seconds late, so you can watch the stroke you just hit.</string>
 </dict>
 </plist>

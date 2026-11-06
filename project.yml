@@ -35,6 +35,7 @@ targets:
       properties:
         CFBundleDisplayName: Mimesis
         LSApplicationCategoryType: public.app-category.sports
+        NSCameraUsageDescription: Court mode shows the camera a few seconds late, so you can watch the stroke you just hit.
     settings:
       base:
         # One bundle ID on every platform, so one purchase covers Mac, iPad and iPhone.
@@ -64,6 +65,7 @@ targets:
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
         UISupportedInterfaceOrientations~ipad: [UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
         UIFileSharingEnabled: true
+        NSCameraUsageDescription: Court mode shows the camera a few seconds late, so you can watch the stroke you just hit.
         LSSupportsOpeningDocumentsInPlace: true
     settings:
       base:

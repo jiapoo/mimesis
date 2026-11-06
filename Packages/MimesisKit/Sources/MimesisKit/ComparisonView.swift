@@ -16,6 +16,7 @@ public struct ComparisonView: View {
     @State private var newName = ""
     @State private var browsing = false
     @State private var exporting = false
+    @State private var court = false
     @Environment(\.scenePhase) private var scenePhase
 
     private let preload: [URL?]
@@ -91,6 +92,15 @@ public struct ComparisonView: View {
         } message: {
             Text("Both clips, with their trims, sync points, speeds, mirroring and drawings.")
         }
+        #if os(iOS)
+        .fullScreenCover(isPresented: $court) {
+            CourtView { url, side in open(url, in: side) }
+        }
+        #else
+        .sheet(isPresented: $court) {
+            CourtView { url, side in open(url, in: side) }
+        }
+        #endif
         .sheet(isPresented: $exporting) {
             ExportView(comparison: comparison)
         }
@@ -184,6 +194,8 @@ public struct ComparisonView: View {
                 Button("Saved comparisons…", systemImage: "list.bullet.rectangle") { browsing = true }
                     .keyboardShortcut("o", modifiers: [.command, .shift])
                 Divider()
+                Button("Court mode…", systemImage: "camera.viewfinder") { court = true }
+                    .keyboardShortcut("k", modifiers: .command)
                 Button("Export video…", systemImage: "film") { exporting = true }
                     .disabled(!comparison.canLink)
                     .keyboardShortcut("e", modifiers: .command)
