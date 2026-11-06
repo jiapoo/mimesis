@@ -22,6 +22,15 @@ struct ComparisonState: Codable {
     var layout: String
     var linked: Bool
     var linkedSpeed: Double
+    /// Nil in comparisons saved before the overlay existed.
+    var overlay: OverlayState?
+}
+
+struct OverlayState: Codable {
+    var top: Int
+    var opacity: Double
+    var offset: CGSize
+    var scale: Double
 }
 
 /// A comparison the user saved by name.
@@ -137,7 +146,9 @@ extension Comparison {
     func state() -> ComparisonState? {
         let clips = clips.map { $0.state() }
         guard clips.contains(where: { $0 != nil }) else { return nil }
-        return ComparisonState(clips: clips, layout: layout.rawValue, linked: linked, linkedSpeed: linkedSpeed)
+        return ComparisonState(
+            clips: clips, layout: layout.rawValue, linked: linked, linkedSpeed: linkedSpeed,
+            overlay: OverlayState(top: overlayTop, opacity: overlayOpacity, offset: overlayOffset, scale: overlayScale))
     }
 
     func restore(_ state: ComparisonState) async {
@@ -151,6 +162,12 @@ extension Comparison {
         }
         layout = Layout(rawValue: state.layout) ?? .both
         linkedSpeed = state.linkedSpeed
+        if let overlay = state.overlay {
+            overlayTop = overlay.top
+            overlayOpacity = overlay.opacity
+            overlayOffset = overlay.offset
+            overlayScale = overlay.scale
+        }
         if state.linked, canLink { linked = true }
     }
 }

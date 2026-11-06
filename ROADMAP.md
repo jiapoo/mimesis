@@ -81,7 +81,7 @@ will need the "tap to choose" step, or cropping the overlay out.
       and it's put back on the matching frame whenever it drifts or the clips pause (2026-11-06; unit-tested,
       and checked on the iPad: A 1 s vs B 0.25 s between sync points → B at 0.25×, on the right frame)
 - ✅ Show which phase the playhead is in and B's speed there ("phase 1 of 2 · B at 0.82×") (2026-11-06)
-- ⬜ Adjust a sync point by dragging its diamond, instead of removing and adding it again
+- ✅ Adjust a sync point by dragging its diamond over the ruler (frame by frame, between its neighbours) (2026-11-06)
 
 ## Phase 4 — Overlay your idol on your clip (SimulCam)
 
@@ -102,30 +102,34 @@ The five steps below build it.
 
 ### 4.2 Mirror him
 
-- ⬜ Mirror the cutout side to side (reuses AreteMedia's mirroring), so a right-hander matches a left-hander
-- ⬜ Mirror only how it's shown, never the saved cutout
+- ✅ Mirror the top clip side to side (AreteMedia's mirroring, from the overlay's own button), so a right-hander
+      matches a left-hander (2026-11-06)
+- ✅ Mirror only how it's shown, never the file (2026-11-06)
 
 ### 4.3 Lay him semi-transparent over your clip
 
-- ⬜ Draw the cutout on top of your clip, with an opacity slider (0–100%)
+- ✅ "Overlay" view: the top clip drawn over the other, with an opacity slider (10–90%) and a button to swap
+      which clip is on top (2026-11-06; the whole picture for now, the cutout comes with 4.1)
 - ⬜ Optional: tint him one colour (e.g. red) so his body is easy to tell from yours
-- ⬜ Switch between overlay and side by side with one key or tap
-- ⬜ Plain overlay without a cutout too (the whole clip semi-transparent), useful when both clips
-      were filmed at the same place
+- ✅ Switch between overlay and side by side with one tap (A | B, A, B, Overlay) (2026-11-06)
+- ✅ Plain overlay without a cutout (the whole clip semi-transparent), useful when both clips
+      were filmed at the same place (2026-11-06)
 
 ### 4.4 Drag and resize him until his feet and hips sit on yours
 
-- ⬜ Drag to move, pinch or scroll to resize; rotate slightly if the cameras were tilted
+- ✅ Drag to move, pinch to resize, double-tap or ↺ to put back (2026-11-06)
+- ⬜ Rotate slightly if the cameras were tilted; scroll to resize on Mac
 - ⬜ Auto-align: find hips, knees and ankles in both clips with `VNDetectHumanBodyPoseRequest`,
       then move and resize him so his hips and feet land on yours; you nudge from there
-- ⬜ Keep the position and size for the whole clip, saved with the comparison
+- ✅ Keep the position and size for the whole clip, saved with the comparison (2026-11-06)
 - ⬜ Automatic background alignment for clips filmed at the same place (`VNHomographicImageRegistrationRequest`)
 
 ### 4.5 Keep it in time using the sync points
 
-- ⬜ The overlay plays linked: the two sync points (e.g. contact) line up, using each clip's trim and speed
-- ⬜ Frame-stepping moves both clips together in the overlay
-- ⬜ Use the Phase 3 section speeds, so every phase of the stroke lines up, not only contact
+- ✅ The overlay plays linked: the same transport, sync points, trims and speeds as side by side (2026-11-06;
+      checked paused on a sync frame, not yet watched playing)
+- ✅ Frame-stepping moves both clips together in the overlay (2026-11-06)
+- ✅ Uses the Phase 3 section speeds, so every phase of the stroke lines up, not only contact (2026-11-06)
 - ⬜ Export the overlay as a video to share
 
 ## Phase 5 — At the court (iPad and iPhone)

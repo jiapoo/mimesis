@@ -106,13 +106,14 @@ public final class Clip {
 @MainActor @Observable
 public final class Comparison {
     public enum Layout: String, CaseIterable, Identifiable {
-        case both, left, right
+        case both, left, right, overlay
         public var id: Self { self }
         public var title: String {
             switch self {
             case .both: "Both"
             case .left: "Left"
             case .right: "Right"
+            case .overlay: "Overlay"
             }
         }
     }
@@ -121,6 +122,22 @@ public final class Comparison {
     public var layout: Layout = .both
     /// Which pane the keys and the shared controls act on while not linked.
     public var focus = 0
+
+    // MARK: Overlay
+
+    /// The clip drawn on top in the overlay (0 is A, 1 is B); the other is underneath.
+    public var overlayTop = 1
+    /// How see-through the top clip is (0 hidden, 1 solid).
+    public var overlayOpacity = 0.5
+    /// Where the top clip sits over the other, as a share of the picture underneath (0, 0 is centred).
+    public var overlayOffset: CGSize = .zero
+    /// The top clip's size against the picture underneath (1 fits it).
+    public var overlayScale: CGFloat = 1
+
+    public func resetOverlay() {
+        overlayOffset = .zero
+        overlayScale = 1
+    }
 
     /// Linked: one play button, one timeline; both clips move together.
     public var linked = false {
@@ -149,6 +166,7 @@ public final class Comparison {
         case .both: clips.filter(\.isLoaded)
         case .left: clips[0].isLoaded ? [clips[0]] : []
         case .right: clips[1].isLoaded ? [clips[1]] : []
+        case .overlay: clips.filter(\.isLoaded)
         }
     }
 

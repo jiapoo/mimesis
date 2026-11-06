@@ -31,6 +31,9 @@ public struct ComparisonView: View {
                 let wide = space.size.width >= space.size.height
                 let layout = wide ? AnyLayout(HStackLayout(spacing: 10)) : AnyLayout(VStackLayout(spacing: 10))
                 layout {
+                    if comparison.layout == .overlay {
+                        OverlayPane(comparison: comparison)
+                    }
                     ForEach(paneIndices, id: \.self) { index in
                         ClipPane(
                             clip: comparison.clips[index],
@@ -128,6 +131,7 @@ public struct ComparisonView: View {
         case .both: [0, 1]
         case .left: [0]
         case .right: [1]
+        case .overlay: []
         }
     }
 
@@ -143,17 +147,21 @@ public struct ComparisonView: View {
             HStack(spacing: 2) {
                 ForEach(Comparison.Layout.allCases) { layout in
                     let on = comparison.layout == layout
+                    let unavailable = layout == .overlay && !comparison.canLink
                     Button {
                         withAnimation(.easeOut(duration: 0.2)) { comparison.layout = layout }
                     } label: {
                         Text(layout.label)
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(on ? Color.black : Color.white.opacity(0.75))
-                            .frame(width: 52, height: 26)
+                            .frame(width: layout == .overlay ? 72 : 52, height: 26)
                             .background(on ? Color.white : .clear, in: Capsule())
                             .contentShape(Capsule())
                     }
                     .buttonStyle(.plain)
+                    .disabled(unavailable)
+                    .opacity(unavailable ? 0.4 : 1)
+                    .help(layout == .overlay ? "One clip over the other, see-through: open both clips first" : "")
                 }
             }
             .padding(3)
@@ -201,6 +209,7 @@ public struct ComparisonView: View {
             "\(clip.url?.path ?? "-")|\(clip.trimStart)|\(clip.trimEnd ?? -1)|\(clip.syncs)|\(clip.speed)|\(clip.engine.mirroredHorizontally)|\(clip.drawings.hashValue)"
         }
         return clips.joined(separator: ";") + "|\(comparison.layout)|\(comparison.linked)|\(comparison.linkedSpeed)"
+            + "|\(comparison.overlayTop)|\(comparison.overlayOpacity)|\(comparison.overlayOffset.width),\(comparison.overlayOffset.height)|\(comparison.overlayScale)"
     }
 
     private func open(_ url: URL, in index: Int) {
@@ -248,6 +257,7 @@ extension Comparison.Layout {
         case .both: "A | B"
         case .left: "A"
         case .right: "B"
+        case .overlay: "Overlay"
         }
     }
 }

@@ -73,10 +73,10 @@ struct Transport: View {
                         }
                         .position(x: x(t), y: 7)
                     }
-                    ForEach(Array(clip.syncs.enumerated()), id: \.offset) { _, t in
-                        markButton(at: t, clip: clip) {
-                            Image(systemName: "diamond.fill").font(.system(size: 10)).foregroundStyle(Theme.accent)
-                        }
+                    ForEach(Array(clip.syncs.enumerated()), id: \.offset) { index, t in
+                        SyncDiamond(
+                            clip: clip, index: index, width: space.size.width, movable: !comparison.linked,
+                            onJump: { jump(to: t, clip: clip) })
                         .position(x: x(t), y: 7)
                     }
                 }
@@ -86,16 +86,20 @@ struct Transport: View {
         }
     }
 
+    private func jump(to time: Double, clip: Clip) {
+        if comparison.linked {
+            comparison.pause()
+            let u = (time - clip.syncTime) / clip.speed
+            Task { await comparison.seek(to: u) }
+        } else {
+            clip.engine.pause()
+            Task { await clip.engine.seekToTime(time) }
+        }
+    }
+
     private func markButton(at time: Double, clip: Clip, @ViewBuilder label: () -> some View) -> some View {
         Button {
-            if comparison.linked {
-                comparison.pause()
-                let u = (time - clip.syncTime) / clip.speed
-                Task { await comparison.seek(to: u) }
-            } else {
-                clip.engine.pause()
-                Task { await clip.engine.seekToTime(time) }
-            }
+            jump(to: time, clip: clip)
         } label: {
             label().frame(width: 22, height: 14).contentShape(Rectangle())
         }
@@ -216,4 +220,51 @@ private func areteRuler(
         progressDotColor: Theme.accent, accent: Theme.accent,
         onDraggingChanged: onDraggingChanged)
         .foregroundStyle(Color.white)
+}
+
+/// A sync point over the ruler: tap to go there; drag sideways to move it (not while linked),
+/// a frame at a time, never past its neighbours or out of the trim. The clip shows the frame as it moves.
+private struct SyncDiamond: View {
+    let clip: Clip
+    let index: Int
+    let width: CGFloat
+    let movable: Bool
+    let onJump: () -> Void
+
+    @State private var from: Double?
+
+    var body: some View {
+        Image(systemName: "diamond.fill")
+            .font(.system(size: from == nil ? 10 : 13))
+            .foregroundStyle(Theme.accent)
+            .frame(width: 22, height: 14)
+            .contentShape(Rectangle())
+            .onTapGesture(perform: onJump)
+            .gesture(
+                DragGesture(minimumDistance: 3)
+                    .onChanged { drag in
+                        guard movable, clip.syncs.indices.contains(index) else { return }
+                        let start = from ?? clip.syncs[index]
+                        if from == nil {
+                            from = start
+                            clip.engine.pause()
+                        }
+                        let frame = clip.frameLength
+                        let low = index > 0 ? clip.syncs[index - 1] + frame : clip.trimStart
+                        let high = index + 1 < clip.syncs.count ? clip.syncs[index + 1] - frame : clip.end
+                        let raw = start + Double(drag.translation.width / max(1, width)) * clip.engine.duration
+                        let snapped = (raw / frame).rounded() * frame
+                        let time = min(max(snapped, low), high)
+                        clip.syncs[index] = time
+                        clip.engine.seekFast(time)
+                    }
+                    .onEnded { _ in
+                        if let time = clip.syncs.indices.contains(index) ? clip.syncs[index] : nil {
+                            Task { await clip.engine.seekToTime(time) }
+                        }
+                        from = nil
+                    },
+                isEnabled: movable)
+            .animation(.easeOut(duration: 0.1), value: from == nil)
+    }
 }
