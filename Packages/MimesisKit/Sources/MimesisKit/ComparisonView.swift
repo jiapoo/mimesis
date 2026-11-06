@@ -20,6 +20,8 @@ public struct ComparisonView: View {
     @State private var library = Library()
     @State private var showingLibrary = false
     @State private var reel: Reel?
+    /// Videos sent from another app, waiting to be put in A or B.
+    @State private var incoming: [URL] = []
     @Environment(\.scenePhase) private var scenePhase
 
     private let preload: [URL?]
@@ -79,6 +81,21 @@ public struct ComparisonView: View {
             }
         }
         .animation(.easeOut(duration: 0.25), value: anyLoaded)
+        // A video sent from another app (Share › Mimesis, Open With, the Dock icon).
+        .onOpenURL { url in Inbox.shared.receive([url]) }
+        .onChange(of: Inbox.shared.urls, initial: true) { _, urls in
+            guard !urls.isEmpty else { return }
+            for url in Inbox.shared.take() { receive(url) }
+        }
+        .confirmationDialog(
+            incoming.first.map { "Open “\($0.deletingPathExtension().lastPathComponent)” as" } ?? "",
+            isPresented: Binding(get: { !incoming.isEmpty && bothLoaded }, set: { if !$0 { incoming.removeAll() } }),
+            titleVisibility: .visible
+        ) {
+            Button("Clip A") { place(in: 0) }
+            Button("Clip B") { place(in: 1) }
+            Button("Cancel", role: .cancel) { incoming.removeAll() }
+        }
         .environment(library)
         .background(Theme.canvas.ignoresSafeArea())
         .preferredColorScheme(.dark)
@@ -270,6 +287,56 @@ public struct ComparisonView: View {
             .buttonStyle(.plain)
             .menuIndicator(.hidden)
             .fixedSize()
+    }
+
+    private var bothLoaded: Bool { comparison.clips.allSatisfy(\.isLoaded) }
+
+    /// A video from another app: into an empty side straight away, else ask which.
+    private func receive(_ url: URL) {
+        guard url.isFileURL else { return }
+        let kept = Self.keep(url)
+        if let empty = comparison.clips.firstIndex(where: { !$0.isLoaded }), incoming.isEmpty {
+            open(kept, in: empty)
+        } else {
+            incoming.append(kept)
+        }
+    }
+
+    private func place(in side: Int) {
+        guard !incoming.isEmpty else { return }
+        let url = incoming.removeFirst()
+        open(url, in: side)
+        // Two sent together: the second goes in the other side.
+        if let next = incoming.first {
+            incoming.removeFirst()
+            open(next, in: 1 - side)
+        }
+    }
+
+    /// On iPhone and iPad a sent video lives in a temporary inbox (or another app's folder, for a while):
+    /// keep a copy with the clips Mimesis owns, so the library and saved comparisons can open it again.
+    /// On the Mac the file stays where it is.
+    private static func keep(_ url: URL) -> URL {
+        #if os(iOS)
+        let accessing = url.startAccessingSecurityScopedResource()
+        defer { if accessing { url.stopAccessingSecurityScopedResource() } }
+        let folder = ComparisonStore.supportFolder.appendingPathComponent("Clips", isDirectory: true)
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        var copy = folder.appendingPathComponent(url.lastPathComponent)
+        if FileManager.default.fileExists(atPath: copy.path) {
+            let same = (try? copy.resourceValues(forKeys: [.fileSizeKey]).fileSize) == (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize)
+            if same { return copy }
+            copy = folder.appendingPathComponent("\(url.deletingPathExtension().lastPathComponent) \(UUID().uuidString.prefix(4)).\(url.pathExtension)")
+        }
+        do {
+            try FileManager.default.copyItem(at: url, to: copy)
+            return copy
+        } catch {
+            return url
+        }
+        #else
+        return url
+        #endif
     }
 
     /// Every moment tagged `label`, back to back in clip A, shown alone.

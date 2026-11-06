@@ -3,6 +3,8 @@ import SwiftUI
 
 @main
 struct MimesisMacApp: App {
+    @NSApplicationDelegateAdaptor private var delegate: AppDelegate
+
     var body: some Scene {
         Window("Mimesis", id: "main") {
             // Two clips side by side; the masking test is in its toolbar.
@@ -18,5 +20,12 @@ struct MimesisMacApp: App {
         #else
         []
         #endif
+    }
+}
+
+/// Videos opened with Mimesis (Finder's Open With, dropped on the Dock icon) go to the comparison screen.
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    func application(_ application: NSApplication, open urls: [URL]) {
+        MainActor.assumeIsolated { Inbox.shared.receive(urls) }
     }
 }

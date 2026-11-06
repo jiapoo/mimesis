@@ -49,6 +49,11 @@ will need the "tap to choose" step, or cropping the overlay out.
       Files, Film at the court, Open from your library) with no timelines; the top bar shows the mark alone when
       narrow; each clip's badge, buttons and tools shorten to fit (sound moved into the clip's ⋯); every sheet
       fits the phone and shares the dark canvas; the masking test only in Debug builds
+- ✅ Open videos sent from other apps (Arete, Imago, Files, Photos…): Share › Mimesis on iPhone and iPad,
+      Open With or the Dock icon on the Mac; an empty side takes it, otherwise Mimesis asks A or B; two sent
+      together fill both; on iPhone/iPad a copy is kept so the library can open it again (2026-11-06; Open With
+      checked on the Mac into an empty B; the A-or-B question and the iPhone Share sheet not yet tried)
+- ⬜ A "Compare in Mimesis" button in Arete and Imago that hands two clips over at once (URL scheme + App Group)
 - ⬜ Open two clips as A and B: file picker (built), drag and drop (built), Photos (built);
       only tested by opening clips at launch so far
 - ✅ Show only one clip, or both (A | B, A, B); side by side in landscape, one above the other in portrait (2026-11-06)
