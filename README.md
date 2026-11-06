@@ -2,7 +2,7 @@
 
 Compare two sports videos (tennis, soccer, swimming…) side by side or overlaid, on macOS, iPadOS and iOS.
 
-See [ROADMAP.md](ROADMAP.md) for the plan and what's done.
+See [USER_GUIDE.md](USER_GUIDE.md) for how to use it, and [ROADMAP.md](ROADMAP.md) for the plan and what's done.
 
 ## Building
 
