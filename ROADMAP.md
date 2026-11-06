@@ -53,7 +53,10 @@ will need the "tap to choose" step, or cropping the overlay out.
       Open With or the Dock icon on the Mac; an empty side takes it, otherwise Mimesis asks A or B; two sent
       together fill both; on iPhone/iPad a copy is kept so the library can open it again (2026-11-06; Open With
       checked on the Mac into an empty B; the A-or-B question and the iPhone Share sheet not yet tried)
-- ⬜ A "Compare in Mimesis" button in Arete and Imago that hands two clips over at once (URL scheme + App Group)
+- ✅ "Compare in Mimesis" in Arete's and Imago's Mac menus (a video's menu and the selection bar in Arete, the
+      browser's menu in Imago): one or two videos open in Mimesis, two as A and B straight away (2026-11-06;
+      the handoff checked on the Mac with two videos; the menu items themselves not clicked)
+- ⬜ The same on iPhone and iPad: needs a shared App Group for the files (after the developer agreement)
 - ⬜ Open two clips as A and B: file picker (built), drag and drop (built), Photos (built);
       only tested by opening clips at launch so far
 - ✅ Show only one clip, or both (A | B, A, B); side by side in landscape, one above the other in portrait (2026-11-06)

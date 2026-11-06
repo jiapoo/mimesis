@@ -85,7 +85,16 @@ public struct ComparisonView: View {
         .onOpenURL { url in Inbox.shared.receive([url]) }
         .onChange(of: Inbox.shared.urls, initial: true) { _, urls in
             guard !urls.isEmpty else { return }
-            for url in Inbox.shared.take() { receive(url) }
+            let sent = Inbox.shared.take()
+            // Two sent together ("Compare in Mimesis" from Arete or Imago): A and B, no question.
+            if sent.count >= 2 {
+                incoming.removeAll()
+                open(Self.keep(sent[0]), in: 0)
+                open(Self.keep(sent[1]), in: 1)
+                comparison.layout = .both
+            } else {
+                for url in sent { receive(url) }
+            }
         }
         .confirmationDialog(
             incoming.first.map { "Open “\($0.deletingPathExtension().lastPathComponent)” as" } ?? "",
