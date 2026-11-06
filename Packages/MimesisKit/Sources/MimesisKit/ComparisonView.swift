@@ -85,7 +85,7 @@ public struct ComparisonView: View {
                 store.save(comparison, as: name.isEmpty ? defaultName : name)
             }
         } message: {
-            Text("Both clips, with their trims, sync points, speeds and mirroring.")
+            Text("Both clips, with their trims, sync points, speeds, mirroring and drawings.")
         }
         .sheet(isPresented: $browsing) {
             SavedComparisonsView(store: store) { item in
@@ -198,7 +198,7 @@ public struct ComparisonView: View {
     /// Everything a saved comparison keeps, so a change to any of it is remembered.
     private var snapshot: String {
         let clips = comparison.clips.map { clip in
-            "\(clip.url?.path ?? "-")|\(clip.trimStart)|\(clip.trimEnd ?? -1)|\(clip.sync ?? -1)|\(clip.speed)|\(clip.engine.mirroredHorizontally)"
+            "\(clip.url?.path ?? "-")|\(clip.trimStart)|\(clip.trimEnd ?? -1)|\(clip.sync ?? -1)|\(clip.speed)|\(clip.engine.mirroredHorizontally)|\(clip.drawings.hashValue)"
         }
         return clips.joined(separator: ";") + "|\(comparison.layout)|\(comparison.linked)|\(comparison.linkedSpeed)"
     }

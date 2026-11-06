@@ -10,6 +10,8 @@ struct ClipState: Codable {
     var sync: Double?
     var speed: Double
     var mirrored: Bool
+    /// Nil in comparisons saved before drawing existed.
+    var drawings: [Drawing]?
 }
 
 /// A comparison as saved: both clips, and how they're shown and played.
@@ -103,7 +105,7 @@ extension Clip {
         guard let url, let bookmark = try? url.bookmarkData(options: bookmarkOptions) else { return nil }
         return ClipState(
             bookmark: bookmark, trimStart: trimStart, trimEnd: trimEnd, sync: sync, speed: speed,
-            mirrored: engine.mirroredHorizontally)
+            mirrored: engine.mirroredHorizontally, drawings: drawings)
     }
 
     /// Opens the clip's file again and puts back its trim, sync point, speed and mirror.
@@ -121,6 +123,7 @@ extension Clip {
         trimEnd = state.trimEnd
         sync = state.sync
         speed = state.speed
+        drawings = state.drawings ?? []
         if state.mirrored { await engine.setMirror(horizontal: true, vertical: false) }
         await engine.seekToTime(syncTime)
         return true

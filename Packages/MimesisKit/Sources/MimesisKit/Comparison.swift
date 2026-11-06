@@ -18,6 +18,8 @@ public final class Clip {
     /// Zoom (1 is the whole frame) and pan, in points; only how it's shown.
     public var zoom: CGFloat = 1
     public var pan: CGSize = .zero
+    /// Lines, arrows, circles and angles drawn on the clip.
+    public var drawings: [Drawing] = []
 
     public init() {
         engine.isMuted = true
@@ -41,6 +43,7 @@ public final class Clip {
         speed = 1
         zoom = 1
         pan = .zero
+        drawings = []
         await engine.loadVideo(url: newURL)
     }
 

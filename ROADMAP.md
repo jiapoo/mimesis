@@ -63,10 +63,14 @@ will need the "tap to choose" step, or cropping the overlay out.
 
 ## Phase 2 — Drawing and measuring
 
-- ⬜ Lines, arrows and circles on a frame
-- ⬜ Angle tool (shoulder, elbow, knee, racket face)
-- ⬜ Drawings stay on their frame, or for a span of frames
-- ⬜ Apple Pencil on iPad
+- ✅ Drawing mode (the pencil on each clip): lines, arrows and circles in four colours; drag a point to move it;
+      undo and clear. Drawings follow zoom, pan and mirroring (2026-11-06; line tested, arrow and circle built)
+- ✅ Angle tool (shoulder, elbow, knee, racket face): drag from the vertex along one arm, then move either arm;
+      shows the angle in degrees (2026-11-06)
+- ✅ Drawings stay on their frame, or on every frame ("This frame" / "Every frame") (2026-11-06; "This frame" tested)
+- ✅ Drawings are saved with the comparison (2026-11-06)
+- ⬜ Marks on the timeline where a clip has drawings, to jump to them
+- ⬜ Apple Pencil on iPad (drawing uses ordinary touch, so it should work; needs a real iPad to check)
 
 ## Phase 3 — Multi-point time matching (what sets Mimesis apart)
 

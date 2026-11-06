@@ -22,6 +22,10 @@ struct ClipPane: View {
     @State private var zoomBase: CGFloat = 1
     @State private var panBase: CGSize = .zero
     @State private var jogged = 0
+    @State private var drawing = false
+    @State private var tool: Drawing.Kind = .line
+    @State private var ink: Drawing.Ink = .crimson
+    @State private var always = false
     @State private var dropping = false
 
     var body: some View {
@@ -81,7 +85,11 @@ struct ClipPane: View {
 
     private var video: some View {
         GeometryReader { space in
-            VideoPlayerRepresentable(player: clip.engine.player)
+            ZStack {
+                VideoPlayerRepresentable(player: clip.engine.player)
+                // In the same frame as the video, so drawings zoom and pan with it.
+                DrawingLayer(clip: clip, editing: drawing, tool: tool, ink: ink, always: always)
+            }
                 .scaleEffect(clip.zoom)
                 .offset(clip.pan)
                 .frame(width: space.size.width, height: space.size.height)
@@ -98,6 +106,8 @@ struct ClipPane: View {
                     // Zoomed in: drag to pan. Otherwise drag sideways to move frame by frame.
                     DragGesture(minimumDistance: 4)
                         .onChanged { drag in
+                            // While drawing, the drag belongs to the drawing.
+                            guard !drawing else { return }
                             if clip.zoom > 1 {
                                 clip.pan = CGSize(
                                     width: panBase.width + drag.translation.width,
@@ -121,6 +131,14 @@ struct ClipPane: View {
         .clipShape(RoundedRectangle(cornerRadius: Theme.corner, style: .continuous))
         .overlay(alignment: .topLeading) { badge.padding(10) }
         .overlay(alignment: .topTrailing) { actions.padding(10) }
+        .overlay(alignment: .bottom) {
+            if drawing {
+                DrawingTools(clip: clip, tool: $tool, ink: $ink, always: $always) { drawing = false }
+                    .padding(10)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .animation(.easeOut(duration: 0.18), value: drawing)
     }
 
     private var badge: some View {
@@ -152,6 +170,12 @@ struct ClipPane: View {
                 RoundButton(symbol: "arrow.down.right.and.arrow.up.left", action: resetView)
                     .help("Fit the whole frame")
             }
+            RoundButton(symbol: "pencil.tip", active: drawing) {
+                onFocus()
+                clip.engine.pause()
+                drawing.toggle()
+            }
+            .help("Draw lines, arrows, circles and angles on the frame")
             RoundButton(symbol: "arrow.left.and.right.righttriangle.left.righttriangle.right",
                         active: clip.engine.mirroredHorizontally, action: clip.toggleMirror)
                 .help("Mirror side to side (⇧⌘H)")
