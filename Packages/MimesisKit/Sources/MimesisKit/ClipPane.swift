@@ -148,7 +148,11 @@ struct ClipPane: View {
                             jogged = 0
                         })
                 .onTapGesture(count: 2) { resetView() }
-                .onTapGesture(perform: onFocus)
+                // Focus the moment the pointer goes down: no waiting to rule out a double-click
+                // (that wait went missing while the other clip played).
+                .simultaneousGesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { _ in if !focused { onFocus() } })
         }
         .background(Color.black)
         .overlay(alignment: .top) {

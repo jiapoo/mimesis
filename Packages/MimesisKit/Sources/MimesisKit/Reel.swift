@@ -58,6 +58,7 @@ final class Reel {
                 try? await Task.sleep(for: .milliseconds(350))
             }
             self.running = false
+            clip.engine.loopPlayback = true
         }
     }
 

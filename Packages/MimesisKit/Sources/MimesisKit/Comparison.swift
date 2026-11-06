@@ -162,7 +162,11 @@ public final class Comparison {
     public var linked = false {
         didSet {
             guard linked != oldValue else { return }
-            for clip in clips { clip.engine.pause() }
+            for clip in clips {
+                clip.engine.pause()
+                // Linked play loops the shared span itself; on their own, each clip loops.
+                clip.engine.loopPlayback = !linked
+            }
             stopTicker()
             isPlaying = false
             if linked { Task { await seek(to: position) } }
@@ -310,17 +314,16 @@ public final class Comparison {
     public func togglePlay() {
         if linked {
             isPlaying ? pause() : play()
-        } else if clips.contains(where: { $0.engine.isPlaying }) {
-            // Something is playing, even the clip not in focus: pause stops it.
-            for clip in clips { clip.engine.pause() }
-        } else {
-            focused?.engine.play()
+        } else if let clip = focused {
+            // The focused clip only: the other keeps doing what it was doing.
+            clip.engine.loopPlayback = true
+            clip.engine.togglePlayPause()
         }
     }
 
-    /// Playing: both while linked, else either clip.
+    /// Playing: both while linked, else the focused clip (what the play button shows).
     public var anyPlaying: Bool {
-        linked ? isPlaying : clips.contains { $0.engine.isPlaying }
+        linked ? isPlaying : focused?.engine.isPlaying ?? false
     }
 
     public func play() {
