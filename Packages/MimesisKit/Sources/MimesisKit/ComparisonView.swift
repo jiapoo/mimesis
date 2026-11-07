@@ -23,6 +23,9 @@ public struct ComparisonView: View {
     /// Videos sent from another app, waiting to be put in A or B.
     @State private var incoming: [URL] = []
     @Environment(\.scenePhase) private var scenePhase
+    #if os(macOS)
+    @State private var tabMonitor: Any?
+    #endif
 
     private let preload: [URL?]
 
@@ -42,50 +45,28 @@ public struct ComparisonView: View {
                     onCourt: { court = true },
                     onLibrary: library.clips.isEmpty ? nil : { showingLibrary = true })
             } else {
-            // The videos edge to edge, touching; the panel floats over them, see-through.
-            ZStack(alignment: .bottom) {
+                // Wide (Mac, iPad, a phone on its side): the videos side by side, edge to edge, with
+                // the panel floating over them. Tall (a phone upright): A over B, and the panel docked
+                // under them, so it never covers clip B.
                 GeometryReader { space in
                     let wide = space.size.width >= space.size.height
-                    let layout = wide ? AnyLayout(HStackLayout(spacing: 1)) : AnyLayout(VStackLayout(spacing: 1))
-                    layout {
-                        if comparison.layout == .overlay {
-                            OverlayPane(comparison: comparison)
-                                .dropDestination(for: URL.self) { urls, _ in
-                                    let videos = urls.filter(isVideo)
-                                    guard !videos.isEmpty else { return false }
-                                    dropped(videos, on: nil)
-                                    return true
-                                }
+                    if wide {
+                        ZStack(alignment: .bottom) {
+                            panes(wide: true)
+                            panel
+                                .padding(.horizontal, 12)
+                                .padding(.bottom, 10)
                         }
-                        ForEach(paneIndices, id: \.self) { index in
-                            ClipPane(
-                                clip: comparison.clips[index],
-                                letter: index == 0 ? "A" : "B",
-                                linked: comparison.linked,
-                                focused: comparison.focused === comparison.clips[index],
-                                showsFocus: paneIndices.count == 2,
-                                onFocus: { comparison.focus = index },
-                                onOpenFile: { importing = index },
-                                onOpenPhotos: { photoTarget = index },
-                                onDropped: { urls in dropped(urls, on: index) },
-                                onJog: { frames in
-                                    if !comparison.linked { comparison.focus = index }
-                                    comparison.step(frames)
-                                })
+                    } else {
+                        VStack(spacing: 8) {
+                            panes(wide: false)
+                            panel
+                                .padding(.horizontal, 8)
+                                .padding(.bottom, 4)
                         }
                     }
-                    .background(Color.white.opacity(0.08))
                 }
-                VStack(spacing: 6) {
-                    if let reel, reel.running {
-                        ReelBar(reel: reel)
-                    }
-                    Transport(comparison: comparison)
-                }
-                .padding(.horizontal, 12)
-                .padding(.bottom, 10)
-                .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
+                .transition(.opacity)
             }
         }
         .animation(.easeOut(duration: 0.25), value: anyLoaded)
@@ -118,6 +99,27 @@ public struct ComparisonView: View {
         .preferredColorScheme(.dark)
         .tint(Theme.accent)
         .background(keys)
+        #if os(macOS)
+        // Tab never reaches a keyboard shortcut on the Mac: the window takes it to move between controls.
+        // Catch it first, unless someone is typing.
+        .onAppear {
+            guard tabMonitor == nil else { return }
+            tabMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+                guard event.keyCode == 48, // Tab
+                      event.modifierFlags.intersection([.command, .option, .control, .shift]).isEmpty,
+                      !(event.window?.firstResponder is NSText),
+                      event.window?.attachedSheet == nil,
+                      anyLoaded
+                else { return event }
+                switchFocus()
+                return nil
+            }
+        }
+        .onDisappear {
+            if let tabMonitor { NSEvent.removeMonitor(tabMonitor) }
+            tabMonitor = nil
+        }
+        #endif
         .task {
             if preload.contains(where: { $0 != nil }) {
                 for (index, url) in preload.prefix(2).enumerated() {
@@ -418,9 +420,9 @@ public struct ComparisonView: View {
                 key("[") { clip.setTrimStart() }
                 key("]") { clip.setTrimEnd() }
                 key("s") { clip.toggleSync() }
-                key("\t") { comparison.focus = 1 - comparison.focus }
             }
             key("l") { if comparison.canLink { comparison.linked.toggle() } }
+            key("\t") { switchFocus() }
         }
         .hidden()
         if comparison.linked {
@@ -436,6 +438,59 @@ public struct ComparisonView: View {
         } else if let clip = comparison.focused {
             MovistKeys(engine: clip.engine)
         }
+    }
+
+    /// Clip A and clip B (or the overlay), touching.
+    private func panes(wide: Bool) -> some View {
+        let layout = wide ? AnyLayout(HStackLayout(spacing: 1)) : AnyLayout(VStackLayout(spacing: 1))
+        return layout {
+            if comparison.layout == .overlay {
+                OverlayPane(comparison: comparison)
+                    .dropDestination(for: URL.self) { urls, _ in
+                        let videos = urls.filter(isVideo)
+                        guard !videos.isEmpty else { return false }
+                        dropped(videos, on: nil)
+                        return true
+                    }
+            }
+            ForEach(paneIndices, id: \.self) { index in
+                ClipPane(
+                    clip: comparison.clips[index],
+                    letter: index == 0 ? "A" : "B",
+                    linked: comparison.linked,
+                    focused: comparison.focused === comparison.clips[index],
+                    showsFocus: paneIndices.count == 2,
+                    onFocus: { comparison.focus = index },
+                    onOpenFile: { importing = index },
+                    onOpenPhotos: { photoTarget = index },
+                    onDropped: { urls in dropped(urls, on: index) },
+                    onJog: { frames in
+                        if !comparison.linked { comparison.focus = index }
+                        comparison.step(frames)
+                    })
+            }
+        }
+        .background(Color.white.opacity(0.08))
+    }
+
+    /// The transport, with the tag reel's bar over it while a reel plays.
+    private var panel: some View {
+        VStack(spacing: 6) {
+            if let reel, reel.running {
+                ReelBar(reel: reel)
+            }
+            Transport(comparison: comparison)
+        }
+        .transition(.move(edge: .bottom).combined(with: .opacity))
+    }
+
+    /// Selects the other clip; on the Mac Tab would otherwise just move the keyboard focus.
+    private func switchFocus() {
+        guard comparison.layout == .both || comparison.layout == .overlay else {
+            comparison.layout = comparison.layout == .left ? .right : .left
+            return
+        }
+        comparison.focus = 1 - comparison.focus
     }
 
     private func key(_ k: KeyEquivalent, action: @escaping () -> Void) -> some View {
