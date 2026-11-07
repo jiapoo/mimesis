@@ -85,20 +85,26 @@ public struct ComparisonView: View {
         }
         .animation(.easeOut(duration: 0.25), value: anyLoaded)
         // A video sent from another app (Share › Mimesis, Open With, the Dock icon).
-        .onOpenURL { url in Inbox.shared.receive([url]) }
+        .onOpenURL { url in
+            #if os(iOS)
+            // mimesis://inbox: Share › Mimesis just left videos in the shared folder.
+            if url.scheme == "mimesis" {
+                Inbox.shared.collectShared()
+                return
+            }
+            #endif
+            Inbox.shared.receive([url])
+        }
+        // Share › Mimesis: each share is one batch (two videos: A and B).
+        .onChange(of: Inbox.shared.batches.count, initial: true) { _, count in
+            guard count > 0 else { return }
+            while let batch = Inbox.shared.takeBatch() { take(batch) }
+        }
         .onChange(of: Inbox.shared.urls, initial: true) { _, urls in
             guard !urls.isEmpty else { return }
-            let sent = Inbox.shared.take()
-            // Two sent together ("Compare in Mimesis" from Arete or Imago): A and B, no question.
-            if sent.count >= 2 {
-                incoming.removeAll()
-                open(Self.keep(sent[0]), in: 0)
-                open(Self.keep(sent[1]), in: 1)
-                comparison.layout = .both
-            } else {
-                for url in sent { receive(url) }
-            }
+            take(Inbox.shared.take())
         }
+
         .confirmationDialog(
             incoming.first.map { "Open “\($0.deletingPathExtension().lastPathComponent)” as" } ?? "",
             isPresented: Binding(get: { !incoming.isEmpty && bothLoaded }, set: { if !$0 { incoming.removeAll() } }),
@@ -176,7 +182,11 @@ public struct ComparisonView: View {
             try? await Task.sleep(for: .seconds(1))
             if !Task.isCancelled { store.remember(comparison) }
         }
-        .onChange(of: scenePhase) { _, phase in
+        .onChange(of: scenePhase, initial: true) { _, phase in
+            #if os(iOS)
+            // Anything Share › Mimesis left while Mimesis wasn't asked to open.
+            if phase == .active { Inbox.shared.collectShared() }
+            #endif
             if phase != .active { store.remember(comparison) }
         }
         .alert("Save comparison", isPresented: $naming) {
@@ -387,6 +397,18 @@ public struct ComparisonView: View {
             open(urls[1], in: 1)
         } else if let url = urls.first {
             if let side { open(url, in: side) } else { receive(url) }
+        }
+    }
+
+    /// Videos sent together: two go into A and B with no question; one goes to an empty side (else Mimesis asks).
+    private func take(_ sent: [URL]) {
+        if sent.count >= 2 {
+            incoming.removeAll()
+            open(Self.keep(sent[0]), in: 0)
+            open(Self.keep(sent[1]), in: 1)
+            comparison.layout = .both
+        } else {
+            for url in sent { receive(url) }
         }
     }
 

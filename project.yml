@@ -1,6 +1,6 @@
 name: Mimesis
 options:
-  bundleIdPrefix: com.arc
+  bundleIdPrefix: com.ljworkshop
   deploymentTarget:
     iOS: "18.0"
     macOS: "15.0"
@@ -45,7 +45,7 @@ targets:
     settings:
       base:
         # One bundle ID on every platform, so one purchase covers Mac, iPad and iPhone.
-        PRODUCT_BUNDLE_IDENTIFIER: com.arc.mimesis
+        PRODUCT_BUNDLE_IDENTIFIER: com.ljworkshop.mimesis
         PRODUCT_NAME: Mimesis
         ENABLE_HARDENED_RUNTIME: YES
         # The sandbox, files the user picks, and bookmarks (so saved comparisons find their clips again).
@@ -62,6 +62,8 @@ targets:
     sources: [iOS]
     dependencies:
       - package: MimesisKit
+      # Share › Mimesis in every app's Share sheet.
+      - target: MimesisShare
     info:
       path: iOS/Info.plist
       properties:
@@ -80,13 +82,43 @@ targets:
             LSHandlerRank: Alternate
             LSItemContentTypes: [public.movie, public.mpeg-4, com.apple.quicktime-movie, com.apple.m4v-video]
         LSSupportsOpeningDocumentsInPlace: true
+        # mimesis://inbox: Share › Mimesis opens the app with the videos it just put in the shared folder.
+        CFBundleURLTypes:
+          - CFBundleURLName: com.ljworkshop.mimesis
+            CFBundleURLSchemes: [mimesis]
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.arc.mimesis
+        PRODUCT_BUNDLE_IDENTIFIER: com.ljworkshop.mimesis
         PRODUCT_NAME: Mimesis
+        # The App Group shared with Share › Mimesis.
+        CODE_SIGN_ENTITLEMENTS: iOS/MimesisApp.entitlements
         # iCloud sync of the library's notes and tags needs the iCloud key-value capability, which needs the
         # Apple Developer Program License Agreement accepted first. Then uncomment this, add the same
         # com.apple.developer.ubiquity-kvstore-identifier key to Mac/MimesisMac*.entitlements, and build.
-        # CODE_SIGN_ENTITLEMENTS: iOS/Mimesis.entitlements
+        # (then merge iOS/Mimesis.entitlements into iOS/MimesisApp.entitlements)
         # iPhone and iPad.
         TARGETED_DEVICE_FAMILY: "1,2"
+
+  # Share › Mimesis: in any app's Share sheet on iPhone and iPad (Arete, Imago, Photos, Files, Messages).
+  # It copies the one or two videos into the App Group's Inbox and opens Mimesis, which takes them as A and B.
+  MimesisShare:
+    type: app-extension
+    platform: iOS
+    sources: [ShareExtension]
+    info:
+      path: ShareExtension/Info.plist
+      properties:
+        CFBundleDisplayName: Mimesis
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.share-services
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShareViewController
+          NSExtensionAttributes:
+            NSExtensionActivationRule:
+              NSExtensionActivationSupportsMovieWithMaxCount: 2
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.ljworkshop.mimesis.share
+        PRODUCT_NAME: MimesisShare
+        CODE_SIGN_ENTITLEMENTS: ShareExtension/MimesisShare.entitlements
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SKIP_INSTALL: YES

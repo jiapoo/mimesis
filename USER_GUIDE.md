@@ -365,7 +365,9 @@ When it's done, **Share or save** (Files, Photos, AirDrop, Messages…).
 
 ## Opening videos from Arete, Imago and other apps
 
-- **iPhone / iPad**: in any app (Arete, Imago, Files, Photos, Messages), **Share › Mimesis**.
+- **iPhone / iPad**: in any app (Arete, Imago, Photos, Files, Messages), tap **Share**, then **Mimesis** in the
+  row of apps (if it isn't there: **More**, and turn Mimesis on). Share one video, or two at once for A and B.
+  Mimesis opens with them.
 - **Mac**: right-click a video in Finder › **Open With › Mimesis**, or drop it on the Mimesis Dock icon.
 - **Arete (Mac)**: a video's menu, or the selection bar with one or two videos selected, › **Compare in
   Mimesis**.
