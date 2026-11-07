@@ -112,8 +112,9 @@ below 50 frames a second and slow motion will look jumpy. See [Filming tips](#fi
 - **One frame at a time**: the ◀▮ and ▮▶ buttons, or **drag sideways on the video** — about one frame
   per finger-width of movement — or drag the **frame ruler**.
 - **Jump**: drag along the progress bar.
-- **Speed**: the **1×** button at the bottom right opens a **vertical slider** (0.1× to 2×, in steps of 0.05×)
-  and a list of set speeds (2×, 1.5×, 1×, 0.75×, 0.5×, 0.25×, 0.1×). The button turns crimson when it isn't 1×.
+- **Speed**: the **1×** button at the bottom right opens Arete's **vertical slider**: 0.1× at the bottom to 2× at
+  the top, in steps of 0.1×, with notches at 0.1, 0.5, 1 (the longer one), 1.5 and 2×. The button turns crimson
+  when it isn't 1×.
 - **Sound**: off by default; turn it on in the clip's ⋯ menu.
 
 ---

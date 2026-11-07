@@ -290,8 +290,8 @@ struct Transport: View {
         comparison.linked ? comparison.linkedSpeed : Double(comparison.focused?.engine.playbackSpeed ?? 1)
     }
 
-    /// Playback speed: a small button showing it, which opens a vertical slider (0.1× to 2×, in steps
-    /// of 0.05×) and a few set speeds.
+    /// Playback speed: a small button showing it, which opens Arete's vertical slider (0.1× to 2×, in
+    /// steps of 0.1×).
     private var speedSlider: some View {
         Button { showingSpeed.toggle() } label: {
             Text(speedText(speed))
@@ -304,27 +304,9 @@ struct Transport: View {
         .buttonStyle(.plain)
         .help("Playback speed")
         .popover(isPresented: $showingSpeed, arrowEdge: .bottom) {
-            HStack(alignment: .center, spacing: 14) {
-                SlimSlider(value: Binding(get: { speed }, set: { setSpeed(max(0.1, ($0 * 20).rounded() / 20)) }),
-                           range: 0.1...2, vertical: true)
-                    .frame(height: 170)
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(speedText(speed))
-                        .font(.system(size: 17, weight: .bold).monospacedDigit())
-                        .padding(.bottom, 4)
-                    ForEach([2.0, 1.5, 1.0, 0.75, 0.5, 0.25, 0.1], id: \.self) { value in
-                        Button { setSpeed(value) } label: {
-                            Text(speedText(value))
-                                .font(.system(size: 12, weight: .semibold).monospacedDigit())
-                                .foregroundStyle(abs(speed - value) < 0.001 ? Theme.accent : Color.primary)
-                                .frame(width: 44, height: 20, alignment: .leading)
-                                .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
-            .padding(14)
+            // Arete's own speed slider: the speed on top, notches at 0.1, 0.5, 1, 1.5 and 2×.
+            VerticalSpeedSlider(speed: Float(speed), accent: Theme.accent) { setSpeed(Double($0)) }
+                .padding(6)
             .presentationCompactAdaptation(.popover)
         }
     }
