@@ -91,7 +91,8 @@ below 50 frames a second and slow motion will look jumpy. See [Filming tips](#fi
   see-through, and the **bar** of buttons under them is solid. It's the same on Mac, iPad and iPhone; the
   iPhone's bar also holds the top bar's controls (the **layout** button and **⋯**).
 - **Top bar**: **A | B / A / B / Overlay**, and **⋯** (Save comparison, Saved comparisons, Library, Court mode,
-  Export video).
+  Export video). On the Mac they sit in the window's title bar, level with the close, minimise and zoom
+  buttons.
 
 **Which clip do the panel and play button move?** When the clips are linked: both. Otherwise:
 

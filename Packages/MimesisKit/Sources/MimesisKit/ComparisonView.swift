@@ -37,7 +37,9 @@ public struct ComparisonView: View {
     public var body: some View {
         VStack(spacing: 0) {
             // A phone on its side needs all its height for the clips: the dock carries the top bar's controls.
+            #if os(iOS)
             if !(phone && anyLoaded) { topBar }
+            #endif
             if !anyLoaded {
                 WelcomeView(
                     onOpenFile: { importing = $0 },
@@ -106,6 +108,25 @@ public struct ComparisonView: View {
             Button("Clip B") { place(in: 1) }
             Button("Cancel", role: .cancel) { incoming.removeAll() }
         }
+        #if os(macOS)
+        // On the Mac the top bar is the window's own title bar: no title, the layout in the middle and
+        // the menu on the right, level with the close, minimise and zoom buttons.
+        .toolbar {
+            // Our own capsules, without the glass the system would put around them.
+            if #available(macOS 26, *) {
+                ToolbarItem(placement: .principal) { if anyLoaded { layoutSwitch } }
+                    .sharedBackgroundVisibility(.hidden)
+                ToolbarItem(placement: .primaryAction) { menu }
+                    .sharedBackgroundVisibility(.hidden)
+            } else {
+                ToolbarItem(placement: .principal) { if anyLoaded { layoutSwitch } }
+                ToolbarItem(placement: .primaryAction) { menu }
+            }
+        }
+        .toolbar(removing: .title)
+        .toolbarBackground(Theme.canvas, for: .windowToolbar)
+        .toolbarBackgroundVisibility(.visible, for: .windowToolbar)
+        #endif
         .environment(library)
         .background(Theme.canvas.ignoresSafeArea())
         .preferredColorScheme(.dark)
