@@ -86,8 +86,10 @@ struct ClipPane: View {
             HStack(spacing: 8) {
                 Button(action: onOpenFile) { Label("Files", systemImage: "folder") }
                     .buttonStyle(ChipStyle(active: true))
+                    .help("Open a video file as clip \(letter)")
                 Button(action: onOpenPhotos) { Label("Photos", systemImage: "photo.on.rectangle") }
                     .buttonStyle(ChipStyle())
+                    .help("Pick a video from Photos as clip \(letter)")
             }
             Text("or drop a video here").font(.system(size: 12)).foregroundStyle(Theme.secondary.opacity(0.7))
             Label("Film in Slo-mo (240 fps), or at least 60 fps, for smooth slow motion", systemImage: "lightbulb")
@@ -262,6 +264,7 @@ struct ClipPane: View {
             .buttonStyle(.plain)
             .menuIndicator(.hidden)
             .fixedSize()
+            .help("More for clip \(letter): sound, open another video, clear the trim or sync points, StroMotion, close")
         }
         .fixedSize()
     }

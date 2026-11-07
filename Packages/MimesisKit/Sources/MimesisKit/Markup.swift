@@ -118,6 +118,18 @@ enum Palette {
     static let green = Drawing.RGBA(0.33, 0.86, 0.45)
     static let black = Drawing.RGBA(0.08, 0.08, 0.09)
     static let all = [crimson, yellow, white, cyan, green, black]
+
+    static func name(of color: Drawing.RGBA) -> String {
+        switch color.solid {
+        case crimson: "Crimson"
+        case yellow: "Yellow"
+        case white: "White"
+        case cyan: "Cyan"
+        case green: "Green"
+        case black: "Black"
+        default: "Colour"
+        }
+    }
 }
 
 /// The drawing toolbar, after Photos' Markup: undo and redo; the pen, marker, pencil and eraser as pen
@@ -175,6 +187,7 @@ struct MarkupTools: View {
             .help(pen.always ? "New drawings show on every frame" : "New drawings show on this frame only")
             Button("Done", action: onDone)
                 .buttonStyle(ChipStyle(active: true))
+                .help("Stop drawing (Esc)")
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 4)
@@ -253,6 +266,7 @@ struct MarkupTools: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .help(Palette.name(of: color))
     }
 
     /// Any colour: the system colour picker (on iPhone and iPad the same as Photos'), behind a colour wheel.
@@ -330,6 +344,7 @@ private struct ToolOptions: View {
                                 .contentShape(Circle())
                         }
                         .buttonStyle(.plain)
+                        .help("Width \(width.formatted()) pt")
                     }
                 }
                 VStack(alignment: .leading, spacing: 4) {

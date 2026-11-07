@@ -320,7 +320,7 @@ public struct ComparisonView: View {
                     .buttonStyle(.plain)
                     .disabled(unavailable)
                     .opacity(unavailable ? 0.4 : 1)
-                    .help(layout == .overlay ? "One clip over the other, see-through: open both clips first" : "")
+                    .help(layout.explanation)
                 }
             }
             .padding(3)
@@ -375,6 +375,8 @@ public struct ComparisonView: View {
             .buttonStyle(.plain)
             .menuIndicator(.hidden)
             .fixedSize()
+            .help(phone && anyLoaded ? "Show A | B, A, B or Overlay; save, saved comparisons, library, court mode, export"
+                  : "Save, saved comparisons, library, court mode, export")
     }
 
     /// Videos dropped on the window: two fill A and B; one goes on the side it was dropped on, or, with
@@ -589,6 +591,16 @@ extension Comparison.Layout {
         case .left: "A"
         case .right: "B"
         case .overlay: "Overlay"
+        }
+    }
+
+    /// What it shows, for its button's tooltip.
+    var explanation: String {
+        switch self {
+        case .both: "Both clips, side by side"
+        case .left: "Clip A only, the whole window"
+        case .right: "Clip B only, the whole window"
+        case .overlay: "One clip over the other, see-through (needs both clips)"
         }
     }
 

@@ -116,6 +116,7 @@ struct Transport: View {
         HStack(spacing: 2) {
             option("A", on: !comparison.linked && comparison.focused === comparison.clips[0],
                    shown: both || comparison.clips[0].isLoaded) { select(0) }
+                .help("Clip A: the tools, timeline and play button are for A (Tab)")
             if both {
                 Button { comparison.linked = true } label: {
                     HStack(spacing: 3) {
@@ -135,6 +136,7 @@ struct Transport: View {
             }
             option("B", on: !comparison.linked && comparison.focused === comparison.clips[1],
                    shown: both || comparison.clips[1].isLoaded) { select(1) }
+                .help("Clip B: the tools, timeline and play button are for B (Tab)")
         }
         .padding(2)
         .background(Theme.raised, in: Capsule())

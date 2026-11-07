@@ -68,12 +68,14 @@ struct CourtView: View {
             }
             .buttonStyle(.plain)
             .keyboardShortcut(.cancelAction)
+            .help("Close court mode (Esc)")
             Spacer()
             Text(camera.delay == 0 ? "Live" : "\(Int(camera.delay)) s behind")
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(camera.delay == 0 ? Color.white : Theme.onAccent)
                 .padding(.horizontal, 14).frame(height: 32)
                 .background(camera.delay == 0 ? Color.black.opacity(0.5) : Theme.accent, in: Capsule())
+                .help("How far behind the camera you're watching")
             Spacer()
             Color.clear.frame(width: 36, height: 36)
         }

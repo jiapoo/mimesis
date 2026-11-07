@@ -5,6 +5,11 @@ import SwiftUI
 struct MimesisMacApp: App {
     @NSApplicationDelegateAdaptor private var delegate: AppDelegate
 
+    init() {
+        // Each button's explanation shows after 0.4 s of hovering, not the Mac's usual 1.5 s or so.
+        UserDefaults.standard.register(defaults: ["NSInitialToolTipDelay": 400])
+    }
+
     var body: some Scene {
         Window("Mimesis", id: "main") {
             // Two clips side by side; the masking test is in its toolbar.
