@@ -14,6 +14,7 @@ struct Transport: View {
     /// More controls at the end of the bar (an iPhone's layout and menu: it has no top bar).
     var extras: AnyView?
     @Environment(Library.self) private var library
+    @State private var showingSpeed = false
 
     /// An iPhone: everything a little smaller, so the videos keep the height.
     private var compact: Bool {
@@ -289,25 +290,43 @@ struct Transport: View {
         comparison.linked ? comparison.linkedSpeed : Double(comparison.focused?.engine.playbackSpeed ?? 1)
     }
 
-    /// Playback speed, as a slider (0.1× to 2×, in steps of 0.05×); tap the reading for 1×.
+    /// Playback speed: a small button showing it, which opens a vertical slider (0.1× to 2×, in steps
+    /// of 0.05×) and a few set speeds.
     private var speedSlider: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "gauge.with.dots.needle.33percent")
-                .font(.system(size: 12))
-                .foregroundStyle(Theme.secondary)
-            SlimSlider(value: Binding(get: { speed }, set: { setSpeed(max(0.1, ($0 * 20).rounded() / 20)) }), range: 0.1...2)
-                .frame(width: compact ? 70 : 110)
-            Button { setSpeed(1) } label: {
-                Text(speedText(speed))
-                    .font(.system(size: 12, weight: .semibold).monospacedDigit())
-                    .foregroundStyle(abs(speed - 1) < 0.001 ? Color.white : Theme.accent)
-                    .frame(width: 38, alignment: .leading)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .help("Tap for 1×")
+        Button { showingSpeed.toggle() } label: {
+            Text(speedText(speed))
+                .font(.system(size: 13, weight: .semibold).monospacedDigit())
+                .foregroundStyle(abs(speed - 1) < 0.001 ? Color.white : Theme.onAccent)
+                .frame(minWidth: 44, minHeight: compact ? 30 : 32)
+                .background(abs(speed - 1) < 0.001 ? Theme.raised : Theme.accent, in: Capsule())
+                .contentShape(Capsule())
         }
+        .buttonStyle(.plain)
         .help("Playback speed")
+        .popover(isPresented: $showingSpeed, arrowEdge: .bottom) {
+            HStack(alignment: .center, spacing: 14) {
+                SlimSlider(value: Binding(get: { speed }, set: { setSpeed(max(0.1, ($0 * 20).rounded() / 20)) }),
+                           range: 0.1...2, vertical: true)
+                    .frame(height: 170)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(speedText(speed))
+                        .font(.system(size: 17, weight: .bold).monospacedDigit())
+                        .padding(.bottom, 4)
+                    ForEach([2.0, 1.5, 1.0, 0.75, 0.5, 0.25, 0.1], id: \.self) { value in
+                        Button { setSpeed(value) } label: {
+                            Text(speedText(value))
+                                .font(.system(size: 12, weight: .semibold).monospacedDigit())
+                                .foregroundStyle(abs(speed - value) < 0.001 ? Theme.accent : Color.primary)
+                                .frame(width: 44, height: 20, alignment: .leading)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .padding(14)
+            .presentationCompactAdaptation(.popover)
+        }
     }
 
     private func setSpeed(_ value: Double) {

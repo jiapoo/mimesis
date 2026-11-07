@@ -86,7 +86,7 @@ below 50 frames a second and slow motion will look jumpy. See [Filming tips](#fi
       **◆ sync**, **🏷 tag**, its **speed**;
     - middle, **frame back / play / frame forward**;
     - right, **✏ Draw on both** (when linked), **↶ Undo** (and ↷ Redo once there's something to redo), the
-      playback **speed** slider.
+      playback **speed** (tap it for a slider).
 - As in Arete's player, the **timeline** runs across the bottom of the videos from edge to edge,
   see-through, and the **bar** of buttons under them is solid. It's the same on Mac, iPad and iPhone; the
   iPhone's bar also holds the top bar's controls (the **layout** button and **⋯**).
@@ -112,7 +112,8 @@ below 50 frames a second and slow motion will look jumpy. See [Filming tips](#fi
 - **One frame at a time**: the ◀▮ and ▮▶ buttons, or **drag sideways on the video** — about one frame
   per finger-width of movement — or drag the **frame ruler**.
 - **Jump**: drag along the progress bar.
-- **Speed**: the **slider** at the bottom right (0.1× to 2×, in steps of 0.05×); tap the reading for 1×.
+- **Speed**: the **1×** button at the bottom right opens a **vertical slider** (0.1× to 2×, in steps of 0.05×)
+  and a list of set speeds (2×, 1.5×, 1×, 0.75×, 0.5×, 0.25×, 0.1×). The button turns crimson when it isn't 1×.
 - **Sound**: off by default; turn it on in the clip's ⋯ menu.
 
 ---
