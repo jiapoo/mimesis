@@ -1,76 +1,151 @@
 import AreteMedia
 import SwiftUI
 
-/// The floating panel at the bottom: Arete's two timelines (a progress bar for the whole clip, and a
-/// frame ruler for exact frames), then link, frame steps, play and speed.
-/// Linked, it moves both clips, the ruler counting clip A's frames; otherwise the selected clip.
+/// The panel at the bottom, laid out as in Arete's player: the timeline on top (the time, a progress
+/// bar for the whole clip, and the frame ruler), and every button in one row underneath: the clip's
+/// own tools on the left, play in the middle, link, draw, undo and speed on the right.
+/// Floating and see-through over the videos (Mac, iPad); docked under them on an iPhone.
 struct Transport: View {
     let comparison: Comparison
-    /// Docked under the clips on a phone held sideways: one slim ruler and one row, always all there,
-    /// so the clips never jump in size when playback starts.
+    /// Under the clips instead of over them (an iPhone): the same panel, on the canvas.
     var docked = false
-    /// More controls at the end of the docked row (the layout and the app's menu, with no top bar there).
+    /// More controls at the end of the row (the layout and the app's menu, with no top bar there).
     var extras: AnyView?
     @Environment(Library.self) private var library
 
+    private let shape = RoundedRectangle(cornerRadius: 20, style: .continuous)
+
     var body: some View {
-        if docked { dock } else { panel }
+        VStack(spacing: docked ? 6 : 8) {
+            timeline
+            buttons
+        }
+        .padding(.horizontal, 12)
+        .padding(.top, docked ? 6 : 10)
+        .padding(.bottom, docked ? 4 : 10)
+        .background {
+            if docked {
+                Theme.canvas
+            } else {
+                // See-through: the videos show under it.
+                shape.fill(Color.black.opacity(0.22))
+                    .background(.ultraThinMaterial.opacity(0.35), in: shape)
+                    .overlay(shape.strokeBorder(Color.white.opacity(0.1)))
+            }
+        }
+        .overlay(alignment: .top) {
+            if docked { Rectangle().fill(Theme.line).frame(height: 1) }
+        }
+        .frame(maxWidth: docked ? .infinity : 960)
+        .disabled(comparison.focused == nil)
     }
 
-    /// The phone's dock: the ruler, then the clip's tools on the left and playback on the right.
-    private var dock: some View {
-        VStack(spacing: 4) {
-            marks
-            ruler(compact: true)
-            HStack(spacing: 8) {
-                focusPicker
-                if let clip = comparison.focused {
-                    ClipTools(clip: clip, linked: comparison.linked)
-                } else {
-                    Spacer(minLength: 0)
+    // MARK: - The timeline
+
+    @ViewBuilder private var timeline: some View {
+        if comparison.watchingBoth && !comparison.linked {
+            // Watching both, not linked: a slim timeline for each.
+            VStack(spacing: 4) {
+                ForEach(0..<2, id: \.self) { index in
+                    if comparison.clips[index].isLoaded { mini(comparison.clips[index], letter: index == 0 ? "A" : "B") }
                 }
-                Divider().frame(height: 22).overlay(Color.white.opacity(0.15))
+            }
+        } else {
+            VStack(spacing: 2) {
+                marks
+                ruler(compact: docked)
+            }
+        }
+    }
+
+    private func mini(_ clip: Clip, letter: String) -> some View {
+        let engine = clip.engine
+        let trimmed = clip.trimStart > 0 || clip.trimEnd != nil
+        return HStack(spacing: 10) {
+            Text(letter)
+                .font(.system(size: 11, weight: .bold))
+                .frame(width: 20, height: 20)
+                .background(Color.white.opacity(0.18), in: Circle())
+            Timeline(
+                range: 0...max(0.01, engine.duration),
+                value: engine.currentTime,
+                highlight: trimmed ? clip.trimStart...clip.end : nil,
+                marker: clip.syncs.first,
+                onScrub: { t in
+                    if engine.isPlaying { engine.pause() }
+                    engine.seekFast(t)
+                },
+                onEnd: { t in Task { await engine.seekToTime(t) } })
+            Text(clock(engine.currentTime))
+                .font(.system(size: 11, weight: .medium).monospacedDigit())
+                .foregroundStyle(Theme.secondary)
+                .frame(width: 56, alignment: .trailing)
+        }
+        .foregroundStyle(.white)
+    }
+
+    // MARK: - The row of buttons
+
+    private var buttons: some View {
+        HStack(spacing: 8) {
+            // Left: which clip, and its own tools.
+            HStack(spacing: 6) {
+                focusPicker
+                if let clip = comparison.selected {
+                    ClipTools(clip: clip, linked: comparison.linked)
+                }
+            }
+            Spacer(minLength: 6)
+            // Middle: play.
+            HStack(spacing: 8) {
+                RoundButton(symbol: "backward.frame.fill", size: 32) { comparison.step(-1) }
+                    .help("One frame back (,)")
+                playButton(size: docked ? 40 : 44)
+                RoundButton(symbol: "forward.frame.fill", size: 32) { comparison.step(1) }
+                    .help("One frame forward (.)")
+            }
+            Spacer(minLength: 6)
+            // Right: link, draw on both, undo, speed.
+            HStack(spacing: 8) {
                 RoundButton(symbol: "link", active: comparison.linked, size: 32) {
                     comparison.linked.toggle()
                 }
                 .disabled(!comparison.canLink)
                 .opacity(comparison.canLink ? 1 : 0.4)
-                RoundButton(symbol: "backward.frame.fill", size: 32) { comparison.step(-1) }
-                playButton(size: 40)
-                RoundButton(symbol: "forward.frame.fill", size: 32) { comparison.step(1) }
+                .help("Link: play and step both clips together, lined up at their sync points (L)")
+                if comparison.drawsTogether {
+                    RoundButton(symbol: "pencil.tip", active: comparison.drawing == .both, size: 32) {
+                        comparison.toggleDrawingBoth()
+                    }
+                    .help("Draw on both clips")
+                }
+                RoundButton(symbol: "arrow.uturn.backward", size: 32) { comparison.history.undo(comparison) }
+                    .disabled(!comparison.history.canUndo)
+                    .opacity(comparison.history.canUndo ? 1 : 0.4)
+                    .help("Undo (⌘Z)")
+                if comparison.history.canRedo {
+                    RoundButton(symbol: "arrow.uturn.forward", size: 32) { comparison.history.redo(comparison) }
+                        .help("Redo (⇧⌘Z)")
+                }
                 speedMenu
                 if let extras { extras }
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.top, 6)
-        .padding(.bottom, 4)
-        .background(Theme.canvas)
-        .overlay(alignment: .top) { Rectangle().fill(Theme.line).frame(height: 1) }
-        .disabled(comparison.focused == nil)
     }
 
-    /// Which clip the controls drive: A or B. Tapping a clip does the same.
+    /// Which clip the controls drive: A, B, or both (A+B: nothing dimmed, play and step move both).
+    /// Tapping a clip picks it too.
     @ViewBuilder private var focusPicker: some View {
-        let both = comparison.clips.allSatisfy(\.isLoaded)
+        let both = comparison.canLink
         HStack(spacing: 2) {
-            ForEach(0..<2, id: \.self) { index in
-                let clip = comparison.clips[index]
-                let on = comparison.focused === clip
-                if both || on {
-                    Button {
-                        select(index)
-                    } label: {
-                        Text(index == 0 ? "A" : "B")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(on ? Theme.onAccent : Color.white.opacity(0.7))
-                            .frame(width: 26, height: 26)
-                            .background(on ? Theme.accent : .clear, in: Circle())
-                            .contentShape(Circle())
-                    }
-                    .buttonStyle(.plain)
-                }
+            option("A", on: !comparison.watchingBoth && comparison.focused === comparison.clips[0],
+                   shown: both || comparison.clips[0].isLoaded) { select(0) }
+            if both {
+                option("A+B", on: comparison.watchingBoth, shown: true) { comparison.watchingBoth = true }
+                    .help("Both clips: neither dimmed; play and the frame steps move both (Esc)")
             }
+            option("B", on: !comparison.watchingBoth && comparison.focused === comparison.clips[1],
+                   shown: both || comparison.clips[1].isLoaded) { select(1) }
         }
         .padding(2)
         .background(Theme.raised, in: Capsule())
@@ -78,11 +153,28 @@ struct Transport: View {
         .help("Which clip the tools and timeline are for (Tab)")
     }
 
+    @ViewBuilder
+    private func option(_ title: String, on: Bool, shown: Bool, action: @escaping () -> Void) -> some View {
+        if shown {
+            Button(action: action) {
+                Text(title)
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(on ? Theme.onAccent : Color.white.opacity(0.7))
+                    .padding(.horizontal, title.count > 1 ? 8 : 0)
+                    .frame(minWidth: 26, minHeight: 26)
+                    .background(on ? Theme.accent : .clear, in: Capsule())
+                    .contentShape(Capsule())
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
     private func select(_ index: Int) {
         switch comparison.layout {
         case .left, .right: comparison.layout = index == 0 ? .left : .right
         default: comparison.focus = index
         }
+        comparison.watchingBoth = false
     }
 
     private func playButton(size: CGFloat) -> some View {
@@ -96,56 +188,6 @@ struct Transport: View {
         }
         .buttonStyle(.plain)
         .help("Play / pause (Space)")
-    }
-
-    @ViewBuilder private var panel: some View {
-        // While playing, only the play controls: the tools and timelines come back on pause.
-        let full = !comparison.anyPlaying
-        VStack(spacing: 6) {
-            if full, let clip = comparison.focused {
-                HStack(spacing: 8) {
-                    focusPicker
-                    ClipTools(clip: clip, linked: comparison.linked)
-                }
-            }
-            if full {
-                marks
-                ruler(compact: false)
-            }
-            HStack(spacing: 12) {
-                RoundButton(symbol: "link", active: comparison.linked, size: 34) {
-                    comparison.linked.toggle()
-                }
-                .disabled(!comparison.canLink)
-                .opacity(comparison.canLink ? 1 : 0.4)
-                .help("Link: play and step both clips together, lined up at their sync points (L)")
-
-                Text(status)
-                    .font(.system(size: 12, weight: .medium).monospacedDigit())
-                    .foregroundStyle(Theme.secondary)
-                    .lineLimit(1)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                HStack(spacing: 8) {
-                    RoundButton(symbol: "backward.frame.fill", size: 34) { comparison.step(-1) }
-                        .help("One frame back (,)")
-                    playButton(size: 48)
-                    RoundButton(symbol: "forward.frame.fill", size: 34) { comparison.step(1) }
-                        .help("One frame forward (.)")
-                }
-
-                speedMenu
-                    .frame(maxWidth: .infinity, alignment: .trailing)
-            }
-        }
-        .padding(12)
-        // See-through, floating over the videos.
-        .background(Color.black.opacity(0.38), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .background(.ultraThinMaterial.opacity(0.55), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(Color.white.opacity(0.1)))
-        .frame(maxWidth: 900)
-        .animation(.easeOut(duration: 0.2), value: full)
-        .disabled(comparison.focused == nil)
     }
 
     /// The clip on the ruler and its marks: always the focused one, linked or not.
@@ -245,23 +287,6 @@ struct Transport: View {
         }
     }
 
-    /// Which clip the controls move, and where the linked timeline is against the sync point.
-    private var status: String {
-        if comparison.linked {
-            var parts = ["A + B", "\(seconds(comparison.position)) from sync"]
-            if let section = comparison.section {
-                parts.append("phase \(section.index) of \(section.count)")
-            }
-            let pace = comparison.sectionSpeed
-            if abs(pace - 1) > 0.005 { parts.append("B at \(speedText((pace * 100).rounded() / 100))") }
-            return parts.joined(separator: "  ·  ")
-        }
-        guard let clip = comparison.focused else { return "" }
-        let letter = clip === comparison.clips[0] ? "A" : "B"
-        guard let first = clip.syncs.first else { return letter }
-        return "\(letter)  ·  \(seconds(clip.engine.currentTime - first)) from sync"
-    }
-
     private var speed: Double {
         comparison.linked ? comparison.linkedSpeed : Double(comparison.focused?.engine.playbackSpeed ?? 1)
     }
@@ -319,7 +344,7 @@ private func areteRuler(
         showProgressBar: true,
         cornerRadius: 12,
         majorColor: .white, mediumColor: .white.opacity(0.88), minorColor: .white.opacity(0.72),
-        backgroundFill: .black.opacity(0.42),
+        backgroundFill: .black.opacity(0.28),
         timeCurrentColor: Theme.accent, progressFillColor: Theme.accent.opacity(0.45),
         progressDotColor: Theme.accent, accent: Theme.accent,
         onDraggingChanged: onDraggingChanged)

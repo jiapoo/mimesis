@@ -27,6 +27,7 @@ public final class Clip {
 
     public init() {
         engine.isMuted = true
+        watchPlaying()
     }
 
     public var isLoaded: Bool { url != nil }
@@ -81,6 +82,9 @@ public final class Clip {
         trimEnd = nil
     }
 
+    public func clearTrimStart() { trimStart = 0 }
+    public func clearTrimEnd() { trimEnd = nil }
+
     /// Adds a sync point at the playhead, or removes the one that's there.
     public func toggleSync() {
         if let here = syncHere {
@@ -112,8 +116,39 @@ public final class Clip {
         pan = .zero
     }
 
+    /// The trim holds only while playing (from In to Out, looping). Paused, the playhead goes anywhere,
+    /// so In and Out can be moved: the engine would otherwise keep every seek and step inside them.
     private func applyBounds() {
+        guard engine.isPlaying else { return }
         engine.setPlaybackBounds(trimStart...max(trimStart, end))
+    }
+
+    private func watchPlaying() {
+        withObservationTracking {
+            _ = engine.isPlaying
+        } onChange: { [weak self] in
+            Task { @MainActor in
+                guard let self else { return }
+                self.playingChanged()
+                self.watchPlaying()
+            }
+        }
+    }
+
+    private func playingChanged() {
+        if engine.isPlaying {
+            applyBounds()
+            // Played from outside the trim: from In.
+            if engine.currentTime < trimStart - 0.05 || engine.currentTime > end + 0.05 {
+                Task { await engine.seekToTime(trimStart) }
+            }
+        } else {
+            // Not straight away: a loop pauses for a moment at Out on its way back to In.
+            Task {
+                try? await Task.sleep(for: .milliseconds(400))
+                if !engine.isPlaying { engine.setPlaybackBounds(nil) }
+            }
+        }
     }
 }
 
@@ -137,7 +172,50 @@ public final class Comparison {
     public let clips = [Clip(), Clip()]
     public var layout: Layout = .both
     /// Which pane the keys and the shared controls act on while not linked.
-    public var focus = 0
+    public var focus = 0 {
+        didSet { watchingBoth = false }
+    }
+    /// Neither clip selected: both shown alike (nothing dimmed), and play, pause and the frame steps
+    /// move both. Choose "A+B" in the panel, or press Esc on the Mac; tap a clip to select it again.
+    public var watchingBoth = false {
+        didSet { if watchingBoth, drawing != nil, drawing != .both { drawing = nil } }
+    }
+
+    /// The clip picked out on screen (ringed, its own buttons showing), unless both are being watched.
+    public var selected: Clip? { watchingBoth ? nil : focused }
+
+    // MARK: Drawing
+
+    public enum DrawTarget: Equatable {
+        case clip(Int)
+        /// Both clips at once (linked, or both watched), from the one Draw button in the panel.
+        case both
+    }
+
+    /// What's being drawn on, if anything.
+    public var drawing: DrawTarget?
+    let pen = Pen()
+    let history = EditHistory()
+
+    public func isDrawing(on clip: Clip) -> Bool {
+        switch drawing {
+        case .both: true
+        case .clip(let index): clips[index] === clip
+        case nil: false
+        }
+    }
+
+    /// One Draw for both clips: while linked, or watching both.
+    public var drawsTogether: Bool { (linked || watchingBoth) && canLink }
+
+    public func toggleDrawingBoth() {
+        if drawing == .both {
+            drawing = nil
+        } else {
+            linked ? pause() : clips.forEach { $0.engine.pause() }
+            drawing = .both
+        }
+    }
 
     // MARK: Overlay
 
@@ -169,6 +247,7 @@ public final class Comparison {
             }
             stopTicker()
             isPlaying = false
+            drawing = nil
             if linked { Task { await seek(to: position) } }
         }
     }
@@ -298,6 +377,14 @@ public final class Comparison {
     /// Frame steps: both clips while linked, else the focused one.
     public func step(_ frames: Int) {
         guard linked else {
+            if watchingBoth {
+                for clip in clips where clip.isLoaded {
+                    clip.engine.pause()
+                    let target = clip.engine.currentTime + Double(frames) * clip.frameLength
+                    Task { await clip.engine.seekToTime(target) }
+                }
+                return
+            }
             guard let clip = focused else { return }
             clip.engine.pause()
             let target = clip.engine.currentTime + Double(frames) * clip.frameLength
@@ -314,6 +401,14 @@ public final class Comparison {
     public func togglePlay() {
         if linked {
             isPlaying ? pause() : play()
+        } else if watchingBoth {
+            // Both, each from where it is, each looping on its own.
+            let loaded = clips.filter(\.isLoaded)
+            let playing = loaded.contains { $0.engine.isPlaying }
+            for clip in loaded {
+                clip.engine.loopPlayback = true
+                playing ? clip.engine.pause() : clip.engine.play()
+            }
         } else if let clip = focused {
             // The focused clip only: the other keeps doing what it was doing.
             clip.engine.loopPlayback = true
@@ -321,9 +416,12 @@ public final class Comparison {
         }
     }
 
-    /// Playing: both while linked, else the focused clip (what the play button shows).
+    /// Playing: both while linked, either while watching both, else the focused clip (what the play
+    /// button shows).
     public var anyPlaying: Bool {
-        linked ? isPlaying : focused?.engine.isPlaying ?? false
+        if linked { return isPlaying }
+        if watchingBoth { return clips.contains { $0.engine.isPlaying } }
+        return focused?.engine.isPlaying ?? false
     }
 
     public func play() {

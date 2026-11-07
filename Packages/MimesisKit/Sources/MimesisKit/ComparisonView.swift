@@ -140,6 +140,11 @@ public struct ComparisonView: View {
             if let sync = LibrarySync() { library.startSync(sync) }
         }
         // Remember the comparison a second after it last changed, and when the app goes to the background.
+        // Undo: the edits are noted a moment after they stop changing (one step for a whole drag).
+        .task(id: snapshot) {
+            try? await Task.sleep(for: .milliseconds(350))
+            if !Task.isCancelled { comparison.history.record(comparison) }
+        }
         .task(id: snapshot) {
             // Every clip opened goes into the library.
             for url in comparison.clips.compactMap(\.url) { library.record(url) }
@@ -473,9 +478,19 @@ public struct ComparisonView: View {
             key("s") { if !comparison.linked { comparison.focused?.toggleSync() } }
             key("l") { if comparison.canLink { comparison.linked.toggle() } }
             key("\t") { switchFocus() }
+            // Esc: stop drawing; else watch both clips (neither dimmed).
+            key(.escape) {
+                if comparison.drawing != nil {
+                    comparison.drawing = nil
+                } else if comparison.canLink, comparison.layout == .both || comparison.layout == .overlay {
+                    comparison.watchingBoth = true
+                }
+            }
+            key("z", [.command]) { comparison.history.undo(comparison) }
+            key("z", [.command, .shift]) { comparison.history.redo(comparison) }
         }
         .hidden()
-        if comparison.linked {
+        if comparison.linked || comparison.watchingBoth {
             Group {
                 key(.space) { comparison.togglePlay() }
                 key(",") { comparison.step(-1) }
@@ -485,7 +500,7 @@ public struct ComparisonView: View {
                 key(.home) { comparison.pause(); Task { await comparison.seek(to: comparison.range.lowerBound) } }
             }
             .hidden()
-            .id("linked")
+            .id(comparison.linked ? "linked" : "both")
         } else if let clip = comparison.focused {
             // A fresh set for each clip, so the keys never drive the one focused before.
             MovistKeys(engine: clip.engine)
@@ -511,19 +526,40 @@ public struct ComparisonView: View {
                     clip: comparison.clips[index],
                     letter: index == 0 ? "A" : "B",
                     linked: comparison.linked,
-                    focused: comparison.focused === comparison.clips[index],
-                    showsFocus: paneIndices.count == 2,
+                    focused: comparison.selected === comparison.clips[index],
+                    showsFocus: paneIndices.count == 2 && !comparison.watchingBoth,
                     onFocus: { comparison.focus = index },
                     onOpenFile: { importing = index },
                     onOpenPhotos: { photoTarget = index },
                     onDropped: { urls in dropped(urls, on: index) },
                     onJog: { frames in
-                        if !comparison.linked { comparison.focus = index }
+                        if !comparison.linked && !comparison.watchingBoth { comparison.focus = index }
                         comparison.step(frames)
+                    },
+                    drawing: comparison.isDrawing(on: comparison.clips[index]),
+                    pen: comparison.pen,
+                    drawsTogether: comparison.drawsTogether,
+                    onDraw: {
+                        comparison.drawing = comparison.drawing == .clip(index) ? nil : .clip(index)
                     })
             }
         }
         .background(Color.white.opacity(0.08))
+        // The drawing tools, over the clips (one clip's, or both at once).
+        .overlay(alignment: .top) {
+            if let target = comparison.drawing {
+                DrawingTools(
+                    clips: target == .both ? comparison.clips.filter(\.isLoaded)
+                        : [comparison.clips[target == .clip(1) ? 1 : 0]],
+                    pen: comparison.pen,
+                    onUndo: { comparison.history.undo(comparison) },
+                    canUndo: comparison.history.canUndo,
+                    onDone: { comparison.drawing = nil })
+                .padding(.top, 48)
+                .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .animation(.easeOut(duration: 0.18), value: comparison.drawing)
     }
 
     /// The transport, with the tag reel's bar over it while a reel plays.
@@ -546,8 +582,8 @@ public struct ComparisonView: View {
         comparison.focus = 1 - comparison.focus
     }
 
-    private func key(_ k: KeyEquivalent, action: @escaping () -> Void) -> some View {
-        Button("", action: action).keyboardShortcut(k, modifiers: [])
+    private func key(_ k: KeyEquivalent, _ modifiers: EventModifiers = [], action: @escaping () -> Void) -> some View {
+        Button("", action: action).keyboardShortcut(k, modifiers: modifiers)
     }
 }
 

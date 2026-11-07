@@ -50,6 +50,24 @@ public struct Drawing: Codable, Identifiable, Hashable {
     /// Shown on every frame, not just its own.
     public var always: Bool
     public var ink: Ink
+    /// The pen's size; nil in drawings made before there were sizes (medium).
+    public var size: Size?
+
+    public enum Size: String, Codable, CaseIterable, Identifiable {
+        case thin, medium, thick
+        public var id: Self { self }
+        /// Against the medium pen.
+        var scale: CGFloat {
+            switch self {
+            case .thin: 0.6
+            case .medium: 1
+            case .thick: 1.8
+            }
+        }
+        var title: String { rawValue.capitalized }
+    }
+
+    var penSize: Size { size ?? .medium }
 }
 
 extension Clip {
@@ -64,9 +82,7 @@ extension Clip {
 struct DrawingLayer: View {
     let clip: Clip
     let editing: Bool
-    let tool: Drawing.Kind
-    let ink: Drawing.Ink
-    let always: Bool
+    let pen: Pen
 
     @State private var draft: Drawing?
     @State private var moving: (id: UUID, index: Int)?
@@ -123,11 +139,12 @@ struct DrawingLayer: View {
                 }
             }
             let start = toVideo(drag.startLocation, frame)
-            draft = Drawing(kind: tool, points: [start, start], time: clip.engine.currentTime, always: always, ink: ink)
+            draft = Drawing(kind: pen.tool, points: [start, start], time: clip.engine.currentTime, always: pen.always, ink: pen.ink,
+                            size: pen.size)
         }
         guard var drawing = draft else { return }
         let start = toVideo(drag.startLocation, frame)
-        switch tool {
+        switch pen.tool {
         case .line, .arrow, .circle:
             drawing.points = [start, here]
         case .angle:
@@ -163,8 +180,9 @@ struct DrawingLayer: View {
 
     private func draw(_ drawing: Drawing, points: [CGPoint], in context: inout GraphicsContext) {
         let color = drawing.ink.color
-        let style = StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round)
-        let shadow = StrokeStyle(lineWidth: 5.5, lineCap: .round, lineJoin: .round)
+        let scale = drawing.penSize.scale
+        let style = StrokeStyle(lineWidth: 3 * scale, lineCap: .round, lineJoin: .round)
+        let shadow = StrokeStyle(lineWidth: 5.5 * scale, lineCap: .round, lineJoin: .round)
         var path = Path()
         switch drawing.kind {
         case .line:
@@ -238,50 +256,66 @@ struct DrawingLayer: View {
     }
 }
 
-/// The tools while drawing: shape, colour, this frame or every frame, undo, clear, done.
+/// The tools while drawing: shape, colour, pen size, this frame or every frame, undo, clear, done.
 struct DrawingTools: View {
-    let clip: Clip
-    @Binding var tool: Drawing.Kind
-    @Binding var ink: Drawing.Ink
-    @Binding var always: Bool
+    /// The clips being drawn on (both, when drawing on both at once).
+    let clips: [Clip]
+    let pen: Pen
+    let onUndo: () -> Void
+    let canUndo: Bool
     let onDone: () -> Void
 
     var body: some View {
+        @Bindable var pen = pen
         HStack(spacing: 6) {
             ForEach(Drawing.Kind.allCases) { kind in
-                RoundButton(symbol: kind.symbol, active: tool == kind) { tool = kind }
+                RoundButton(symbol: kind.symbol, active: pen.tool == kind) { pen.tool = kind }
                     .help(kind.title)
             }
             divider
             ForEach(Drawing.Ink.allCases) { option in
-                Button { ink = option } label: {
+                Button { pen.ink = option } label: {
                     Circle().fill(option.color)
                         .frame(width: 18, height: 18)
-                        .overlay(Circle().strokeBorder(.white, lineWidth: ink == option ? 2 : 0).padding(-3))
+                        .overlay(Circle().strokeBorder(.white, lineWidth: pen.ink == option ? 2 : 0).padding(-3))
                         .frame(width: 28, height: 30)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
             }
             divider
-            Button { always.toggle() } label: {
-                Text(always ? "Every frame" : "This frame")
+            // The pen's size: a dot as thick as the line it draws.
+            ForEach(Drawing.Size.allCases) { size in
+                Button { pen.size = size } label: {
+                    Circle().fill(Color.white)
+                        .frame(width: 5 * size.scale + 2, height: 5 * size.scale + 2)
+                        .frame(width: 26, height: 26)
+                        .background(pen.size == size ? Color.white.opacity(0.22) : .clear, in: Circle())
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .help("\(size.title) pen")
             }
-            .buttonStyle(ChipStyle(active: always))
+            divider
+            Button { pen.always.toggle() } label: {
+                Text(pen.always ? "Every frame" : "This frame")
+            }
+            .buttonStyle(ChipStyle(active: pen.always))
             .help("Show new drawings on this frame only, or on every frame")
             divider
-            RoundButton(symbol: "arrow.uturn.backward") { if !clip.drawings.isEmpty { clip.drawings.removeLast() } }
-                .help("Undo the last drawing")
-                .disabled(clip.drawings.isEmpty)
-            RoundButton(symbol: "trash") { clip.drawings.removeAll() }
-                .help("Clear every drawing on this clip")
-                .disabled(clip.drawings.isEmpty)
+            RoundButton(symbol: "arrow.uturn.backward", action: onUndo)
+                .help("Undo (⌘Z)")
+                .disabled(!canUndo)
+            RoundButton(symbol: "trash") { for clip in clips { clip.drawings.removeAll() } }
+                .help(clips.count > 1 ? "Clear every drawing on both clips" : "Clear every drawing on this clip")
+                .disabled(clips.allSatisfy(\.drawings.isEmpty))
             Button("Done", action: onDone)
                 .buttonStyle(ChipStyle(active: true))
         }
         .padding(6)
         .background(.ultraThinMaterial, in: Capsule())
         .overlay(Capsule().strokeBorder(Theme.line))
+        .fixedSize()
     }
 
     private var divider: some View {

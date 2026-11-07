@@ -18,6 +18,13 @@ struct ClipPane: View {
     let onDropped: ([URL]) -> Void
     /// A sideways drag on the video: move this many frames (both clips while linked).
     let onJog: (Int) -> Void
+    /// Drawing on this clip (alone, or with the other).
+    let drawing: Bool
+    let pen: Pen
+    /// One Draw for both clips, in the panel: no Draw button of its own.
+    let drawsTogether: Bool
+    /// Its own Draw button: start or stop drawing on this clip.
+    let onDraw: () -> Void
 
     /// How far a finger moves for one frame.
     static let pointsPerFrame: CGFloat = 12
@@ -25,10 +32,6 @@ struct ClipPane: View {
     @State private var zoomBase: CGFloat = 1
     @State private var panBase: CGSize = .zero
     @State private var jogged = 0
-    @State private var drawing = false
-    @State private var tool: Drawing.Kind = .line
-    @State private var ink: Drawing.Ink = .crimson
-    @State private var always = false
     @State private var stroMotion = false
     @State private var dropping = false
 
@@ -106,7 +109,7 @@ struct ClipPane: View {
             ZStack {
                 VideoPlayerRepresentable(player: clip.engine.player)
                 // In the same frame as the video, so drawings zoom and pan with it.
-                DrawingLayer(clip: clip, editing: drawing, tool: tool, ink: ink, always: always)
+                DrawingLayer(clip: clip, editing: drawing, pen: pen)
                 // On the Mac the video's own view takes the clicks; a clear layer over it gives them to
                 // the gestures below (focus on click, double-click to fit, drag to step or pan).
                 if !drawing {
@@ -152,25 +155,20 @@ struct ClipPane: View {
                 // (that wait went missing while the other clip played).
                 .simultaneousGesture(
                     DragGesture(minimumDistance: 0)
-                        .onChanged { _ in if !focused { onFocus() } })
+                        .onChanged { _ in if !focused && !drawing { onFocus() } })
         }
         .background(Color.black)
         .overlay(alignment: .top) {
             // The letter and time always; the clip's buttons only on the focused clip.
-            VStack(spacing: 8) {
-                HStack(alignment: .top, spacing: 8) {
-                    ViewThatFits(in: .horizontal) {
-                        badge(name: false, time: true)
-                        badge(name: false, time: false)
-                    }
-                    Spacer(minLength: 0)
-                    if focused || drawing {
-                        actions.transition(.opacity)
-                    }
+            // (The drawing tools float over both clips, from the comparison.)
+            HStack(alignment: .top, spacing: 8) {
+                ViewThatFits(in: .horizontal) {
+                    badge(name: false, time: true)
+                    badge(name: false, time: false)
                 }
-                if drawing {
-                    DrawingTools(clip: clip, tool: $tool, ink: $ink, always: $always) { drawing = false }
-                        .transition(.move(edge: .top).combined(with: .opacity))
+                Spacer(minLength: 0)
+                if focused && !drawing {
+                    actions.transition(.opacity)
                 }
             }
             .padding(10)
@@ -222,12 +220,14 @@ struct ClipPane: View {
                 RoundButton(symbol: "arrow.down.right.and.arrow.up.left", action: resetView)
                     .help("Fit the whole frame")
             }
-            RoundButton(symbol: "pencil.tip", active: drawing) {
-                onFocus()
-                clip.engine.pause()
-                drawing.toggle()
+            if !drawsTogether {
+                RoundButton(symbol: "pencil.tip", active: drawing) {
+                    onFocus()
+                    clip.engine.pause()
+                    onDraw()
+                }
+                .help("Draw lines, arrows, circles and angles on the frame")
             }
-            .help("Draw lines, arrows, circles and angles on the frame")
             RoundButton(symbol: "arrow.left.and.right.righttriangle.left.righttriangle.right",
                         active: clip.engine.mirroredHorizontally, action: clip.toggleMirror)
                 .help("Mirror side to side (⇧⌘H)")
@@ -285,7 +285,6 @@ struct ClipTools: View {
     var body: some View { tools }
 
     private func onFocus() {}
-
 
     /// Tag the moment at the playhead ("Forehand", "Fault"…), to find it again in the library.
     private var tagMenu: some View {
@@ -358,22 +357,54 @@ struct ClipTools: View {
             + "other clip's: the first lines the clips up, more make each phase in between line up too.")
     }
 
+    /// In or Out: tap to set it at the playhead; once set, its ✕ clears it.
+    private func trimButton(label: String, set: Bool, help: String,
+                            action: @escaping () -> Void, clear: @escaping () -> Void) -> some View {
+        HStack(spacing: 0) {
+            Button(action: action) { Text(label) }
+                .buttonStyle(.plain)
+                .padding(.leading, 10)
+                .padding(.trailing, set ? 4 : 10)
+                .frame(height: 28)
+                .contentShape(Rectangle())
+                .help(help)
+            if set {
+                Button(action: clear) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 9, weight: .bold))
+                        .frame(width: 18, height: 18)
+                        .background(Color.black.opacity(0.22), in: Circle())
+                        .frame(width: 24, height: 28)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .padding(.trailing, 3)
+                .help("Clear")
+            }
+        }
+        .font(.system(size: 12, weight: .semibold))
+        .lineLimit(1)
+        .foregroundStyle(set ? Theme.onAccent : Color.white)
+        .background(set ? Theme.accent : Color.white.opacity(0.08), in: Capsule())
+        .fixedSize()
+    }
+
     /// Trim, sync point and speed: what lines this clip up with the other.
     private var tools: some View {
         HStack(spacing: 6) {
-            // In / Out show where the trim is once it's set.
-            Button { onFocus(); clip.setTrimStart() } label: {
-                Text(clip.trimStart > 0 ? "In \(short(clip.trimStart))" : "In")
-            }
-            .buttonStyle(ChipStyle(active: clip.trimStart > 0))
-            .help("Start the clip at the playhead ([)")
-            Button { onFocus(); clip.setTrimEnd() } label: {
-                Text(clip.trimEnd.map { "Out \(short($0))" } ?? "Out")
-            }
-            .buttonStyle(ChipStyle(active: clip.trimEnd != nil))
-            .help("End the clip at the playhead (])")
-
-            Spacer(minLength: 6)
+            // In / Out show where the trim is once it's set, with an ✕ to take just that one away.
+            trimButton(
+                label: clip.trimStart > 0 ? "In \(short(clip.trimStart))" : "In",
+                set: clip.trimStart > 0,
+                help: "Start the clip at the playhead ([)",
+                action: clip.setTrimStart,
+                clear: clip.clearTrimStart)
+            trimButton(
+                label: clip.trimEnd.map { "Out \(short($0))" } ?? "Out",
+                set: clip.trimEnd != nil,
+                help: "End the clip at the playhead (])",
+                action: clip.setTrimEnd,
+                clear: clip.clearTrimEnd)
 
             ViewThatFits(in: .horizontal) {
                 syncButton(labelled: true)

@@ -77,24 +77,27 @@ below 50 frames a second and slow motion will look jumpy. See [Filming tips](#fi
 - **Each clip** shows only its letter and time (top left). The **focused** clip — the one you tapped last — has
   a thin crimson edge and its buttons top right: **✏ Draw**, **⇋ Mirror**, **⋯** (Sound, Open video, From Photos,
   Clear trim, Clear sync points, StroMotion, Close).
-- **The floating panel** at the bottom is see-through, over the videos. From the top:
-  - the focused clip's tools: the **A | B** switch (which clip the tools and timeline are for), **In / Out**
-    (trim), **Add sync**, **🏷 tag**, its **speed**;
-  - **marks**: crimson ◆ sync points, yellow 🏷 tags, white • drawings (tap one to jump there);
-  - the **progress bar** and the **frame ruler** (drag it sideways to move frame by frame);
-  - **🔗 Link**, a status line, **frame back / play / frame forward**, and the playback **speed**.
-- **While playing**, the panel shrinks to its last row so it covers less of the videos; pause to get the tools
-  and timelines back.
-- **On iPhone** the same controls sit in a **dock** under the clips that never changes size: a slim ruler, then
-  one row with **A | B**, the clip's tools, **🔗 Link**, frame back / play / frame forward, speed, the
-  **layout** button (A | B, A, B, Overlay) and **⋯**. There's no top bar, so the clips get the whole height.
+- **The panel** at the bottom is laid out like Arete's player, and is the same on Mac, iPad and iPhone:
+  - **on top, the timeline**: the time, the **progress bar**, the **frame ruler** (drag it sideways to move
+    frame by frame), and over it the **marks**: crimson ◆ sync points, yellow 🏷 tags, white • drawings (tap
+    one to jump there);
+  - **underneath, one row of buttons**:
+    - left, the clip's own tools: **A | A+B | B** (which clip they're for), **In / Out** (trim), **◆ sync**,
+      **🏷 tag**, the clip's **speed**;
+    - middle, **frame back / play / frame forward**;
+    - right, **🔗 Link**, **✏ Draw on both** (when linked or watching both), **↶ Undo** (and ↷ Redo once
+      there's something to redo), the playback **speed**.
+- On the Mac and iPad the panel floats over the videos, see-through. **On iPhone** it sits under the clips
+  and holds the top bar's controls too (the **layout** button and **⋯**), so the clips get the whole height.
 - **Top bar**: **A | B / A / B / Overlay**, and **⋯** (Save comparison, Saved comparisons, Library, Court mode,
   Export video).
 
 **Which clip do the panel and play button move?** When the clips are linked: both. Otherwise:
 
 - showing **A only** or **B only** → that clip;
-- showing **both** → the **focused** clip (tap a clip, tap **A | B** in the panel, or press **Tab** on the Mac);
+- showing **both** → the **focused** clip (tap a clip, tap **A** or **B** in the panel, or press **Tab** on the Mac);
+- **A+B** (or **Esc** on the Mac) → **neither is selected**: no ring, nothing dimmed, a slim timeline for each
+  clip, and play / pause and the frame steps move **both**, each from where it is. Tap a clip to select it again;
 - the play button shows the **focused clip's** state: switch to a paused clip and it shows ▶ even while the
   other clip keeps playing. Each clip loops.
 
@@ -117,9 +120,12 @@ Trim each clip to just the stroke, so playback, linking, StroMotion and the cuto
 
 1. Move to the first frame you want, tap **In**. It shows the time, e.g. *In 0.57*.
 2. Move to the last frame you want, tap **Out** (*Out 1.27*).
-3. The trimmed part is highlighted on the ruler; playback stays inside it.
+3. The trimmed part is highlighted on the ruler; playback plays from In to Out and loops.
 
-To undo: the clip's ⋯ › **Clear trim**.
+- **Paused, the playhead goes anywhere**, in or out of the trim, so you can move to a new frame and tap In or
+  Out again to move it. Play from outside the trim starts at In.
+- **Take one away**: the **✕** on *In 0.57* or *Out 1.27*. Both at once: the clip's ⋯ › **Clear trim**.
+- **Undo** any of it with **↶** or **⌘Z**.
 
 ---
 
@@ -184,7 +190,8 @@ Tip: you don't need the same number of sync points in both clips — extra ones 
 
 ## Drawing and measuring angles
 
-Tap **✏** on a clip. It pauses and shows the drawing tools at the bottom of the video:
+Tap **✏** on a clip. It pauses and shows the drawing tools over the clips. **Linked** (or watching **A+B**),
+there's one **✏** in the panel instead, and it draws on **both** clips: draw on either one with the same pen.
 
 | Tool | How to draw |
 |---|---|
@@ -194,10 +201,11 @@ Tap **✏** on a clip. It pauses and shows the drawing tools at the bottom of th
 | **Angle** | Drag from the **joint** (elbow, knee, shoulder) along one arm; the second arm opens at 40°. Then drag either arm's white dot into place. The angle is shown in degrees. |
 
 - **Colours**: crimson, yellow, white, cyan.
+- **Pen size**: thin, medium or thick (the three dots).
 - **This frame / Every frame**: a drawing on *this frame* only shows on the frame it was drawn on (good
   for marking contact); *every frame* shows it throughout (good for a reference line like the baseline).
 - **Adjust**: drag any white dot.
-- **Undo** the last drawing, or **clear** all of this clip's drawings.
+- **Undo** (↶ or ⌘Z), or **clear** all the drawings on the clip (both clips, when drawing on both).
 - **Done** closes the tools.
 
 Drawings stay on the player through zoom, pan, resizing and mirroring, appear as white dots over the
@@ -370,6 +378,8 @@ On iPhone and iPad a copy is kept in Mimesis so the library can open it again la
 | S | Add or remove a sync point here |
 | Tab | Select the other clip (the keys, panel and timeline follow it) |
 | L | Link / unlink |
+| Esc | Watch both (no clip selected); while drawing, stop drawing |
+| ⌘Z / ⇧⌘Z | Undo / redo: trims, sync points, speeds, drawings |
 
 **Menus**
 

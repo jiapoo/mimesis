@@ -24,9 +24,10 @@ enum DrawingImage {
         context.setLineCap(.round)
         context.setLineJoin(.round)
         // About 4–5 px in a 1920-wide export, whichever way round the clip was filmed.
-        let line = max(3, max(size.width, size.height) / 240)
+        let baseLine = max(3, max(size.width, size.height) / 240)
 
         for drawing in drawings {
+            let line = baseLine * drawing.penSize.scale
             let points = drawing.points.map { p in
                 CGPoint(x: (mirrored ? 1 - p.x : p.x) * size.width, y: p.y * size.height)
             }
