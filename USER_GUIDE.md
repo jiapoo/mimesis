@@ -239,19 +239,23 @@ Choose **Overlay** in the top bar (on iPhone: the layout menu at the right of th
 The **top** clip (B, unless you swap) is drawn over the other, see-through. Choose **A🔗B** to play the two lined
 up at their sync points.
 
-Nothing sits over the picture but the "B over A" label: the overlay's controls are in the **bar** under it,
-in place of the clip tools (trim and sync points are set in **A | B**):
+**At the top**, as on a clip: the "B over A" label (and, once cut out, the cutout's options), and on the right
+what moves the top clip:
+
+- **⇅ Swap** which clip is on top · **⇋ Mirror** it (a right-hander to match a left-hander);
+- **🧍 Line up the bodies** · **⧉ Line up the backgrounds** (see below);
+- **⟲ 0° ⟳** turn it a degree at a time (a tilted camera) · **↺ Put it back**.
+
+**In the bar** under the videos, in place of the clip tools (trim and sync points are set in **A | B**):
 
 - **✋ / 🔍** — what touches do:
-  - **✋ Move** the top clip: drag to move it, pinch to resize, twist with two fingers to turn it (a tilted
-    camera). Double-tap puts it back.
+  - **✋ Move** the top clip: drag to move it, pinch to resize, twist with two fingers to turn it. Double-tap
+    puts it back.
   - **🔍 Zoom** the whole picture, **both clips together**: pinch to zoom, drag to pan, double-tap (or the
     button top right) to see it all.
+- **− +** — with ✋, make the top clip smaller or bigger; with 🔍, zoom out or in (handy with a mouse).
 - **◐ slider** — how see-through the top clip is (10–90%).
 - **Cut out** — see below.
-- **⧉ menu** — everything else: **Swap** which clip is on top, **Mirror** it, **Zoom in / out** (for a mouse),
-  **Line up the bodies / the backgrounds**, make the top clip **bigger / smaller**, **turn** it 1° at a time,
-  **Put it back**, and the cutout's options.
 
 ### Cutting the player out
 
@@ -259,20 +263,20 @@ The whole picture on top is confusing. **Cut out** finds the player in every fra
 takes a few seconds the first time — trim it to the stroke first; up to 600 frames; tap the progress to stop).
 Then only the player and racket are drawn over your clip. The cutout is saved, so next time it's ready at once.
 
-Once it's cut out, **Cutout** turns it on and off, and the ⧉ menu has:
+Once it's cut out, **Cutout** in the bar turns it on and off, and its options appear at the top, beside the label:
 
-- **Tint** — colours the top player crimson so the two bodies are easy to tell apart.
-- **Box instead of outline** — for when the outline loses the racket.
-- **Pick the player…** — when others are in frame (opponent, umpire, ball kids): then tap the player you want.
-  They're followed through every frame. **Show everyone** undoes it.
-- **Cut out again** — e.g. after changing the trim.
+- **⬚ Box** — a soft box around the player instead of their outline, for when the outline loses the racket.
+- **🖌 Tint** — colours the top player crimson so the two bodies are easy to tell apart.
+- **👆 Pick the player** — when others are in frame (opponent, umpire, ball kids): then tap the player you want.
+  They're followed through every frame. **👥** shows everyone again.
+- **↻ Cut out again** — e.g. after changing the trim.
 
 ### Lining the two up automatically
 
-- **Line up the bodies** (⧉ menu): finds both players' hips and feet in the frames on screen and moves
+- **Line up the bodies** (🧍, top right): finds both players' hips and feet in the frames on screen and moves
   and resizes the top one so their hips and feet sit on yours. Step to a frame where both players are fully
   visible first. Nudge by hand afterwards if needed.
-- **Line up the backgrounds** (⧉ menu): for two clips filmed **at the same place** (same
+- **Line up the backgrounds** (⧉, top right): for two clips filmed **at the same place** (same
   court, same camera spot, different days). It lines up the court lines and fences, whoever is playing. If the
   places don't match, it says so.
 

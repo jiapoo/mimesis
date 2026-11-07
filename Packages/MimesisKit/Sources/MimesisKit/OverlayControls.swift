@@ -10,6 +10,28 @@ final class OverlayUI {
     var aligning = false
     /// Shown over the overlay for a few seconds (auto-align couldn't, nobody where tapped…).
     var problem: String?
+
+    /// Lines the top clip up with the one underneath: by the bodies (hips and feet), or the backgrounds.
+    func align(_ comparison: Comparison, byBackground: Bool = false) {
+        aligning = true
+        problem = nil
+        Task {
+            do {
+                if byBackground {
+                    try await comparison.alignBackgrounds()
+                } else {
+                    try await comparison.autoAlign()
+                }
+            } catch {
+                #if targetEnvironment(simulator)
+                problem = "Lining up needs a real iPhone or iPad (Vision can't run it in Simulator)."
+                #else
+                problem = error.localizedDescription
+                #endif
+            }
+            aligning = false
+        }
+    }
 }
 
 /// The overlay's controls, in the bar under the videos (none over the picture): what touches do (move the
@@ -28,9 +50,9 @@ struct OverlayControls: View {
     var body: some View {
         HStack(spacing: 8) {
             modeSwitch
+            sizeButtons
             opacity
             cutout
-            menu
         }
         .foregroundStyle(.white)
     }
@@ -119,65 +141,19 @@ struct OverlayControls: View {
         }
     }
 
-    /// Everything else: swap, mirror, line them up, size and turn, put back, and the cutout's options.
-    private var menu: some View {
-        Menu {
-            Button("Swap: \(baseLetter) on top", systemImage: "arrow.up.arrow.down") {
-                comparison.overlayTop = 1 - comparison.overlayTop
-                comparison.resetOverlay()
+    /// − and +: with ✋ they resize the top clip, with 🔍 they zoom the whole picture (for a mouse; or pinch).
+    private var sizeButtons: some View {
+        HStack(spacing: 4) {
+            RoundButton(symbol: "minus") {
+                ui.movesTop ? resize(by: 1 / 1.1) : zoomView(by: 1 / 1.25)
             }
-            Button(top.engine.mirroredHorizontally ? "Unmirror \(topLetter)" : "Mirror \(topLetter)",
-                   systemImage: "arrow.left.and.right.righttriangle.left.righttriangle.right",
-                   action: top.toggleMirror)
-            Divider()
-            // The whole picture (both clips): also pinch, with 🔍 on.
-            Button("Zoom in", systemImage: "plus.magnifyingglass") { zoomView(by: 1.25) }
-            Button("Zoom out", systemImage: "minus.magnifyingglass") { zoomView(by: 1 / 1.25) }
-                .disabled(base.zoom <= 1)
-            Divider()
-            Button("Line up the bodies", systemImage: "figure.stand") { align() }
-                .disabled(ui.aligning)
-            Button("Line up the backgrounds", systemImage: "square.on.square.dashed") { align(byBackground: true) }
-                .disabled(ui.aligning)
-            Divider()
-            Button("\(topLetter) bigger", systemImage: "plus.square") { resize(by: 1.1) }
-            Button("\(topLetter) smaller", systemImage: "minus.square") { resize(by: 1 / 1.1) }
-            Button("Turn 1° left (now \(Int(comparison.overlayRotation.rounded()))°)", systemImage: "rotate.left") {
-                comparison.overlayRotation -= 1
+            .disabled(!ui.movesTop && base.zoom <= 1)
+            .help(ui.movesTop ? "Make \(topLetter) smaller (or pinch)" : "Zoom out (or pinch)")
+            RoundButton(symbol: "plus") {
+                ui.movesTop ? resize(by: 1.1) : zoomView(by: 1.25)
             }
-            Button("Turn 1° right", systemImage: "rotate.right") { comparison.overlayRotation += 1 }
-            Button("Put \(topLetter) back", systemImage: "arrow.counterclockwise", action: comparison.resetOverlay)
-                .disabled(comparison.overlayOffset == .zero && comparison.overlayScale == 1 && comparison.overlayRotation == 0)
-            if let cutout = top.cutout, cutout.state == .ready {
-                Divider()
-                Toggle(isOn: Binding(get: { cutout.boxed }, set: { cutout.boxed = $0 })) {
-                    Label("Box instead of outline", systemImage: "rectangle.dashed")
-                }
-                .disabled(!cutout.enabled)
-                Toggle(isOn: Binding(get: { cutout.tinted }, set: { cutout.tinted = $0 })) {
-                    Label("Tint \(topLetter) crimson", systemImage: "paintbrush")
-                }
-                .disabled(!cutout.enabled)
-                if cutout.hasSeveral && cutout.enabled {
-                    Button("Pick the player…", systemImage: "hand.tap") { ui.picking = true }
-                    if cutout.picked != nil {
-                        Button("Show everyone", systemImage: "person.2") { cutout.pickEveryone() }
-                    }
-                }
-                Button("Cut out again", systemImage: "arrow.clockwise") { top.makeCutout(fresh: true) }
-            }
-        } label: {
-            Image(systemName: ui.aligning ? "hourglass" : "square.2.layers.3d")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(width: 32, height: 32)
-                .background(Theme.raised, in: Circle())
+            .help(ui.movesTop ? "Make \(topLetter) bigger (or pinch)" : "Zoom in on both clips (or pinch)")
         }
-        .menuStyle(.button)
-        .buttonStyle(.plain)
-        .menuIndicator(.hidden)
-        .fixedSize()
-        .help("Overlay: swap, mirror, line up, size and turn, the cutout's options")
     }
 
     private func zoomView(by factor: CGFloat) {
@@ -190,27 +166,6 @@ struct OverlayControls: View {
     private func resize(by factor: CGFloat) {
         withAnimation(.easeOut(duration: 0.12)) {
             comparison.overlayScale = min(4, max(0.25, comparison.overlayScale * factor))
-        }
-    }
-
-    private func align(byBackground: Bool = false) {
-        ui.aligning = true
-        ui.problem = nil
-        Task {
-            do {
-                if byBackground {
-                    try await comparison.alignBackgrounds()
-                } else {
-                    try await comparison.autoAlign()
-                }
-            } catch {
-                #if targetEnvironment(simulator)
-                ui.problem = "Lining up needs a real iPhone or iPad (Vision can't run it in Simulator)."
-                #else
-                ui.problem = error.localizedDescription
-                #endif
-            }
-            ui.aligning = false
         }
     }
 }

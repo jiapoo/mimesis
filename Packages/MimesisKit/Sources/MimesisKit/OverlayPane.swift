@@ -124,10 +124,14 @@ struct OverlayPane: View {
         .background(Color.black)
         .clipped()
         .overlay(alignment: .top) {
-            // Only what to read here; its controls are in the bar under the videos.
-            HStack(alignment: .top, spacing: 8) {
+            // At the top, as on a clip: what's on top and its cutout's options on the left, and what moves
+            // the top clip on the right. How to touch, the size or zoom, see-through and the cutout itself
+            // are in the bar under the videos.
+            HStack(alignment: .top, spacing: 6) {
                 badge
+                cutoutOptions
                 Spacer(minLength: 0)
+                adjustments
                 if base.zoom > 1 {
                     RoundButton(symbol: "arrow.down.right.and.arrow.up.left") {
                         withAnimation(.easeOut(duration: 0.2)) { base.resetView() }
@@ -155,6 +159,75 @@ struct OverlayPane: View {
                 if ui.problem == problem { ui.problem = nil }
             }
         }
+    }
+
+    /// Swap, mirror, line up (the bodies, or the backgrounds), turn, put back.
+    private var adjustments: some View {
+        HStack(spacing: 6) {
+            RoundButton(symbol: "arrow.up.arrow.down") {
+                comparison.overlayTop = 1 - comparison.overlayTop
+                comparison.resetOverlay()
+            }
+            .help("Swap: \(baseLetter) on top")
+            RoundButton(symbol: "arrow.left.and.right.righttriangle.left.righttriangle.right",
+                        active: top.engine.mirroredHorizontally, action: top.toggleMirror)
+                .help("Mirror \(topLetter) side to side, e.g. a right-hander to match a left-hander")
+            divider
+            RoundButton(symbol: ui.aligning ? "hourglass" : "figure.stand") { ui.align(comparison) }
+                .disabled(ui.aligning)
+                .help("Line up the bodies: put \(topLetter)'s hips and feet on \(baseLetter)'s, from the frames on screen")
+            RoundButton(symbol: ui.aligning ? "hourglass" : "square.on.square.dashed") {
+                ui.align(comparison, byBackground: true)
+            }
+            .disabled(ui.aligning)
+            .help("Line up the backgrounds: for two clips filmed at the same place, so the court lines match")
+            divider
+            RoundButton(symbol: "rotate.left") { comparison.overlayRotation -= 1 }
+                .help("Turn \(topLetter) 1° anticlockwise (or twist with two fingers)")
+            Text("\(Int(comparison.overlayRotation.rounded()))°")
+                .font(.system(size: 11, weight: .semibold).monospacedDigit())
+                .foregroundStyle(.white)
+                .frame(minWidth: 26)
+                .help("How far \(topLetter) is turned")
+            RoundButton(symbol: "rotate.right") { comparison.overlayRotation += 1 }
+                .help("Turn \(topLetter) 1° clockwise")
+            divider
+            RoundButton(symbol: "arrow.counterclockwise") {
+                withAnimation(.easeOut(duration: 0.2)) { comparison.resetOverlay() }
+            }
+            .disabled(comparison.overlayOffset == .zero && comparison.overlayScale == 1 && comparison.overlayRotation == 0)
+            .help("Put \(topLetter) back where it started (or double-tap with ✋)")
+        }
+        .padding(4)
+        .background(Color.black.opacity(0.35), in: Capsule())
+    }
+
+    /// Once cut out: a box instead of the outline, a crimson tint, one player or everyone, cut out again.
+    @ViewBuilder private var cutoutOptions: some View {
+        if let cutout = top.cutout, cutout.state == .ready, cutout.enabled {
+            HStack(spacing: 6) {
+                RoundButton(symbol: "rectangle.dashed", active: cutout.boxed) { cutout.boxed.toggle() }
+                    .help("A soft box around \(topLetter)'s player instead of their outline, for when the outline loses the racket")
+                RoundButton(symbol: "paintbrush", active: cutout.tinted) { cutout.tinted.toggle() }
+                    .help("Tint \(topLetter)'s player crimson, to tell the two bodies apart")
+                if cutout.hasSeveral {
+                    RoundButton(symbol: "hand.tap", active: ui.picking || cutout.picked != nil) { ui.picking.toggle() }
+                        .help("Keep only one player when \(topLetter) has others in frame: then tap them")
+                    if cutout.picked != nil {
+                        RoundButton(symbol: "person.2") { cutout.pickEveryone() }
+                            .help("Show everyone found in \(topLetter), not only the player picked")
+                    }
+                }
+                RoundButton(symbol: "arrow.clockwise") { top.makeCutout(fresh: true) }
+                    .help("Cut out again, e.g. after changing \(topLetter)'s trim")
+            }
+            .padding(4)
+            .background(Color.black.opacity(0.35), in: Capsule())
+        }
+    }
+
+    private var divider: some View {
+        Rectangle().fill(Color.white.opacity(0.2)).frame(width: 1, height: 18)
     }
 
     private var hint: String? {
