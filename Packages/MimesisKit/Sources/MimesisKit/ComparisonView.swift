@@ -36,7 +36,8 @@ public struct ComparisonView: View {
 
     public var body: some View {
         VStack(spacing: 0) {
-            topBar
+            // A phone on its side needs all its height for the clips: the dock carries the top bar's controls.
+            if !(phone && anyLoaded) { topBar }
             if !anyLoaded {
                 WelcomeView(
                     onOpenFile: { importing = $0 },
@@ -50,7 +51,14 @@ public struct ComparisonView: View {
                 // under them, so it never covers clip B.
                 GeometryReader { space in
                     let wide = space.size.width >= space.size.height
-                    if wide {
+                    if phone {
+                        // iPhone, always sideways: the clips side by side, the dock under them.
+                        VStack(spacing: 0) {
+                            panes(wide: true)
+                            if let reel, reel.running { ReelBar(reel: reel).padding(6) }
+                            Transport(comparison: comparison, docked: true, extras: AnyView(dockExtras))
+                        }
+                    } else if wide {
                         ZStack(alignment: .bottom) {
                             panes(wide: true)
                             panel
@@ -245,17 +253,59 @@ public struct ComparisonView: View {
         .padding(.vertical, 10)
     }
 
+    /// An iPhone: it runs sideways only, with the dock under the clips.
+    private var phone: Bool {
+        #if os(iOS)
+        UIDevice.current.userInterfaceIdiom == .phone
+        #else
+        false
+        #endif
+    }
+
+    /// The top bar's controls, at the end of the phone's dock: the layout, and the app's menu.
+    private var dockExtras: some View {
+        HStack(spacing: 8) {
+            Menu {
+                ForEach(Comparison.Layout.allCases) { layout in
+                    Button {
+                        withAnimation(.easeOut(duration: 0.2)) { choose(layout) }
+                    } label: {
+                        if comparison.layout == layout {
+                            Label(layout.label, systemImage: "checkmark")
+                        } else {
+                            Text(layout.label)
+                        }
+                    }
+                    .disabled(layout == .overlay && !comparison.canLink)
+                }
+            } label: {
+                Image(systemName: comparison.layout.symbol)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 32, height: 32)
+                    .background(Theme.raised, in: Circle())
+            }
+            .menuStyle(.button)
+            .buttonStyle(.plain)
+            .menuIndicator(.hidden)
+            .fixedSize()
+            menu
+        }
+    }
+
+    private func choose(_ layout: Comparison.Layout) {
+        comparison.layout = layout
+        if layout == .left { comparison.focus = 0 }
+        if layout == .right { comparison.focus = 1 }
+    }
+
     private var layoutSwitch: some View {
             HStack(spacing: 2) {
                 ForEach(Comparison.Layout.allCases) { layout in
                     let on = comparison.layout == layout
                     let unavailable = layout == .overlay && !comparison.canLink
                     Button {
-                        withAnimation(.easeOut(duration: 0.2)) {
-                            comparison.layout = layout
-                            if layout == .left { comparison.focus = 0 }
-                            if layout == .right { comparison.focus = 1 }
-                        }
+                        withAnimation(.easeOut(duration: 0.2)) { choose(layout) }
                     } label: {
                         Text(layout.label)
                             .font(.system(size: 12, weight: .semibold))
@@ -415,12 +465,12 @@ public struct ComparisonView: View {
     /// Keys, as in Movist, for both clips while linked, else the selected one;
     /// plus [ ] for the trim and S for the sync point.
     @ViewBuilder private var keys: some View {
+        // Each key looks up the focused clip when pressed: on the Mac a shortcut can keep its first
+        // action after the view changes, so one that held a clip kept driving it after Tab.
         Group {
-            if let clip = comparison.focused, !comparison.linked {
-                key("[") { clip.setTrimStart() }
-                key("]") { clip.setTrimEnd() }
-                key("s") { clip.toggleSync() }
-            }
+            key("[") { if !comparison.linked { comparison.focused?.setTrimStart() } }
+            key("]") { if !comparison.linked { comparison.focused?.setTrimEnd() } }
+            key("s") { if !comparison.linked { comparison.focused?.toggleSync() } }
             key("l") { if comparison.canLink { comparison.linked.toggle() } }
             key("\t") { switchFocus() }
         }
@@ -435,8 +485,11 @@ public struct ComparisonView: View {
                 key(.home) { comparison.pause(); Task { await comparison.seek(to: comparison.range.lowerBound) } }
             }
             .hidden()
+            .id("linked")
         } else if let clip = comparison.focused {
+            // A fresh set for each clip, so the keys never drive the one focused before.
             MovistKeys(engine: clip.engine)
+                .id(ObjectIdentifier(clip))
         }
     }
 
@@ -505,6 +558,15 @@ extension Comparison.Layout {
         case .left: "A"
         case .right: "B"
         case .overlay: "Overlay"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .both: "rectangle.split.2x1"
+        case .left: "a.square"
+        case .right: "b.square"
+        case .overlay: "square.2.layers.3d"
         }
     }
 }

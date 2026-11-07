@@ -12,56 +12,42 @@ struct WelcomeView: View {
     /// Nil until the library has clips.
     let onLibrary: (() -> Void)?
 
+    #if os(iOS)
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+    /// A phone on its side: two columns, the welcome on the left and the ways in on the right.
+    private var sideways: Bool { verticalSizeClass == .compact }
+    #else
+    private let sideways = false
+    #endif
+
     var body: some View {
         ScrollView {
-            VStack(spacing: 28) {
-                VStack(spacing: 14) {
-                    EchoMark().frame(width: 76, height: 76)
-                    Text("Compare two swings")
-                        .font(.system(size: 28, weight: .bold))
-                    Text("Put your stroke beside the one you learn from: line them up at contact, slow them down, and see where you differ.")
-                        .font(.system(size: 15))
-                        .foregroundStyle(Theme.secondary)
-                        .multilineTextAlignment(.center)
-                        .frame(maxWidth: 420)
-                }
-                .padding(.top, 24)
-
-                ViewThatFits(in: .horizontal) {
-                    HStack(spacing: 12) { slots }
-                    VStack(spacing: 12) { slots }
-                }
-                .frame(maxWidth: 640)
-
-                VStack(spacing: 10) {
-                    Button(action: onCourt) {
-                        Label("Film at the court", systemImage: "camera.viewfinder")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(WideButtonStyle())
-                    if let onLibrary {
-                        Button(action: onLibrary) {
-                            Label("Open from your library", systemImage: "books.vertical")
-                                .frame(maxWidth: .infinity)
+            Group {
+                if sideways {
+                    HStack(alignment: .center, spacing: 36) {
+                        hero(alignment: .leading).frame(maxWidth: 300, alignment: .leading)
+                        VStack(spacing: 10) {
+                            slots
+                            ways
                         }
-                        .buttonStyle(WideButtonStyle())
+                        .frame(maxWidth: 420)
                     }
-                    #if os(macOS)
-                    Label("Or drop one or two videos here", systemImage: "arrow.down.doc")
-                        .font(.system(size: 12))
-                        .foregroundStyle(Theme.secondary.opacity(0.8))
-                    #endif
-                    Label("Film in Slo-mo (240 fps), or at least 60 fps, for smooth slow motion", systemImage: "lightbulb")
-                        .font(.system(size: 12))
-                        .foregroundStyle(Theme.secondary.opacity(0.8))
-                        .multilineTextAlignment(.center)
-                        .padding(.top, 6)
+                    .padding(.vertical, 16)
+                } else {
+                    VStack(spacing: 28) {
+                        hero(alignment: .center).padding(.top, 24)
+                        ViewThatFits(in: .horizontal) {
+                            HStack(spacing: 12) { slots }
+                            VStack(spacing: 12) { slots }
+                        }
+                        .frame(maxWidth: 640)
+                        ways.frame(maxWidth: 640)
+                    }
                 }
-                .frame(maxWidth: 640)
             }
             .foregroundStyle(.white)
             .padding(.horizontal, 20)
-            .padding(.bottom, 24)
+            .padding(.bottom, sideways ? 8 : 24)
             .frame(maxWidth: .infinity)
         }
         .scrollBounceBehavior(.basedOnSize)
@@ -78,6 +64,64 @@ struct WelcomeView: View {
                     .strokeBorder(Theme.accent, style: StrokeStyle(lineWidth: 2, dash: [8, 6]))
                     .padding(8)
                     .allowsHitTesting(false)
+            }
+        }
+    }
+
+    private func hero(alignment: HorizontalAlignment) -> some View {
+        VStack(alignment: alignment, spacing: sideways ? 10 : 14) {
+            EchoMark().frame(width: sideways ? 56 : 76, height: sideways ? 56 : 76)
+            Text("Compare two swings")
+                .font(.system(size: sideways ? 24 : 28, weight: .bold))
+            Text("Put your stroke beside the one you learn from: line them up at contact, slow them down, and see where you differ.")
+                .font(.system(size: sideways ? 14 : 15))
+                .foregroundStyle(Theme.secondary)
+                .multilineTextAlignment(alignment == .center ? .center : .leading)
+                .frame(maxWidth: 420)
+            if sideways {
+                Label("Film in Slo-mo (240 fps), or at least 60 fps, for smooth slow motion", systemImage: "lightbulb")
+                    .font(.system(size: 12))
+                    .foregroundStyle(Theme.secondary.opacity(0.8))
+                    .padding(.top, 4)
+            }
+        }
+    }
+
+    /// The other ways in: film at the court, or the library.
+    private var ways: some View {
+        VStack(spacing: 10) {
+            HStack(spacing: 10) {
+                Button(action: onCourt) {
+                    Label("Film at the court", systemImage: "camera.viewfinder")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(WideButtonStyle())
+                if let onLibrary, sideways {
+                    Button(action: onLibrary) {
+                        Label("Library", systemImage: "books.vertical")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(WideButtonStyle())
+                }
+            }
+            if let onLibrary, !sideways {
+                Button(action: onLibrary) {
+                    Label("Open from your library", systemImage: "books.vertical")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(WideButtonStyle())
+            }
+            #if os(macOS)
+            Label("Or drop one or two videos here", systemImage: "arrow.down.doc")
+                .font(.system(size: 12))
+                .foregroundStyle(Theme.secondary.opacity(0.8))
+            #endif
+            if !sideways {
+                Label("Film in Slo-mo (240 fps), or at least 60 fps, for smooth slow motion", systemImage: "lightbulb")
+                    .font(.system(size: 12))
+                    .foregroundStyle(Theme.secondary.opacity(0.8))
+                    .multilineTextAlignment(.center)
+                    .padding(.top, 6)
             }
         }
     }
@@ -112,7 +156,7 @@ struct WelcomeView: View {
                 .buttonStyle(ChipStyle())
             }
         }
-        .padding(16)
+        .padding(sideways ? 12 : 16)
         .frame(minWidth: 260, maxWidth: .infinity)
         .background(Theme.card, in: RoundedRectangle(cornerRadius: Theme.corner + 4, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: Theme.corner + 4, style: .continuous)

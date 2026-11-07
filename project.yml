@@ -68,7 +68,8 @@ targets:
         CFBundleDisplayName: Mimesis
         UILaunchScreen: {}
         # Landscape too on iPhone: that's where two clips fit side by side.
-        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+        # iPhone: sideways only, the two clips side by side. iPad: any way up.
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
         UISupportedInterfaceOrientations~ipad: [UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
         UIFileSharingEnabled: true
         NSCameraUsageDescription: Court mode shows the camera a few seconds late, so you can watch the stroke you just hit.

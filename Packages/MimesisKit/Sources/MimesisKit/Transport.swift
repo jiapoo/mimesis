@@ -6,26 +6,111 @@ import SwiftUI
 /// Linked, it moves both clips, the ruler counting clip A's frames; otherwise the selected clip.
 struct Transport: View {
     let comparison: Comparison
+    /// Docked under the clips on a phone held sideways: one slim ruler and one row, always all there,
+    /// so the clips never jump in size when playback starts.
+    var docked = false
+    /// More controls at the end of the docked row (the layout and the app's menu, with no top bar there).
+    var extras: AnyView?
     @Environment(Library.self) private var library
 
     var body: some View {
+        if docked { dock } else { panel }
+    }
+
+    /// The phone's dock: the ruler, then the clip's tools on the left and playback on the right.
+    private var dock: some View {
+        VStack(spacing: 4) {
+            marks
+            ruler(compact: true)
+            HStack(spacing: 8) {
+                focusPicker
+                if let clip = comparison.focused {
+                    ClipTools(clip: clip, linked: comparison.linked)
+                } else {
+                    Spacer(minLength: 0)
+                }
+                Divider().frame(height: 22).overlay(Color.white.opacity(0.15))
+                RoundButton(symbol: "link", active: comparison.linked, size: 32) {
+                    comparison.linked.toggle()
+                }
+                .disabled(!comparison.canLink)
+                .opacity(comparison.canLink ? 1 : 0.4)
+                RoundButton(symbol: "backward.frame.fill", size: 32) { comparison.step(-1) }
+                playButton(size: 40)
+                RoundButton(symbol: "forward.frame.fill", size: 32) { comparison.step(1) }
+                speedMenu
+                if let extras { extras }
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.top, 6)
+        .padding(.bottom, 4)
+        .background(Theme.canvas)
+        .overlay(alignment: .top) { Rectangle().fill(Theme.line).frame(height: 1) }
+        .disabled(comparison.focused == nil)
+    }
+
+    /// Which clip the controls drive: A or B. Tapping a clip does the same.
+    @ViewBuilder private var focusPicker: some View {
+        let both = comparison.clips.allSatisfy(\.isLoaded)
+        HStack(spacing: 2) {
+            ForEach(0..<2, id: \.self) { index in
+                let clip = comparison.clips[index]
+                let on = comparison.focused === clip
+                if both || on {
+                    Button {
+                        select(index)
+                    } label: {
+                        Text(index == 0 ? "A" : "B")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(on ? Theme.onAccent : Color.white.opacity(0.7))
+                            .frame(width: 26, height: 26)
+                            .background(on ? Theme.accent : .clear, in: Circle())
+                            .contentShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .padding(2)
+        .background(Theme.raised, in: Capsule())
+        .fixedSize()
+        .help("Which clip the tools and timeline are for (Tab)")
+    }
+
+    private func select(_ index: Int) {
+        switch comparison.layout {
+        case .left, .right: comparison.layout = index == 0 ? .left : .right
+        default: comparison.focus = index
+        }
+    }
+
+    private func playButton(size: CGFloat) -> some View {
+        Button { comparison.togglePlay() } label: {
+            Image(systemName: comparison.anyPlaying ? "pause.fill" : "play.fill")
+                .font(.system(size: size * 0.38, weight: .bold))
+                .foregroundStyle(Theme.onAccent)
+                .frame(width: size, height: size)
+                .background(Theme.accent, in: Circle())
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .help("Play / pause (Space)")
+    }
+
+    @ViewBuilder private var panel: some View {
         // While playing, only the play controls: the tools and timelines come back on pause.
         let full = !comparison.anyPlaying
         VStack(spacing: 6) {
             if full, let clip = comparison.focused {
                 HStack(spacing: 8) {
-                    Text(clip === comparison.clips[0] ? "A" : "B")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(Theme.onAccent)
-                        .frame(width: 20, height: 20)
-                        .background(Theme.accent, in: Circle())
-                        .help("The tools are clip \(clip === comparison.clips[0] ? "A" : "B")'s: tap the other clip to switch")
+                    focusPicker
                     ClipTools(clip: clip, linked: comparison.linked)
                 }
             }
             if full {
                 marks
-                ruler
+                ruler(compact: false)
             }
             HStack(spacing: 12) {
                 RoundButton(symbol: "link", active: comparison.linked, size: 34) {
@@ -44,16 +129,7 @@ struct Transport: View {
                 HStack(spacing: 8) {
                     RoundButton(symbol: "backward.frame.fill", size: 34) { comparison.step(-1) }
                         .help("One frame back (,)")
-                    Button { comparison.togglePlay() } label: {
-                        Image(systemName: comparison.anyPlaying ? "pause.fill" : "play.fill")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundStyle(Theme.onAccent)
-                            .frame(width: 48, height: 48)
-                            .background(Theme.accent, in: Circle())
-                            .contentShape(Circle())
-                    }
-                    .buttonStyle(.plain)
-                    .help("Play / pause (Space)")
+                    playButton(size: 48)
                     RoundButton(symbol: "forward.frame.fill", size: 34) { comparison.step(1) }
                         .help("One frame forward (.)")
                 }
@@ -132,11 +208,12 @@ struct Transport: View {
     }
 
     /// AreteMedia's FrameRulerTimeline, styled as in Arete's player.
-    @ViewBuilder private var ruler: some View {
+    @ViewBuilder private func ruler(compact: Bool) -> some View {
         if comparison.linked, let lead = comparison.focused {
             // The focused clip's own frames; a seek on it moves the shared timeline, so the other follows.
             let range = comparison.range
             areteRuler(
+                compact: compact,
                 currentTime: lead.engine.currentTime,
                 duration: lead.engine.duration,
                 fps: lead.engine.fps,
@@ -153,6 +230,7 @@ struct Transport: View {
         } else if let clip = comparison.focused {
             let engine = clip.engine
             areteRuler(
+                compact: compact,
                 currentTime: engine.currentTime,
                 duration: engine.duration,
                 fps: engine.fps,
@@ -163,7 +241,7 @@ struct Transport: View {
                     if dragging { engine.pause() } else { engine.finalizeAfterScrub() }
                 })
         } else {
-            areteRuler(currentTime: 0, duration: 1, fps: 30, onSeek: { _ in })
+            areteRuler(compact: compact, currentTime: 0, duration: 1, fps: 30, onSeek: { _ in })
         }
     }
 
@@ -226,6 +304,7 @@ struct Transport: View {
 /// the overall progress bar above it, and the playhead, time and trim in the accent.
 @MainActor
 private func areteRuler(
+    compact: Bool = false,
     currentTime: TimeInterval, duration: TimeInterval, fps: Float,
     onSeek: @escaping (TimeInterval) -> Void,
     trimStart: TimeInterval? = nil, trimEnd: TimeInterval? = nil,
@@ -234,7 +313,7 @@ private func areteRuler(
     FrameRulerTimeline(
         currentTime: currentTime, duration: duration, fps: fps, onSeek: onSeek,
         trimStart: trimStart, trimEnd: trimEnd,
-        majorTickHeight: 36, mediumTickHeight: 24, minorTickHeight: 14,
+        majorTickHeight: compact ? 22 : 36, mediumTickHeight: compact ? 15 : 24, minorTickHeight: compact ? 9 : 14,
         tickSpacing: 14,
         majorLineWidth: 3.0, mediumLineWidth: 1.8, minorLineWidth: 1.2,
         showProgressBar: true,

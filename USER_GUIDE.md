@@ -72,25 +72,31 @@ below 50 frames a second and slow motion will look jumpy. See [Filming tips](#fi
 ## The screen
 
 - **The videos fill the screen, touching.** Side by side when the window is wide, one above the other when it's
-  tall (an iPhone held upright; turn it sideways for left/right).
+  tall (an iPad held upright). **On iPhone, Mimesis runs sideways only**: the clips side by side, the controls
+  in a dock under them, so nothing covers a clip.
 - **Each clip** shows only its letter and time (top left). The **focused** clip — the one you tapped last — has
   a thin crimson edge and its buttons top right: **✏ Draw**, **⇋ Mirror**, **⋯** (Sound, Open video, From Photos,
   Clear trim, Clear sync points, StroMotion, Close).
 - **The floating panel** at the bottom is see-through, over the videos. From the top:
-  - the focused clip's tools: its letter, **In / Out** (trim), **Add sync**, **🏷 tag**, its **speed**;
+  - the focused clip's tools: the **A | B** switch (which clip the tools and timeline are for), **In / Out**
+    (trim), **Add sync**, **🏷 tag**, its **speed**;
   - **marks**: crimson ◆ sync points, yellow 🏷 tags, white • drawings (tap one to jump there);
   - the **progress bar** and the **frame ruler** (drag it sideways to move frame by frame);
   - **🔗 Link**, a status line, **frame back / play / frame forward**, and the playback **speed**.
 - **While playing**, the panel shrinks to its last row so it covers less of the videos; pause to get the tools
   and timelines back.
+- **On iPhone** the same controls sit in a **dock** under the clips that never changes size: a slim ruler, then
+  one row with **A | B**, the clip's tools, **🔗 Link**, frame back / play / frame forward, speed, the
+  **layout** button (A | B, A, B, Overlay) and **⋯**. There's no top bar, so the clips get the whole height.
 - **Top bar**: **A | B / A / B / Overlay**, and **⋯** (Save comparison, Saved comparisons, Library, Court mode,
   Export video).
 
 **Which clip do the panel and play button move?** When the clips are linked: both. Otherwise:
 
 - showing **A only** or **B only** → that clip;
-- showing **both** → the **focused** clip (tap a clip to focus it; the panel's letter says which);
-- **pause** always stops whatever is playing, even the clip that isn't focused.
+- showing **both** → the **focused** clip (tap a clip, tap **A | B** in the panel, or press **Tab** on the Mac);
+- the play button shows the **focused clip's** state: switch to a paused clip and it shows ▶ even while the
+  other clip keeps playing. Each clip loops.
 
 ---
 
@@ -362,7 +368,7 @@ On iPhone and iPad a copy is kept in Mimesis so the library can open it again la
 |---|---|
 | [ and ] | Trim In / Out at the playhead |
 | S | Add or remove a sync point here |
-| Tab | Select the other clip |
+| Tab | Select the other clip (the keys, panel and timeline follow it) |
 | L | Link / unlink |
 
 **Menus**
