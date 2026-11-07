@@ -1,92 +1,55 @@
 import AreteMedia
 import SwiftUI
 
-/// The panel at the bottom, laid out as in Arete's player: the timeline on top (the time, a progress
-/// bar for the whole clip, and the frame ruler), and every button in one row underneath: the clip's
-/// own tools on the left, play in the middle, link, draw, undo and speed on the right.
-/// Floating and see-through over the videos (Mac, iPad); docked under them on an iPhone.
+/// The controls at the bottom, laid out as in Arete's player, in two parts:
+/// - `.timeline`: the time, a progress bar for the whole clip and the frame ruler, from edge to edge,
+///   see-through over the bottom of the videos;
+/// - `.bar`: a solid bar under the videos with every button in one row: the clip's own tools on the
+///   left, play in the middle, draw, undo and speed on the right.
 struct Transport: View {
+    enum Part { case timeline, bar }
+
     let comparison: Comparison
-    /// Under the clips instead of over them (an iPhone): the same panel, on the canvas.
-    var docked = false
-    /// More controls at the end of the row (the layout and the app's menu, with no top bar there).
+    let part: Part
+    /// More controls at the end of the bar (an iPhone's layout and menu: it has no top bar).
     var extras: AnyView?
     @Environment(Library.self) private var library
 
-    private let shape = RoundedRectangle(cornerRadius: 20, style: .continuous)
-
     var body: some View {
-        VStack(spacing: docked ? 6 : 8) {
-            timeline
-            buttons
+        switch part {
+        case .timeline: timeline
+        case .bar: bar
         }
-        .padding(.horizontal, 12)
-        .padding(.top, docked ? 6 : 10)
-        .padding(.bottom, docked ? 4 : 10)
-        .background {
-            if docked {
-                Theme.canvas
-            } else {
-                // See-through: the videos show under it.
-                shape.fill(Color.black.opacity(0.22))
-                    .background(.ultraThinMaterial.opacity(0.35), in: shape)
-                    .overlay(shape.strokeBorder(Color.white.opacity(0.1)))
-            }
-        }
-        .overlay(alignment: .top) {
-            if docked { Rectangle().fill(Theme.line).frame(height: 1) }
-        }
-        .frame(maxWidth: docked ? .infinity : 960)
-        .disabled(comparison.focused == nil)
     }
 
     // MARK: - The timeline
 
-    @ViewBuilder private var timeline: some View {
-        if comparison.watchingBoth && !comparison.linked {
-            // Watching both, not linked: a slim timeline for each.
-            VStack(spacing: 4) {
-                ForEach(0..<2, id: \.self) { index in
-                    if comparison.clips[index].isLoaded { mini(comparison.clips[index], letter: index == 0 ? "A" : "B") }
-                }
+    private var timeline: some View {
+        VStack(spacing: 2) {
+            if comparison.linked {
+                // Linked: how far from sync, the phase, and B's pace in it.
+                Text(linkedStatus)
+                    .font(.system(size: 11, weight: .semibold).monospacedDigit())
+                    .foregroundStyle(.white.opacity(0.85))
+                    .padding(.horizontal, 10).padding(.vertical, 3)
+                    .background(Color.black.opacity(0.45), in: Capsule())
             }
-        } else {
-            VStack(spacing: 2) {
-                marks
-                ruler(compact: docked)
-            }
+            marks
+            ruler(compact: false)
         }
+        .padding(.horizontal, 14)
+        .padding(.top, 18)
+        .padding(.bottom, 8)
+        // A soft shade from below, so the timeline reads over a bright video.
+        .background(
+            LinearGradient(colors: [.clear, .black.opacity(0.45)], startPoint: .top, endPoint: .bottom)
+                .allowsHitTesting(false))
+        .disabled(comparison.focused == nil)
     }
 
-    private func mini(_ clip: Clip, letter: String) -> some View {
-        let engine = clip.engine
-        let trimmed = clip.trimStart > 0 || clip.trimEnd != nil
-        return HStack(spacing: 10) {
-            Text(letter)
-                .font(.system(size: 11, weight: .bold))
-                .frame(width: 20, height: 20)
-                .background(Color.white.opacity(0.18), in: Circle())
-            Timeline(
-                range: 0...max(0.01, engine.duration),
-                value: engine.currentTime,
-                highlight: trimmed ? clip.trimStart...clip.end : nil,
-                marker: clip.syncs.first,
-                onScrub: { t in
-                    if engine.isPlaying { engine.pause() }
-                    engine.seekFast(t)
-                },
-                onEnd: { t in Task { await engine.seekToTime(t) } })
-            Text(clock(engine.currentTime))
-                .font(.system(size: 11, weight: .medium).monospacedDigit())
-                .foregroundStyle(Theme.secondary)
-                .frame(width: 56, alignment: .trailing)
-        }
-        .foregroundStyle(.white)
-    }
+    // MARK: - The bar
 
-    // MARK: - The row of buttons
-
-    private var buttons: some View {
+    private var bar: some View {
         HStack(spacing: 8) {
             // Left: which clip, and its own tools.
             HStack(spacing: 6) {
@@ -100,21 +63,15 @@ struct Transport: View {
             HStack(spacing: 8) {
                 RoundButton(symbol: "backward.frame.fill", size: 32) { comparison.step(-1) }
                     .help("One frame back (,)")
-                playButton(size: docked ? 40 : 44)
+                playButton(size: 42)
                 RoundButton(symbol: "forward.frame.fill", size: 32) { comparison.step(1) }
                     .help("One frame forward (.)")
             }
             Spacer(minLength: 6)
-            // Right: link, draw on both, undo, speed.
+            // Right: draw on both, undo, speed.
             HStack(spacing: 8) {
-                RoundButton(symbol: "link", active: comparison.linked, size: 32) {
-                    comparison.linked.toggle()
-                }
-                .disabled(!comparison.canLink)
-                .opacity(comparison.canLink ? 1 : 0.4)
-                .help("Link: play and step both clips together, lined up at their sync points (L)")
                 if comparison.drawsTogether {
-                    RoundButton(symbol: "pencil.tip", active: comparison.drawing == .both, size: 32) {
+                    RoundButton(symbol: "pencil.tip.crop.circle", active: comparison.drawing == .both, size: 32) {
                         comparison.toggleDrawingBoth()
                     }
                     .help("Draw on both clips")
@@ -131,20 +88,39 @@ struct Transport: View {
                 if let extras { extras }
             }
         }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 7)
+        .frame(maxWidth: .infinity)
+        .background(Theme.card)
+        .overlay(alignment: .top) { Rectangle().fill(Theme.line).frame(height: 1) }
+        .disabled(comparison.focused == nil)
     }
 
-    /// Which clip the controls drive: A, B, or both (A+B: nothing dimmed, play and step move both).
-    /// Tapping a clip picks it too.
+    /// Which clip the controls drive: A, B, or A+B: linked, both playing and stepping together, lined up
+    /// at their sync points (L). Tapping a clip picks it too.
     @ViewBuilder private var focusPicker: some View {
         let both = comparison.canLink
         HStack(spacing: 2) {
-            option("A", on: !comparison.watchingBoth && comparison.focused === comparison.clips[0],
+            option("A", on: !comparison.linked && comparison.focused === comparison.clips[0],
                    shown: both || comparison.clips[0].isLoaded) { select(0) }
             if both {
-                option("A+B", on: comparison.watchingBoth, shown: true) { comparison.watchingBoth = true }
-                    .help("Both clips: neither dimmed; play and the frame steps move both (Esc)")
+                Button { comparison.linked = true } label: {
+                    HStack(spacing: 3) {
+                        Text("A")
+                        Image(systemName: "link").font(.system(size: 9, weight: .bold))
+                        Text("B")
+                    }
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(comparison.linked ? Theme.onAccent : Color.white.opacity(0.7))
+                    .padding(.horizontal, 8)
+                    .frame(minHeight: 26)
+                    .background(comparison.linked ? Theme.accent : .clear, in: Capsule())
+                    .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .help("A+B, linked: both play and step together, lined up at their sync points (L)")
             }
-            option("B", on: !comparison.watchingBoth && comparison.focused === comparison.clips[1],
+            option("B", on: !comparison.linked && comparison.focused === comparison.clips[1],
                    shown: both || comparison.clips[1].isLoaded) { select(1) }
         }
         .padding(2)
@@ -160,7 +136,6 @@ struct Transport: View {
                 Text(title)
                     .font(.system(size: 12, weight: .bold))
                     .foregroundStyle(on ? Theme.onAccent : Color.white.opacity(0.7))
-                    .padding(.horizontal, title.count > 1 ? 8 : 0)
                     .frame(minWidth: 26, minHeight: 26)
                     .background(on ? Theme.accent : .clear, in: Capsule())
                     .contentShape(Capsule())
@@ -170,11 +145,11 @@ struct Transport: View {
     }
 
     private func select(_ index: Int) {
+        comparison.linked = false
         switch comparison.layout {
         case .left, .right: comparison.layout = index == 0 ? .left : .right
         default: comparison.focus = index
         }
-        comparison.watchingBoth = false
     }
 
     private func playButton(size: CGFloat) -> some View {
@@ -285,6 +260,17 @@ struct Transport: View {
         } else {
             areteRuler(compact: compact, currentTime: 0, duration: 1, fps: 30, onSeek: { _ in })
         }
+    }
+
+    /// "+0.20 s from sync · phase 2 of 3 · B at 0.82×"
+    private var linkedStatus: String {
+        var parts = ["\(seconds(comparison.position)) from sync"]
+        if let section = comparison.section {
+            parts.append("phase \(section.index) of \(section.count)")
+        }
+        let pace = comparison.sectionSpeed
+        if abs(pace - 1) > 0.005 { parts.append("B at \(speedText((pace * 100).rounded() / 100))") }
+        return parts.joined(separator: "  ·  ")
     }
 
     private var speed: Double {

@@ -46,33 +46,37 @@ public struct ComparisonView: View {
                     onCourt: { court = true },
                     onLibrary: library.clips.isEmpty ? nil : { showingLibrary = true })
             } else {
-                // Wide (Mac, iPad, a phone on its side): the videos side by side, edge to edge, with
-                // the panel floating over them. Tall (a phone upright): A over B, and the panel docked
-                // under them, so it never covers clip B.
-                GeometryReader { space in
-                    let wide = space.size.width >= space.size.height
-                    if phone {
-                        // iPhone, always sideways: the clips side by side, the dock under them.
-                        VStack(spacing: 0) {
-                            panes(wide: true)
-                            if let reel, reel.running { ReelBar(reel: reel).padding(6) }
-                            Transport(comparison: comparison, docked: true, extras: AnyView(dockExtras))
+                // As in Arete's player, on every device: the videos edge to edge; the timeline across
+                // their bottom, see-through; and a solid bar of buttons under them. (A phone only runs
+                // sideways, so the clips are side by side there too.) While drawing, the drawing tools
+                // take the timeline's place.
+                VStack(spacing: 0) {
+                    ZStack(alignment: .bottom) {
+                        GeometryReader { space in
+                            panes(wide: space.size.width >= space.size.height)
                         }
-                    } else if wide {
-                        ZStack(alignment: .bottom) {
-                            panes(wide: true)
-                            panel
-                                .padding(.horizontal, 12)
-                                .padding(.bottom, 10)
+                        VStack(spacing: 6) {
+                            if let reel, reel.running { ReelBar(reel: reel).padding(.horizontal, 12) }
+                            if let target = comparison.drawing {
+                                MarkupTools(
+                                    clips: target == .both ? comparison.clips.filter(\.isLoaded)
+                                        : [comparison.clips[target == .clip(1) ? 1 : 0]],
+                                    pen: comparison.pen,
+                                    canUndo: comparison.history.canUndo,
+                                    canRedo: comparison.history.canRedo,
+                                    onUndo: { comparison.history.undo(comparison) },
+                                    onRedo: { comparison.history.redo(comparison) },
+                                    onDone: { comparison.drawing = nil })
+                                .padding(.bottom, 12)
+                                .transition(.move(edge: .bottom).combined(with: .opacity))
+                            } else {
+                                Transport(comparison: comparison, part: .timeline)
+                                    .transition(.opacity)
+                            }
                         }
-                    } else {
-                        VStack(spacing: 8) {
-                            panes(wide: false)
-                            panel
-                                .padding(.horizontal, 8)
-                                .padding(.bottom, 4)
-                        }
+                        .animation(.easeOut(duration: 0.2), value: comparison.drawing)
                     }
+                    Transport(comparison: comparison, part: .bar, extras: phone ? AnyView(dockExtras) : nil)
                 }
                 .transition(.opacity)
             }
@@ -482,15 +486,15 @@ public struct ComparisonView: View {
             key(.escape) {
                 if comparison.drawing != nil {
                     comparison.drawing = nil
-                } else if comparison.canLink, comparison.layout == .both || comparison.layout == .overlay {
-                    comparison.watchingBoth = true
+                } else if comparison.canLink {
+                    comparison.linked = true
                 }
             }
             key("z", [.command]) { comparison.history.undo(comparison) }
             key("z", [.command, .shift]) { comparison.history.redo(comparison) }
         }
         .hidden()
-        if comparison.linked || comparison.watchingBoth {
+        if comparison.linked {
             Group {
                 key(.space) { comparison.togglePlay() }
                 key(",") { comparison.step(-1) }
@@ -500,7 +504,7 @@ public struct ComparisonView: View {
                 key(.home) { comparison.pause(); Task { await comparison.seek(to: comparison.range.lowerBound) } }
             }
             .hidden()
-            .id(comparison.linked ? "linked" : "both")
+            .id("linked")
         } else if let clip = comparison.focused {
             // A fresh set for each clip, so the keys never drive the one focused before.
             MovistKeys(engine: clip.engine)
@@ -527,13 +531,13 @@ public struct ComparisonView: View {
                     letter: index == 0 ? "A" : "B",
                     linked: comparison.linked,
                     focused: comparison.selected === comparison.clips[index],
-                    showsFocus: paneIndices.count == 2 && !comparison.watchingBoth,
+                    showsFocus: paneIndices.count == 2 && !comparison.linked,
                     onFocus: { comparison.focus = index },
                     onOpenFile: { importing = index },
                     onOpenPhotos: { photoTarget = index },
                     onDropped: { urls in dropped(urls, on: index) },
                     onJog: { frames in
-                        if !comparison.linked && !comparison.watchingBoth { comparison.focus = index }
+                        if !comparison.linked { comparison.focus = index }
                         comparison.step(frames)
                     },
                     drawing: comparison.isDrawing(on: comparison.clips[index]),
@@ -545,32 +549,7 @@ public struct ComparisonView: View {
             }
         }
         .background(Color.white.opacity(0.08))
-        // The drawing tools, over the clips (one clip's, or both at once).
-        .overlay(alignment: .top) {
-            if let target = comparison.drawing {
-                DrawingTools(
-                    clips: target == .both ? comparison.clips.filter(\.isLoaded)
-                        : [comparison.clips[target == .clip(1) ? 1 : 0]],
-                    pen: comparison.pen,
-                    onUndo: { comparison.history.undo(comparison) },
-                    canUndo: comparison.history.canUndo,
-                    onDone: { comparison.drawing = nil })
-                .padding(.top, 48)
-                .transition(.move(edge: .top).combined(with: .opacity))
-            }
-        }
-        .animation(.easeOut(duration: 0.18), value: comparison.drawing)
-    }
 
-    /// The transport, with the tag reel's bar over it while a reel plays.
-    private var panel: some View {
-        VStack(spacing: 6) {
-            if let reel, reel.running {
-                ReelBar(reel: reel)
-            }
-            Transport(comparison: comparison)
-        }
-        .transition(.move(edge: .bottom).combined(with: .opacity))
     }
 
     /// Selects the other clip; on the Mac Tab would otherwise just move the keyboard focus.
@@ -579,7 +558,17 @@ public struct ComparisonView: View {
             comparison.layout = comparison.layout == .left ? .right : .left
             return
         }
-        comparison.focus = 1 - comparison.focus
+        // A, then B, then A+B (linked), then A again.
+        if comparison.linked {
+            comparison.linked = false
+            comparison.focus = 0
+        } else if comparison.focus == 0 {
+            comparison.focus = 1
+        } else if comparison.canLink {
+            comparison.linked = true
+        } else {
+            comparison.focus = 0
+        }
     }
 
     private func key(_ k: KeyEquivalent, _ modifiers: EventModifiers = [], action: @escaping () -> Void) -> some View {

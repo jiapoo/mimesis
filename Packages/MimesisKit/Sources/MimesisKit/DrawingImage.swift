@@ -23,58 +23,46 @@ enum DrawingImage {
         context.scaleBy(x: 1, y: -1)
         context.setLineCap(.round)
         context.setLineJoin(.round)
-        // About 4–5 px in a 1920-wide export, whichever way round the clip was filmed.
-        let baseLine = max(3, max(size.width, size.height) / 240)
+        // One screen point: about 1.5 px in a 1920-wide export, whichever way round the clip was filmed.
+        let unit = max(1, max(size.width, size.height) / 720)
 
         for drawing in drawings {
-            let line = baseLine * drawing.penSize.scale
             let points = drawing.points.map { p in
                 CGPoint(x: (mirrored ? 1 - p.x : p.x) * size.width, y: p.y * size.height)
             }
-            let path = CGMutablePath()
-            var label: (text: String, at: CGPoint)?
-            switch drawing.kind {
-            case .line:
-                path.addLines(between: points)
-            case .arrow:
-                path.addLines(between: points)
-                if points.count == 2, hypot(points[1].x - points[0].x, points[1].y - points[0].y) > 4 {
-                    let angle = atan2(points[1].y - points[0].y, points[1].x - points[0].x)
-                    for side in [-1.0, 1.0] {
-                        let wing = angle + .pi + side * .pi / 7
-                        path.move(to: points[1])
-                        path.addLine(to: CGPoint(x: points[1].x + line * 5 * cos(wing), y: points[1].y + line * 5 * sin(wing)))
-                    }
-                }
-            case .circle:
-                guard points.count == 2 else { continue }
-                let r = hypot(points[1].x - points[0].x, points[1].y - points[0].y)
-                path.addEllipse(in: CGRect(x: points[0].x - r, y: points[0].y - r, width: r * 2, height: r * 2))
-            case .angle:
-                guard points.count == 3 else { continue }
-                path.addLines(between: points)
-                let (a, v, c) = (points[0], points[1], points[2])
-                let start = atan2(a.y - v.y, a.x - v.x), end = atan2(c.y - v.y, c.x - v.x)
-                var sweep = end - start
-                while sweep > .pi { sweep -= 2 * .pi }
-                while sweep < -.pi { sweep += 2 * .pi }
-                let radius = min(line * 11, hypot(a.x - v.x, a.y - v.y) * 0.5, hypot(c.x - v.x, c.y - v.y) * 0.5)
-                path.move(to: CGPoint(x: v.x + radius * cos(start), y: v.y + radius * sin(start)))
-                path.addArc(center: v, radius: radius, startAngle: start, endAngle: start + sweep, clockwise: sweep < 0)
-                let middle = start + sweep / 2
-                label = ("\(Int((abs(sweep) * 180 / .pi).rounded()))°",
-                         CGPoint(x: v.x + (radius + line * 9) * cos(middle), y: v.y + (radius + line * 9) * sin(middle)))
-            }
+            let g = drawing.geometry(points, unit: unit)
+            let width = CGFloat(drawing.resolvedWidth) * unit
+            let look = drawing.look
+            let color = drawing.resolvedColor.with(alpha: drawing.resolvedColor.a * look.alpha)
+            context.setLineCap(look.square ? .square : .round)
+            context.setLineDash(phase: 0, lengths: [])
             // A dark edge under the colour, as on screen, so marks read on any background.
-            context.addPath(path)
-            context.setStrokeColor(CGColor(gray: 0, alpha: 0.45))
-            context.setLineWidth(line * 1.8)
+            if look.shadow {
+                context.addPath(g.path)
+                context.setStrokeColor(CGColor(gray: 0, alpha: 0.4))
+                context.setLineWidth(width + 2.5 * unit)
+                context.strokePath()
+            }
+            context.addPath(g.path)
+            context.setStrokeColor(color.cgColor)
+            context.setLineWidth(width)
             context.strokePath()
-            context.addPath(path)
-            context.setStrokeColor(drawing.ink.cgColor)
-            context.setLineWidth(line)
-            context.strokePath()
-            if let label { draw(label.text, at: label.at, size: line * 5, in: context) }
+            if look.grain {
+                context.addPath(g.path)
+                context.setStrokeColor(CGColor(gray: 0, alpha: 0.18))
+                context.setLineWidth(max(0.6, width * 0.45))
+                context.setLineCap(.butt)
+                context.setLineDash(phase: 0, lengths: [0.8 * unit, 1.6 * unit])
+                context.strokePath()
+                context.setLineDash(phase: 0, lengths: [])
+            }
+            if let arc = g.arc {
+                context.addPath(arc)
+                context.setStrokeColor(color.with(alpha: color.a * 0.9).cgColor)
+                context.setLineWidth(max(1.5 * unit, width * 0.66))
+                context.strokePath()
+            }
+            if let label = g.label { draw(label.text, at: label.at, size: 15 * unit, in: context) }
         }
         return context.makeImage()
     }
@@ -98,13 +86,3 @@ enum DrawingImage {
     }
 }
 
-extension Drawing.Ink {
-    var cgColor: CGColor {
-        switch self {
-        case .crimson: CGColor(red: 0.925, green: 0.227, blue: 0.333, alpha: 1)
-        case .yellow: CGColor(red: 1, green: 0.84, blue: 0.2, alpha: 1)
-        case .white: CGColor(gray: 1, alpha: 1)
-        case .cyan: CGColor(red: 0.3, green: 0.85, blue: 1, alpha: 1)
-        }
-    }
-}

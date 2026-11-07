@@ -24,9 +24,11 @@ struct ExportClipTests {
         comparison.overlayRotation = 15
         // Marks on every frame: an angle on A (yellow), an arrow on B (crimson).
         a.drawings = [Drawing(kind: .angle, points: [CGPoint(x: 0.3, y: 0.3), CGPoint(x: 0.5, y: 0.5), CGPoint(x: 0.8, y: 0.5)],
-                              time: 1, always: true, ink: .yellow)]
+                              time: 1, always: true, color: Palette.yellow, width: 3, brush: .pen),
+                      Drawing(kind: .freehand, points: [CGPoint(x: 0.2, y: 0.2), CGPoint(x: 0.3, y: 0.25), CGPoint(x: 0.4, y: 0.2)],
+                              time: 1, always: true, color: Palette.cyan, width: 20, brush: .marker)]
         b.drawings = [Drawing(kind: .arrow, points: [CGPoint(x: 0.2, y: 0.8), CGPoint(x: 0.6, y: 0.4)],
-                              time: 1, always: true, ink: .crimson)]
+                              time: 1, always: true, color: Palette.crimson, width: 5, brush: .pen)]
         comparison.linked = true
         let range = comparison.range
         #expect(abs((range.upperBound - range.lowerBound) - 2) < 0.01)

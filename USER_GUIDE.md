@@ -41,7 +41,7 @@ This guide goes from your first two clips to the advanced tools. If you only rea
    on the video, or use the frame buttons at the bottom, until the racket meets the ball.
    Tap **Add sync**. A crimson diamond appears above the timeline.
 3. **Do the same in B.** Select B, find its contact frame, tap **Add sync**.
-4. **Link them.** Tap the **link** button (bottom left of the panel). Both clips now jump to contact.
+4. **Link them.** Tap **A🔗B** (bottom left of the bar). Both clips now jump to contact.
 5. **Watch.** Press play, or step frame by frame. Both clips move together, lined up at contact.
    Set the speed (bottom right, e.g. **0.25×**) for slow motion.
 
@@ -82,13 +82,14 @@ below 50 frames a second and slow motion will look jumpy. See [Filming tips](#fi
     frame by frame), and over it the **marks**: crimson ◆ sync points, yellow 🏷 tags, white • drawings (tap
     one to jump there);
   - **underneath, one row of buttons**:
-    - left, the clip's own tools: **A | A+B | B** (which clip they're for), **In / Out** (trim), **◆ sync**,
-      **🏷 tag**, the clip's **speed**;
+    - left, **A | A🔗B | B** (A, B, or both linked) and the selected clip's own tools: **In / Out** (trim),
+      **◆ sync**, **🏷 tag**, its **speed**;
     - middle, **frame back / play / frame forward**;
-    - right, **🔗 Link**, **✏ Draw on both** (when linked or watching both), **↶ Undo** (and ↷ Redo once
-      there's something to redo), the playback **speed**.
-- On the Mac and iPad the panel floats over the videos, see-through. **On iPhone** it sits under the clips
-  and holds the top bar's controls too (the **layout** button and **⋯**), so the clips get the whole height.
+    - right, **✏ Draw on both** (when linked), **↶ Undo** (and ↷ Redo once there's something to redo), the
+      playback **speed**.
+- As in Arete's player, the **timeline** runs across the bottom of the videos from edge to edge,
+  see-through, and the **bar** of buttons under them is solid. It's the same on Mac, iPad and iPhone; the
+  iPhone's bar also holds the top bar's controls (the **layout** button and **⋯**).
 - **Top bar**: **A | B / A / B / Overlay**, and **⋯** (Save comparison, Saved comparisons, Library, Court mode,
   Export video).
 
@@ -96,8 +97,9 @@ below 50 frames a second and slow motion will look jumpy. See [Filming tips](#fi
 
 - showing **A only** or **B only** → that clip;
 - showing **both** → the **focused** clip (tap a clip, tap **A** or **B** in the panel, or press **Tab** on the Mac);
-- **A+B** (or **Esc** on the Mac) → **neither is selected**: no ring, nothing dimmed, a slim timeline for each
-  clip, and play / pause and the frame steps move **both**, each from where it is. Tap a clip to select it again;
+- **A🔗B** (or **Esc** or **L** on the Mac) → the clips are **linked**: one timeline, and play and the frame
+  steps move **both**, lined up at their sync points (see [Sync points and linking](#sync-points-and-linking)).
+  No ring, nothing dimmed. In **Overlay**, too, A🔗B plays the two lined up. Tap **A** or **B** to unlink;
 - the play button shows the **focused clip's** state: switch to a paused clip and it shows ▶ even while the
   other clip keeps playing. Each clip loops.
 
@@ -141,12 +143,12 @@ A **sync point** is a moment that should line up between the two clips — usual
   time and shows the frame as you drag.
 - **Remove all**: ⋯ › **Clear sync points**.
 
-**Linking.** Tap **🔗** (or **L**) once each clip has a sync point:
+**Linking.** Tap **A🔗B** (or **L**) once each clip has a sync point:
 
 - Both clips jump to their first sync point and play, step and scrub **together**.
-- The status line says how far you are from sync: *A + B · +0.20 s from sync*.
+- A label over the timeline says how far you are from sync: *+0.20 s from sync*.
 - Without sync points, linking lines up the clips' starts (their trim In points).
-- Tap 🔗 again to unlink and move each clip on its own.
+- Tap **A** or **B** to unlink and move each clip on its own.
 
 ---
 
@@ -172,7 +174,7 @@ Mark the **same phases** in both clips, in the same order, for example:
 Then link. Mimesis pairs the sync points in order and, between each pair, **speeds up or slows down clip B**
 so each phase lasts exactly as long as A's. Every phase lines up, not only contact. Clip A plays normally.
 
-While playing, the status line shows the phase and B's pace there, e.g.
+While linked, the label over the timeline shows the phase and B's pace there, e.g.
 *phase 2 of 3 · B at 0.82×*. When you pause, both clips land on exactly matching frames.
 
 Tip: you don't need the same number of sync points in both clips — extra ones in one clip are ignored.
@@ -190,23 +192,37 @@ Tip: you don't need the same number of sync points in both clips — extra ones 
 
 ## Drawing and measuring angles
 
-Tap **✏** on a clip. It pauses and shows the drawing tools over the clips. **Linked** (or watching **A+B**),
-there's one **✏** in the panel instead, and it draws on **both** clips: draw on either one with the same pen.
+Drawing works like **Markup in Photos**. Tap **✏** on a clip: it pauses, and the drawing tools take the
+timeline's place at the bottom. **Linked (A+B)**, there's one **✏** in the bar instead, and it draws on
+**both** clips with the same pen.
 
-| Tool | How to draw |
+**The toolbar**, left to right:
+
+- **↶ ↷** undo and redo (also ⌘Z, ⇧⌘Z).
+- **The pens**: **pen**, **marker** (wide and see-through, for highlighting), **pencil** (fine, with a
+  grain), and the **eraser** (drag over a drawing to take it away). The one in your hand stands up, showing its
+  colour and how thick it draws. **Tap it again** for its **width** (five sizes) and **opacity**; the eraser's
+  options erase everything on this frame or on the clip.
+- **+** the shapes: **line**, **arrow**, **rectangle**, **circle**, and **angle**. Once chosen, the + shows that
+  shape; its width and opacity are in the same menu.
+- **The colours**: crimson, yellow, white, cyan, green, black, and the **colour wheel** for any other (on
+  iPhone and iPad it's the same picker as Photos': grid, spectrum, sliders, and its eyedropper).
+- **□ / ▤** this frame or every frame: a drawing on *this frame* only shows on the frame it was drawn on (good
+  for marking contact); *every frame* shows it throughout (good for a reference line like the baseline).
+- **Done**.
+
+Each tool keeps its own colour and width, as in Photos: switch to the marker and back, and the pen is as you
+left it.
+
+| Shape | How to draw |
 |---|---|
 | **Line** | Drag from one end to the other. |
 | **Arrow** | Drag from the tail to the point. |
+| **Rectangle** | Drag from one corner to the other. |
 | **Circle** | Drag from the centre outwards. |
 | **Angle** | Drag from the **joint** (elbow, knee, shoulder) along one arm; the second arm opens at 40°. Then drag either arm's white dot into place. The angle is shown in degrees. |
 
-- **Colours**: crimson, yellow, white, cyan.
-- **Pen size**: thin, medium or thick (the three dots).
-- **This frame / Every frame**: a drawing on *this frame* only shows on the frame it was drawn on (good
-  for marking contact); *every frame* shows it throughout (good for a reference line like the baseline).
-- **Adjust**: drag any white dot.
-- **Undo** (↶ or ⌘Z), or **clear** all the drawings on the clip (both clips, when drawing on both).
-- **Done** closes the tools.
+Shapes keep **white dots** while drawing: drag one to adjust the shape.
 
 Drawings stay on the player through zoom, pan, resizing and mirroring, appear as white dots over the
 timeline (tap to jump there), are saved with the comparison, and are included when you
@@ -376,9 +392,9 @@ On iPhone and iPad a copy is kept in Mimesis so the library can open it again la
 |---|---|
 | [ and ] | Trim In / Out at the playhead |
 | S | Add or remove a sync point here |
-| Tab | Select the other clip (the keys, panel and timeline follow it) |
+| Tab | A, then B, then A🔗B (linked), then A again |
 | L | Link / unlink |
-| Esc | Watch both (no clip selected); while drawing, stop drawing |
+| Esc | Link the clips (A🔗B); while drawing, stop drawing |
 | ⌘Z / ⇧⌘Z | Undo / redo: trims, sync points, speeds, drawings |
 
 **Menus**
@@ -417,9 +433,9 @@ You're left-handed; Alcaraz is right-handed.
 2. **Trim** each to one forehand (In just before the unit turn, Out after the finish).
 3. **Mirror B** (⇋) so he swings the same way as you.
 4. In each clip, add **sync points** at the same four phases: unit turn, racket drop, **contact**, finish.
-5. **Link** (🔗) and set the speed to **0.25×**. Play: every phase lines up; the status shows how much faster
+5. **Link** (A🔗B) and set the speed to **0.25×**. Play: every phase lines up; the label shows how much faster
    or slower he is in each.
-6. Pause at contact. **Draw an angle** at your elbow and at his (✏ › Angle). Compare the numbers.
+6. Pause at contact. **Draw an angle** at your elbow and at his (✏ in the bar › + › Angle). Compare the numbers.
 7. Switch to **Overlay**. **Cut out B**; if his opponent is in frame, **Pick player** and tap him. Turn on
    **Tint**. Tap **auto-align** so his hips and feet sit on yours.
 8. Step frame by frame through the swing and watch where the crimson body leaves yours.

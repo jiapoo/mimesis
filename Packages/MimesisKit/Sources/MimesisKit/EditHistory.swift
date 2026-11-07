@@ -1,16 +1,6 @@
 import Foundation
 import Observation
 
-/// The pen the drawing tools set: shape, colour, size, and whether new drawings show on every frame.
-/// One for the whole comparison, so drawing on both clips at once uses the same pen.
-@MainActor @Observable
-final class Pen {
-    var tool: Drawing.Kind = .line
-    var ink: Drawing.Ink = .crimson
-    var size: Drawing.Size = .medium
-    var always = false
-}
-
 /// Undo and redo for every edit to the clips: trims, sync points, speeds and drawings (⌘Z, ⇧⌘Z).
 ///
 /// Rather than each edit saying what it changed, the comparison's edits are looked at a moment after

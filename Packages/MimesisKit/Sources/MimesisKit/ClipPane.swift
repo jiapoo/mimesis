@@ -167,7 +167,8 @@ struct ClipPane: View {
                     badge(name: false, time: false)
                 }
                 Spacer(minLength: 0)
-                if focused && !drawing {
+                // Linked, both clips are one: each keeps its buttons (mirror, sound, open…).
+                if (focused || linked) && !drawing {
                     actions.transition(.opacity)
                 }
             }
