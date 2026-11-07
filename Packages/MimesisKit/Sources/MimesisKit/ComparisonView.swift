@@ -271,36 +271,8 @@ public struct ComparisonView: View {
         #endif
     }
 
-    /// The top bar's controls, at the end of the phone's dock: the layout, and the app's menu.
-    private var dockExtras: some View {
-        HStack(spacing: 8) {
-            Menu {
-                ForEach(Comparison.Layout.allCases) { layout in
-                    Button {
-                        withAnimation(.easeOut(duration: 0.2)) { choose(layout) }
-                    } label: {
-                        if comparison.layout == layout {
-                            Label(layout.label, systemImage: "checkmark")
-                        } else {
-                            Text(layout.label)
-                        }
-                    }
-                    .disabled(layout == .overlay && !comparison.canLink)
-                }
-            } label: {
-                Image(systemName: comparison.layout.symbol)
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .frame(width: 32, height: 32)
-                    .background(Theme.raised, in: Circle())
-            }
-            .menuStyle(.button)
-            .buttonStyle(.plain)
-            .menuIndicator(.hidden)
-            .fixedSize()
-            menu
-        }
-    }
+    /// The top bar's controls, at the end of the iPhone's bar: one menu, with the layout at its top.
+    private var dockExtras: some View { menu }
 
     private func choose(_ layout: Comparison.Layout) {
         comparison.layout = layout
@@ -338,6 +310,19 @@ public struct ComparisonView: View {
 
     private var menu: some View {
             Menu {
+                if phone && anyLoaded {
+                    // No top bar on an iPhone: the layout is here.
+                    Section("Show") {
+                        ForEach(Comparison.Layout.allCases) { layout in
+                            Button {
+                                withAnimation(.easeOut(duration: 0.2)) { choose(layout) }
+                            } label: {
+                                Label(layout.label, systemImage: comparison.layout == layout ? "checkmark" : layout.symbol)
+                            }
+                            .disabled(layout == .overlay && !comparison.canLink)
+                        }
+                    }
+                }
                 Button("Save comparison…", systemImage: "square.and.arrow.down") {
                     newName = defaultName
                     naming = true
@@ -359,10 +344,10 @@ public struct ComparisonView: View {
                 Button("Masking test…", systemImage: "person.crop.rectangle") { maskTest = true }
                 #endif
             } label: {
-                Image(systemName: "ellipsis")
-                    .font(.system(size: 15, weight: .semibold))
+                Image(systemName: phone && anyLoaded ? comparison.layout.symbol : "ellipsis")
+                    .font(.system(size: phone ? 13 : 15, weight: .semibold))
                     .foregroundStyle(.white)
-                    .frame(width: 36, height: 36)
+                    .frame(width: phone ? 32 : 36, height: phone ? 32 : 36)
                     .background(Theme.raised, in: Circle())
             }
             .menuStyle(.button)

@@ -130,3 +130,41 @@ extension View {
             #endif
     }
 }
+
+/// A slim slider for the bar (speed, opacity): a thin track filled in the accent and a small white knob.
+/// Smaller than the system's, which on iPhone is too tall for the bar. Drag or tap anywhere along it.
+struct SlimSlider: View {
+    @Binding var value: Double
+    let range: ClosedRange<Double>
+
+    @State private var dragging = false
+
+    var body: some View {
+        GeometryReader { space in
+            let width = space.size.width
+            let share = (min(max(value, range.lowerBound), range.upperBound) - range.lowerBound)
+                / max(0.0001, range.upperBound - range.lowerBound)
+            let x = CGFloat(share) * width
+            ZStack(alignment: .leading) {
+                Capsule().fill(Color.white.opacity(0.18)).frame(height: 4)
+                Capsule().fill(Theme.accent).frame(width: max(4, x), height: 4)
+                Circle().fill(Color.white)
+                    .frame(width: dragging ? 16 : 13, height: dragging ? 16 : 13)
+                    .shadow(color: .black.opacity(0.35), radius: 2, y: 1)
+                    .offset(x: min(max(0, x - (dragging ? 8 : 6.5)), width - (dragging ? 16 : 13)))
+            }
+            .frame(height: space.size.height)
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { drag in
+                        dragging = true
+                        let share = min(max(drag.location.x / max(1, width), 0), 1)
+                        value = range.lowerBound + Double(share) * (range.upperBound - range.lowerBound)
+                    }
+                    .onEnded { _ in dragging = false })
+            .animation(.easeOut(duration: 0.1), value: dragging)
+        }
+        .frame(height: 22)
+    }
+}

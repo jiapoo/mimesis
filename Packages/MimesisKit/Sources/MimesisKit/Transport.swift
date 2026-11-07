@@ -15,6 +15,15 @@ struct Transport: View {
     var extras: AnyView?
     @Environment(Library.self) private var library
 
+    /// An iPhone: everything a little smaller, so the videos keep the height.
+    private var compact: Bool {
+        #if os(iOS)
+        UIDevice.current.userInterfaceIdiom == .phone
+        #else
+        false
+        #endif
+    }
+
     var body: some View {
         switch part {
         case .timeline: timeline
@@ -35,11 +44,11 @@ struct Transport: View {
                     .background(Color.black.opacity(0.45), in: Capsule())
             }
             marks
-            ruler(compact: false)
+            ruler(compact: compact)
         }
         .padding(.horizontal, 14)
-        .padding(.top, 18)
-        .padding(.bottom, 8)
+        .padding(.top, compact ? 4 : 18)
+        .padding(.bottom, compact ? 2 : 8)
         // A soft shade from below, so the timeline reads over a bright video.
         .background(
             LinearGradient(colors: [.clear, .black.opacity(0.45)], startPoint: .top, endPoint: .bottom)
@@ -54,17 +63,20 @@ struct Transport: View {
             // Left: which clip, and its own tools.
             HStack(spacing: 6) {
                 focusPicker
-                if let clip = comparison.selected {
+                if comparison.layout == .overlay {
+                    // The overlay's own controls, here rather than over the picture.
+                    OverlayControls(comparison: comparison, compact: compact)
+                } else if let clip = comparison.selected {
                     ClipTools(clip: clip, linked: comparison.linked)
                 }
             }
             Spacer(minLength: 6)
             // Middle: play.
             HStack(spacing: 8) {
-                RoundButton(symbol: "backward.frame.fill", size: 32) { comparison.step(-1) }
+                RoundButton(symbol: "backward.frame.fill", size: compact ? 30 : 32) { comparison.step(-1) }
                     .help("One frame back (,)")
-                playButton(size: 42)
-                RoundButton(symbol: "forward.frame.fill", size: 32) { comparison.step(1) }
+                playButton(size: compact ? 34 : 42)
+                RoundButton(symbol: "forward.frame.fill", size: compact ? 30 : 32) { comparison.step(1) }
                     .help("One frame forward (.)")
             }
             Spacer(minLength: 6)
@@ -84,12 +96,12 @@ struct Transport: View {
                     RoundButton(symbol: "arrow.uturn.forward", size: 32) { comparison.history.redo(comparison) }
                         .help("Redo (⇧⌘Z)")
                 }
-                speedMenu
+                speedSlider
                 if let extras { extras }
             }
         }
         .padding(.horizontal, 14)
-        .padding(.vertical, 7)
+        .padding(.vertical, compact ? 3 : 7)
         .frame(maxWidth: .infinity)
         .background(Theme.card)
         .overlay(alignment: .top) { Rectangle().fill(Theme.line).frame(height: 1) }
@@ -277,28 +289,24 @@ struct Transport: View {
         comparison.linked ? comparison.linkedSpeed : Double(comparison.focused?.engine.playbackSpeed ?? 1)
     }
 
-    private var speedMenu: some View {
-        Menu {
-            ForEach([0.1, 0.25, 0.5, 0.75, 1.0, 1.5, 2.0], id: \.self) { value in
-                Button { setSpeed(value) } label: {
-                    if abs(value - speed) < 0.001 {
-                        Label(speedText(value), systemImage: "checkmark")
-                    } else {
-                        Text(speedText(value))
-                    }
-                }
+    /// Playback speed, as a slider (0.1× to 2×, in steps of 0.05×); tap the reading for 1×.
+    private var speedSlider: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "gauge.with.dots.needle.33percent")
+                .font(.system(size: 12))
+                .foregroundStyle(Theme.secondary)
+            SlimSlider(value: Binding(get: { speed }, set: { setSpeed(max(0.1, ($0 * 20).rounded() / 20)) }), range: 0.1...2)
+                .frame(width: compact ? 70 : 110)
+            Button { setSpeed(1) } label: {
+                Text(speedText(speed))
+                    .font(.system(size: 12, weight: .semibold).monospacedDigit())
+                    .foregroundStyle(abs(speed - 1) < 0.001 ? Color.white : Theme.accent)
+                    .frame(width: 38, alignment: .leading)
+                    .contentShape(Rectangle())
             }
-        } label: {
-            Text(speedText(speed))
-                .font(.system(size: 13, weight: .semibold).monospacedDigit())
-                .foregroundStyle(.white)
-                .frame(minWidth: 44, minHeight: 30)
-                .background(Theme.raised, in: Capsule())
+            .buttonStyle(.plain)
+            .help("Tap for 1×")
         }
-        .menuStyle(.button)
-        .buttonStyle(.plain)
-        .menuIndicator(.hidden)
-        .fixedSize()
         .help("Playback speed")
     }
 

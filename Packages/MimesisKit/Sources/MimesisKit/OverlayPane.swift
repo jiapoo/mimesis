@@ -2,16 +2,20 @@ import AreteMedia
 import SwiftUI
 
 /// One clip over the other, see-through, to show where two bodies differ frame by frame.
-/// Drag to move the top clip, pinch to resize it, double-tap to put it back.
+/// Two ways to touch it, chosen in the bar (`OverlayControls`):
+/// - **Move the top clip** (✋): drag to move it, pinch to resize, twist to turn, double-tap to put it back;
+/// - **Zoom** (🔍): pinch to zoom the whole picture, both clips together, drag to pan, double-tap to see it all.
 struct OverlayPane: View {
     let comparison: Comparison
 
     @State private var offsetBase: CGSize?
     @State private var scaleBase: CGFloat?
     @State private var rotationBase: Double?
-    @State private var aligning = false
-    @State private var picking = false
-    @State private var alignProblem: String?
+    @State private var zoomBase: CGFloat?
+    @State private var panBase: CGSize?
+
+    private var ui: OverlayUI { comparison.overlayUI }
+    private var picking: Bool { ui.picking }
 
     private var top: Clip { comparison.clips[comparison.overlayTop] }
     private var base: Clip { comparison.clips[1 - comparison.overlayTop] }
@@ -54,76 +58,109 @@ struct OverlayPane: View {
                 }
             }
             .frame(width: space.size.width, height: space.size.height)
+            // Zoomed, both clips together.
+            .scaleEffect(base.zoom)
+            .offset(base.pan)
+            .frame(width: space.size.width, height: space.size.height)
             .clipped()
             .contentShape(Rectangle())
             .gesture(
                 DragGesture(minimumDistance: 2)
                     .onChanged { drag in
                         guard !picking else { return }
+                        if !ui.movesTop {
+                            let start = panBase ?? base.pan
+                            panBase = start
+                            base.pan = CGSize(width: start.width + drag.translation.width,
+                                              height: start.height + drag.translation.height)
+                            return
+                        }
                         let start = offsetBase ?? comparison.overlayOffset
                         offsetBase = start
                         comparison.overlayOffset = CGSize(
                             width: start.width + drag.translation.width / max(1, picture.width),
                             height: start.height + drag.translation.height / max(1, picture.height))
                     }
-                    .onEnded { _ in offsetBase = nil })
+                    .onEnded { _ in offsetBase = nil; panBase = nil })
             .simultaneousGesture(
                 MagnifyGesture()
                     .onChanged { pinch in
+                        if !ui.movesTop {
+                            let start = zoomBase ?? base.zoom
+                            zoomBase = start
+                            base.zoom = min(8, max(1, start * pinch.magnification))
+                            if base.zoom == 1 { base.pan = .zero }
+                            return
+                        }
                         let start = scaleBase ?? comparison.overlayScale
                         scaleBase = start
                         comparison.overlayScale = min(4, max(0.25, start * pinch.magnification))
                     }
-                    .onEnded { _ in scaleBase = nil })
+                    .onEnded { _ in scaleBase = nil; zoomBase = nil })
             .simultaneousGesture(
                 RotateGesture()
                     .onChanged { turn in
-                        guard !picking else { return }
+                        guard !picking, ui.movesTop else { return }
                         let start = rotationBase ?? comparison.overlayRotation
                         rotationBase = start
                         comparison.overlayRotation = start + turn.rotation.degrees
                     }
                     .onEnded { _ in rotationBase = nil })
             .onTapGesture(count: 2) {
-                withAnimation(.easeOut(duration: 0.2)) { comparison.resetOverlay() }
+                withAnimation(.easeOut(duration: 0.2)) {
+                    if ui.movesTop { comparison.resetOverlay() } else { base.resetView() }
+                }
             }
             .onTapGesture { location in
                 guard picking else { return }
-                pick(at: location, picture: picture)
+                // Back through the zoom to the unzoomed picture.
+                let centre = CGPoint(x: space.size.width / 2, y: space.size.height / 2)
+                let unzoomed = CGPoint(
+                    x: (location.x - centre.x - base.pan.width) / base.zoom + centre.x,
+                    y: (location.y - centre.y - base.pan.height) / base.zoom + centre.y)
+                pick(at: unzoomed, picture: picture)
             }
         }
         .background(Color.black)
         .clipped()
         .overlay(alignment: .top) {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(alignment: .top, spacing: 8) {
-                    badge
-                    Spacer(minLength: 0)
-                    actions
+            // Only what to read here; its controls are in the bar under the videos.
+            HStack(alignment: .top, spacing: 8) {
+                badge
+                Spacer(minLength: 0)
+                if base.zoom > 1 {
+                    RoundButton(symbol: "arrow.down.right.and.arrow.up.left") {
+                        withAnimation(.easeOut(duration: 0.2)) { base.resetView() }
+                    }
+                    .help("See the whole picture")
                 }
-                tools
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(Color.black.opacity(0.45), in: Capsule())
             }
             .padding(10)
         }
-        .overlay(alignment: .bottom) {
-            if let alignProblem {
-                Text(alignProblem)
+        .overlay(alignment: .center) {
+            if let hint {
+                Text(hint)
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
                     .background(Color.black.opacity(0.6), in: Capsule())
-                    .padding(10)
-                    .onTapGesture { self.alignProblem = nil }
-                    .task {
-                        try? await Task.sleep(for: .seconds(5))
-                        self.alignProblem = nil
-                    }
+                    .allowsHitTesting(false)
             }
         }
+        .onChange(of: ui.problem) { _, problem in
+            guard problem != nil else { return }
+            Task {
+                try? await Task.sleep(for: .seconds(5))
+                if ui.problem == problem { ui.problem = nil }
+            }
+        }
+    }
+
+    private var hint: String? {
+        if let problem = ui.problem { return problem }
+        if picking { return "Tap \(topLetter)'s player" }
+        return nil
     }
 
     private var badge: some View {
@@ -147,57 +184,6 @@ struct OverlayPane: View {
             .background(on ? Theme.accent : Color.white.opacity(0.18), in: Circle())
     }
 
-    private var actions: some View {
-        HStack(spacing: 6) {
-            RoundButton(symbol: "arrow.left.and.right.righttriangle.left.righttriangle.right",
-                        active: top.engine.mirroredHorizontally, action: top.toggleMirror)
-                .help("Mirror the top clip side to side, e.g. a right-hander to match a left-hander")
-            RoundButton(symbol: aligning ? "hourglass" : "figure.stand") { align() }
-                .help("Auto-align: put \(topLetter)'s hips and feet on \(baseLetter)'s, from the frames on screen")
-                .disabled(aligning)
-            RoundButton(symbol: aligning ? "hourglass" : "square.on.square.dashed") { align(byBackground: true) }
-                .help("Line up the backgrounds: for two clips filmed at the same place, so the court lines match")
-                .disabled(aligning)
-            RoundButton(symbol: "minus.magnifyingglass") { resize(by: 1 / 1.1) }
-                .help("Make the top clip smaller")
-            RoundButton(symbol: "plus.magnifyingglass") { resize(by: 1.1) }
-                .help("Make the top clip bigger")
-            RoundButton(symbol: "arrow.up.arrow.down") {
-                comparison.overlayTop = 1 - comparison.overlayTop
-                comparison.resetOverlay()
-            }
-            .help("Swap which clip is on top")
-            RoundButton(symbol: "arrow.counterclockwise", action: comparison.resetOverlay)
-                .help("Put the top clip back where it started (or double-tap)")
-                .disabled(comparison.overlayOffset == .zero && comparison.overlayScale == 1 && comparison.overlayRotation == 0)
-        }
-    }
-
-    private var tools: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "circle.lefthalf.filled")
-                .foregroundStyle(Theme.secondary)
-            Slider(value: Binding(get: { comparison.overlayOpacity }, set: { comparison.overlayOpacity = $0 }),
-                   in: 0.1...0.9)
-                .frame(maxWidth: 260)
-            Text("\(topLetter) \(Int((comparison.overlayOpacity * 100).rounded()))%")
-                .font(.system(size: 12, weight: .semibold).monospacedDigit())
-                .frame(width: 52, alignment: .leading)
-            HStack(spacing: 4) {
-                RoundButton(symbol: "rotate.left", size: 26) { comparison.overlayRotation -= 1 }
-                    .help("Turn \(topLetter) 1° anticlockwise (or twist with two fingers)")
-                Text("\(Int(comparison.overlayRotation.rounded()))°")
-                    .font(.system(size: 12, weight: .semibold).monospacedDigit())
-                    .frame(minWidth: 30)
-                RoundButton(symbol: "rotate.right", size: 26) { comparison.overlayRotation += 1 }
-                    .help("Turn \(topLetter) 1° clockwise")
-            }
-            Spacer(minLength: 8)
-            cutoutControls
-        }
-        .foregroundStyle(.white)
-    }
-
     /// Picks the top clip's subject under a tap: back from the view to the top picture, as filmed.
     private func pick(at location: CGPoint, picture: CGRect) {
         guard let cutout = top.cutout else { return }
@@ -215,86 +201,13 @@ struct OverlayPane: View {
         var point = CGPoint(x: (local.x - shown.minX) / shown.width, y: (local.y - shown.minY) / shown.height)
         if top.engine.mirroredHorizontally { point.x = 1 - point.x }
         guard (0...1).contains(point.x), (0...1).contains(point.y) else {
-            alignProblem = "Tap on \(topLetter)'s player."
+            ui.problem = "Tap on \(topLetter)'s player."
             return
         }
         if cutout.pick(at: top.engine.currentTime, point: point) {
-            picking = false
+            ui.picking = false
         } else {
-            alignProblem = "Nobody there: tap on \(topLetter)'s player."
-        }
-    }
-
-    private func align(byBackground: Bool = false) {
-        aligning = true
-        alignProblem = nil
-        Task {
-            do {
-                if byBackground {
-                    try await comparison.alignBackgrounds()
-                } else {
-                    try await comparison.autoAlign()
-                }
-            } catch {
-                #if targetEnvironment(simulator)
-                alignProblem = "Auto-align needs a real iPhone or iPad (Vision can't run it in Simulator)."
-                #else
-                alignProblem = error.localizedDescription
-                #endif
-            }
-            aligning = false
-        }
-    }
-
-    private func resize(by factor: CGFloat) {
-        withAnimation(.easeOut(duration: 0.12)) {
-            comparison.overlayScale = min(4, max(0.25, comparison.overlayScale * factor))
-        }
-    }
-
-    /// Cut the top player out: a button to start, progress while it works, then on/off and tint.
-    @ViewBuilder private var cutoutControls: some View {
-        switch top.cutout?.state {
-        case nil:
-            Button { top.makeCutout() } label: { Label("Cut out \(topLetter)", systemImage: "person.crop.rectangle") }
-                .buttonStyle(ChipStyle(active: true))
-                .help("Find the player in every frame of \(topLetter)'s trim, so only the player shows over the other clip")
-        case .preparing(let done)?:
-            ProgressView(value: done).frame(width: 120)
-            Text("Cutting out… \(Int(done * 100))%").font(.system(size: 12)).foregroundStyle(Theme.secondary)
-            Button("Stop") { top.dropCutout() }.buttonStyle(ChipStyle())
-        case .ready?:
-            if let cutout = top.cutout {
-                Button { cutout.enabled.toggle() } label: { Label("Cutout", systemImage: "person.crop.rectangle") }
-                    .buttonStyle(ChipStyle(active: cutout.enabled))
-                    .help(cutout.shortened ? "Only the first \(Cutout.frameLimit) frames of the trim are cut out: trim \(topLetter) to the swing"
-                          : "Show \(topLetter) cut out, or whole")
-                Button { cutout.boxed.toggle() } label: { Label("Box", systemImage: "rectangle.dashed") }
-                    .buttonStyle(ChipStyle(active: cutout.boxed))
-                    .disabled(!cutout.enabled)
-                    .help("A soft box around \(topLetter)'s player instead of their outline, for when the outline loses the racket")
-                Button { cutout.tinted.toggle() } label: { Label("Tint", systemImage: "paintbrush") }
-                    .buttonStyle(ChipStyle(active: cutout.tinted))
-                    .disabled(!cutout.enabled)
-                    .help("Colour \(topLetter)'s player crimson, to tell the two bodies apart")
-                if cutout.hasSeveral && cutout.enabled {
-                    if cutout.picked != nil {
-                        Button { cutout.pickEveryone() } label: { Label("Everyone", systemImage: "person.2") }
-                            .buttonStyle(ChipStyle())
-                            .help("Show everyone found in \(topLetter), not only the player picked")
-                    }
-                    Button { picking.toggle() } label: {
-                        Label(picking ? "Tap a player" : "Pick player", systemImage: "hand.tap")
-                    }
-                    .buttonStyle(ChipStyle(active: picking || cutout.picked != nil))
-                    .help("Keep only one player when \(topLetter) has others in frame (an opponent, a coach): tap them")
-                }
-                RoundButton(symbol: "arrow.clockwise") { top.makeCutout(fresh: true) }
-                    .help("Cut out again, e.g. after changing \(topLetter)'s trim")
-            }
-        case .failed(let why)?:
-            Text(why).font(.system(size: 12)).foregroundStyle(Theme.secondary).lineLimit(1)
-            Button("Try again") { top.makeCutout() }.buttonStyle(ChipStyle())
+            ui.problem = "Nobody there: tap on \(topLetter)'s player."
         }
     }
 

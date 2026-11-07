@@ -190,6 +190,7 @@ public final class Comparison {
     public var drawing: DrawTarget?
     let pen = Pen()
     let history = EditHistory()
+    let overlayUI = OverlayUI()
 
     public func isDrawing(on clip: Clip) -> Bool {
         switch drawing {
