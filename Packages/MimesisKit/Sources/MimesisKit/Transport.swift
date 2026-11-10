@@ -54,6 +54,11 @@ struct Transport: View {
         .background(
             LinearGradient(colors: [.clear, .black.opacity(0.45)], startPoint: .top, endPoint: .bottom)
                 .allowsHitTesting(false))
+        // The whole strip takes its touches, gaps and edges included: a touch that just misses the bar
+        // or the ruler must not land on the clip underneath (selecting it, or stepping its frames).
+        .contentShape(Rectangle())
+        .gesture(DragGesture(minimumDistance: 0).onChanged { _ in })
+        .onTapGesture {}
         .disabled(comparison.focused == nil)
     }
 

@@ -10,6 +10,10 @@ public struct ComparisonView: View {
     @State private var importing: Int?
     @State private var photoPick: PhotosPickerItem?
     @State private var photoTarget: Int?
+    /// The clip a chooser was opened for. Kept apart from what shows the chooser: the Mac clears that
+    /// before it hands over the chosen file, which lost the clip and opened nothing.
+    @State private var pickSide = 0
+    @State private var openProblem: String?
     @State private var maskTest = false
     @State private var store = ComparisonStore()
     @State private var naming = false
@@ -46,7 +50,10 @@ public struct ComparisonView: View {
                     onOpenPhotos: { photoTarget = $0 },
                     onDropped: { urls, side in dropped(urls, on: side) },
                     onCourt: { court = true },
-                    onLibrary: library.clips.isEmpty ? nil : { showingLibrary = true })
+                    onLibrary: library.clips.isEmpty ? nil : { showingLibrary = true },
+                    recent: Array(store.saved.prefix(4)),
+                    onOpenProject: { item in Task { await store.open(item, into: comparison) } },
+                    onAllProjects: { browsing = true })
             } else {
                 // As in Arete's player, on every device: the videos edge to edge; the timeline across
                 // their bottom, see-through; and a solid bar of buttons under them. (A phone only runs
@@ -189,7 +196,7 @@ public struct ComparisonView: View {
             #endif
             if phase != .active { store.remember(comparison) }
         }
-        .alert("Save comparison", isPresented: $naming) {
+        .alert("Save project", isPresented: $naming) {
             TextField("Name", text: $newName)
             Button("Cancel", role: .cancel) {}
             Button("Save") {
@@ -197,7 +204,7 @@ public struct ComparisonView: View {
                 store.save(comparison, as: name.isEmpty ? defaultName : name)
             }
         } message: {
-            Text("Both clips, with their trims, sync points, speeds, mirroring and drawings.")
+            Text("Both videos (the project keeps its own copies), with their trims, sync points, speeds, mirroring, drawings and the overlay.")
         }
         #if os(iOS)
         .fullScreenCover(isPresented: $court) {
@@ -228,23 +235,39 @@ public struct ComparisonView: View {
         }
         .fileImporter(
             isPresented: Binding(get: { importing != nil }, set: { if !$0 { importing = nil } }),
-            allowedContentTypes: [.movie]
+            allowedContentTypes: [.movie, .video, .mpeg4Movie, .quickTimeMovie]
         ) { result in
-            if case .success(let url) = result, let index = importing { open(url, in: index) }
+            switch result {
+            case .success(let url): open(url, in: pickSide)
+            case .failure(let error): openProblem = error.localizedDescription
+            }
             importing = nil
         }
+        .onChange(of: importing) { _, side in if let side { pickSide = side } }
+        .onChange(of: photoTarget) { _, side in if let side { pickSide = side } }
         .photosPicker(
             isPresented: Binding(get: { photoTarget != nil }, set: { if !$0 { photoTarget = nil } }),
-            selection: $photoPick, matching: .videos)
+            selection: $photoPick, matching: .videos, preferredItemEncoding: .current)
         .onChange(of: photoPick) { _, item in
             guard let item else { return }
-            let index = photoTarget ?? comparison.focus
+            let index = pickSide
             photoPick = nil
             Task {
-                if let movie = try? await item.loadTransferable(type: PickedMovie.self) {
-                    open(movie.url, in: index)
+                do {
+                    if let movie = try await item.loadTransferable(type: PickedMovie.self) {
+                        open(movie.url, in: index)
+                    } else {
+                        openProblem = "Photos didn't hand over the video. If it's in iCloud, wait for it to download and try again."
+                    }
+                } catch {
+                    openProblem = "Couldn't get the video from Photos: \(error.localizedDescription)"
                 }
             }
+        }
+        .alert("Couldn't open the video", isPresented: Binding(get: { openProblem != nil }, set: { if !$0 { openProblem = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(openProblem ?? "")
         }
         .sheet(isPresented: $maskTest) {
             NavigationStack {
@@ -354,14 +377,32 @@ public struct ComparisonView: View {
                         }
                     }
                 }
-                Button("Save comparison…", systemImage: "square.and.arrow.down") {
+                // A project keeps every edit and its own copies of the videos.
+                Button(store.current.map { "Save “\($0.name)”" } ?? "Save project…", systemImage: "square.and.arrow.down") {
+                    saveProject()
+                }
+                .disabled(!comparison.clips.contains(where: \.isLoaded))
+                .keyboardShortcut("s", modifiers: .command)
+                Button("Save as new project…", systemImage: "plus.square.on.square") {
                     newName = defaultName
                     naming = true
                 }
                 .disabled(!comparison.clips.contains(where: \.isLoaded))
-                .keyboardShortcut("s", modifiers: .command)
-                Button("Saved comparisons…", systemImage: "list.bullet.rectangle") { browsing = true }
+                .keyboardShortcut("s", modifiers: [.command, .shift])
+                Menu {
+                    ForEach(store.saved.prefix(8)) { item in
+                        Button(item.name) { Task { await store.open(item, into: comparison) } }
+                    }
+                    if store.saved.isEmpty { Text("No projects yet") }
+                } label: {
+                    Label("Open recent", systemImage: "clock.arrow.circlepath")
+                }
+                Button("All projects…", systemImage: "list.bullet.rectangle") { browsing = true }
                     .keyboardShortcut("o", modifiers: [.command, .shift])
+                Button("New comparison", systemImage: "plus") { store.closeProject(comparison) }
+                    .disabled(!anyLoaded)
+                    .keyboardShortcut("n", modifiers: .command)
+                Divider()
                 Button("Library…", systemImage: "books.vertical") { showingLibrary = true }
                     .keyboardShortcut("l", modifiers: .command)
                 Divider()
@@ -478,6 +519,14 @@ public struct ComparisonView: View {
     }
 
     /// "serve vs serve2"
+    /// ⌘S: over the project on screen; with none yet, asks for a name.
+    private func saveProject() {
+        if !store.saveCurrent(comparison) {
+            newName = defaultName
+            naming = true
+        }
+    }
+
     private var defaultName: String {
         comparison.clips.filter(\.isLoaded).map(\.name).joined(separator: " vs ")
     }
@@ -652,15 +701,22 @@ struct PickedMovie: Transferable {
     let url: URL
 
     static var transferRepresentation: some TransferRepresentation {
-        FileRepresentation(contentType: .movie) { SentTransferredFile($0.url) } importing: { received in
-            // Kept in Application Support, so a saved comparison can open it again later.
-            let folder = ComparisonStore.supportFolder.appendingPathComponent("Clips", isDirectory: true)
-            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-            let copy = folder.appendingPathComponent(UUID().uuidString)
-                .appendingPathExtension(received.file.pathExtension)
-            try FileManager.default.copyItem(at: received.file, to: copy)
-            return Self(url: copy)
-        }
+        // Photos hands a video over as a movie file, an MPEG-4 or a QuickTime movie, depending on the Mac
+        // or iPhone and how it was filmed: take any of them.
+        FileRepresentation(contentType: .movie) { SentTransferredFile($0.url) } importing: { try keep($0.file) }
+        FileRepresentation(contentType: .mpeg4Movie) { SentTransferredFile($0.url) } importing: { try keep($0.file) }
+        FileRepresentation(contentType: .quickTimeMovie) { SentTransferredFile($0.url) } importing: { try keep($0.file) }
+        FileRepresentation(contentType: .video) { SentTransferredFile($0.url) } importing: { try keep($0.file) }
+    }
+
+    /// A copy in Application Support (Photos' own file goes away), so a saved comparison can open it again.
+    private static func keep(_ file: URL) throws -> Self {
+        let folder = ComparisonStore.supportFolder.appendingPathComponent("Clips", isDirectory: true)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let ext = file.pathExtension.isEmpty ? "mov" : file.pathExtension
+        let copy = folder.appendingPathComponent(UUID().uuidString).appendingPathExtension(ext)
+        try FileManager.default.copyItem(at: file, to: copy)
+        return Self(url: copy)
     }
 }
 
@@ -669,42 +725,63 @@ struct SavedComparisonsView: View {
     let store: ComparisonStore
     let onOpen: (SavedComparison) -> Void
     @Environment(\.dismiss) private var dismiss
+    @State private var renaming: SavedComparison?
+    @State private var newName = ""
 
     var body: some View {
         NavigationStack {
             Group {
                 if store.saved.isEmpty {
                     ContentUnavailableView(
-                        "No saved comparisons", systemImage: "list.bullet.rectangle",
-                        description: Text("Save one from the ⋯ menu to come back to it later."))
+                        "No projects yet", systemImage: "list.bullet.rectangle",
+                        description: Text("Save one from the ⋯ menu (⌘S): it keeps both videos and every edit."))
                 } else {
                     List {
+                        // The most recently saved or opened first.
                         ForEach(store.saved) { item in
                             Button { onOpen(item) } label: {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(item.name).font(.body.weight(.medium))
-                                    Text(item.date.formatted(date: .abbreviated, time: .shortened))
-                                        .font(.caption).foregroundStyle(.secondary)
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(item.name).font(.body.weight(.medium))
+                                        Text(item.date.formatted(date: .abbreviated, time: .shortened))
+                                            .font(.caption).foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    if item.id == store.currentID {
+                                        Text("Open").font(.caption.weight(.semibold)).foregroundStyle(Theme.accent)
+                                    }
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
                             .contextMenu {
+                                Button("Rename…", systemImage: "pencil") {
+                                    newName = item.name
+                                    renaming = item
+                                }
                                 Button("Delete", systemImage: "trash", role: .destructive) { store.delete(item) }
                             }
                             .listRowBackground(Theme.card)
                         }
                         .onDelete { offsets in
-                            for index in offsets { store.delete(store.saved[index]) }
+                            for item in offsets.map({ store.saved[$0] }) { store.delete(item) }
                         }
                     }
                 }
             }
-            .navigationTitle("Saved comparisons")
+            .navigationTitle("Projects")
             .toolbar { Button("Done") { dismiss() } }
+            .alert("Rename project", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
+                TextField("Name", text: $newName)
+                Button("Cancel", role: .cancel) {}
+                Button("Rename") {
+                    let name = newName.trimmingCharacters(in: .whitespaces)
+                    if let renaming, !name.isEmpty { store.rename(renaming, to: name) }
+                }
+            }
         }
-        .themedSheet(width: 420, height: 360)
+        .themedSheet(width: 440, height: 400)
     }
 }
 

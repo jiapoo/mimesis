@@ -1,13 +1,13 @@
 {
-  "originHash" : "bc5be650568bdabeabb82d7bc3bf40a540660b1abd0c60fadec08eeee744894a",
+  "originHash" : "97ba68f623ddcba4e69d6449a8e5116f5d9c88f999012c4afb9c32de1fcc6b4a",
   "pins" : [
     {
       "identity" : "apple-media",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/jiapoo/apple-media",
       "state" : {
-        "revision" : "43775a95e50a520a9f76377c284c973668f4b190",
-        "version" : "1.8.0"
+        "revision" : "77f5711a59e3afcd1a411e7ea79da8cabdbbb023",
+        "version" : "1.12.0"
       }
     }
   ],

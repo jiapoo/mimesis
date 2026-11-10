@@ -243,7 +243,8 @@ public final class Comparison {
             stopTicker()
             isPlaying = false
             drawing = nil
-            if linked { Task { await seek(to: position) } }
+            // Linking goes to the sync point: where the two line up, and where play starts.
+            if linked { Task { await seek(to: loopStart) } }
         }
     }
 
@@ -406,7 +407,7 @@ public final class Comparison {
         isPlaying = true
         Task {
             // From the start again when at the end; and always from lined-up frames.
-            let from = position >= range.upperBound - frameStep ? range.lowerBound : position
+            let from = position >= range.upperBound - frameStep ? loopStart : position
             await seek(to: from)
             guard isPlaying else { return }
             applyRates()
@@ -428,41 +429,71 @@ public final class Comparison {
         if wasPlaying { Task { await seek(to: position) } }
     }
 
-    /// A at its own speed; B at its speed for the section the playhead is in.
-    private func applyRates() {
-        let u = position
+    /// Where a clip's player really is right now (the engine's own time is only refreshed now and then,
+    /// too coarse to compare two players by).
+    private func liveTime(_ clip: Clip) -> Double {
+        guard let time = clip.engine.player?.currentTime().seconds, time.isFinite else { return clip.engine.currentTime }
+        return time
+    }
+
+    /// A at its own speed; B at its speed for the section the playhead is in, a touch faster or slower
+    /// (`nudge`, a share of its speed) while it's catching up with A.
+    private func applyRates(at u: Double? = nil, nudge: Double = 0) {
+        let u = u ?? position
         for clip in clips {
-            let rate = Float(min(8, max(0.05, warp(clip).slope(at: u) * linkedSpeed)))
-            if abs(clip.engine.playbackSpeed - rate) > 0.005 { clip.engine.playbackSpeed = rate }
+            var rate = warp(clip).slope(at: u) * linkedSpeed
+            if clip === b { rate *= 1 + nudge }
+            let speed = Float(min(8, max(0.05, rate)))
+            if abs(clip.engine.playbackSpeed - speed) > 0.002 { clip.engine.playbackSpeed = speed }
         }
     }
 
-    /// While linked and playing: loops at the end of the span both cover, changes B's speed as it
-    /// enters each section, and pulls B back in line when it drifts more than a frame and a half.
+    /// While linked and playing: loops at the end of the span both cover, changes B's speed as it enters
+    /// each section, and keeps B in line with A.
+    ///
+    /// B is kept in line by playing it very slightly faster or slower until it's back (never seen), not
+    /// by jumping it to the right frame: each jump made B stutter, and they came often, because the two
+    /// clips were compared by times that are only refreshed a few times a second. A jump is kept for
+    /// when B is far out (a hiccup in decoding).
     private func startTicker() {
         stopTicker()
         ticker = Task { [weak self] in
             while !Task.isCancelled {
-                try? await Task.sleep(for: .milliseconds(33))
+                try? await Task.sleep(for: .milliseconds(50))
                 guard let self, self.isPlaying else { return }
-                let u = self.position
+                let u = self.warp(self.a).u(at: self.liveTime(self.a))
                 if u >= self.range.upperBound - self.frameStep {
                     for clip in self.clips { clip.engine.pause() }
-                    await self.seek(to: self.range.lowerBound)
+                    await self.seek(to: self.loopStart)
                     guard self.isPlaying else { return }
                     self.applyRates()
                     for clip in self.clips { clip.engine.play() }
                     continue
                 }
-                self.applyRates()
                 let follower = self.b
-                let expected = self.clipTime(follower, at: u)
-                let rate = Double(follower.engine.playbackSpeed)
-                if abs(follower.engine.currentTime - expected) > 1.5 * follower.frameLength * max(1, rate) {
-                    follower.engine.seekFast(expected)
+                // How far B is ahead of where it should be, in its own seconds.
+                let drift = self.liveTime(follower) - self.clipTime(follower, at: u)
+                let frame = follower.frameLength
+                if abs(drift) > max(0.25, 8 * frame) {
+                    follower.engine.seekFast(self.clipTime(follower, at: u))
+                    self.applyRates(at: u)
+                } else if abs(drift) > frame * 0.5 {
+                    // Close the gap over about half a second, by at most 6 % of its speed.
+                    let slope = max(0.05, self.warp(follower).slope(at: u) * self.linkedSpeed)
+                    self.applyRates(at: u, nudge: min(0.06, max(-0.06, -drift / 0.5 / slope)))
+                } else {
+                    self.applyRates(at: u)
                 }
             }
         }
+    }
+
+    /// Where linked play starts and loops from: the first sync point when there is one (never before
+    /// the span both clips cover), else the start of that span.
+    public var loopStart: Double {
+        let range = range
+        guard a.syncs.first != nil || b.syncs.first != nil else { return range.lowerBound }
+        return min(max(0, range.lowerBound), range.upperBound)
     }
 
     private func stopTicker() {

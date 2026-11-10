@@ -11,6 +11,10 @@ struct WelcomeView: View {
     let onCourt: () -> Void
     /// Nil until the library has clips.
     let onLibrary: (() -> Void)?
+    /// The most recent projects, to open with one tap.
+    var recent: [SavedComparison] = []
+    var onOpenProject: (SavedComparison) -> Void = { _ in }
+    var onAllProjects: () -> Void = {}
 
     #if os(iOS)
     @Environment(\.verticalSizeClass) private var verticalSizeClass
@@ -110,6 +114,37 @@ struct WelcomeView: View {
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(WideButtonStyle())
+            }
+            if !recent.isEmpty {
+                // Recent projects: one tap to carry on.
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Text("Recent projects").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.secondary)
+                        Spacer()
+                        Button("All…", action: onAllProjects)
+                            .buttonStyle(.plain)
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(Theme.accent)
+                    }
+                    ForEach(recent.prefix(sideways ? 2 : 4)) { project in
+                        Button { onOpenProject(project) } label: {
+                            HStack(spacing: 10) {
+                                Image(systemName: "rectangle.split.2x1").foregroundStyle(Theme.accent)
+                                Text(project.name).font(.system(size: 14, weight: .medium)).lineLimit(1)
+                                Spacer(minLength: 8)
+                                Text(project.date.formatted(.relative(presentation: .named)))
+                                    .font(.system(size: 12)).foregroundStyle(Theme.secondary)
+                            }
+                            .padding(.horizontal, 12)
+                            .frame(height: 38)
+                            .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .help("Open this project: both videos and every edit")
+                    }
+                }
+                .padding(.top, 4)
             }
             #if os(macOS)
             Label("Or drop one or two videos here", systemImage: "arrow.down.doc")

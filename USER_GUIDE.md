@@ -341,11 +341,17 @@ Fault*, or **New tag…** for your own. Tags show as yellow marks over the timel
 ## Saving and reopening comparisons
 
 - Mimesis **remembers what's on screen** and brings it back the next time you open it.
-- **⋯ › Save comparison…** (⌘S) saves it by name: both clips with their trims, sync points, speeds,
-  mirroring, drawings, overlay position, and cutout.
-- **⋯ › Saved comparisons…** (⇧⌘O) lists them; tap one to reopen it, swipe to delete.
-
-If a clip's file has been moved or deleted, that side opens empty.
+- A **project** keeps a comparison for good: every edit (trims, sync points, speeds, mirroring, drawings, the
+  overlay, the cutout) **and its own copies of both videos**, so it opens again even if the originals are
+  moved or deleted.
+  - **⋯ › Save project…** (⌘S) asks for a name the first time; after that ⌘S saves over the same project
+    (the menu reads *Save “name”*).
+  - **⋯ › Save as new project…** (⇧⌘S) makes another one from what's on screen.
+  - **⋯ › Open recent** lists the latest eight; the welcome screen shows the latest four.
+  - **⋯ › All projects…** (⇧⌘O) lists them all, most recent first: tap to open, swipe to delete,
+    right-click (press and hold) to rename.
+  - **⋯ › New comparison** (⌘N) closes both clips and starts afresh.
+- The copies are kept inside Mimesis. On the same disk a copy takes no extra room.
 
 ---
 
@@ -415,8 +421,9 @@ On iPhone and iPad a copy is kept in Mimesis so the library can open it again la
 
 | Keys | Does |
 |---|---|
-| ⌘S | Save comparison |
-| ⇧⌘O | Saved comparisons |
+| ⌘S / ⇧⌘S | Save the project / save as a new one |
+| ⇧⌘O | All projects |
+| ⌘N | New comparison |
 | ⌘L | Library |
 | ⌘K | Court mode |
 | ⌘E | Export video |

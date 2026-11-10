@@ -20,6 +20,8 @@ struct ClipState: Codable {
     var pick: [Double]?
     /// The cutout drawn as a soft box rather than an outline.
     var box: Bool?
+    /// In a project: the name of the project's own copy of the video, in the project's folder.
+    var file: String?
 }
 
 /// A comparison as saved: both clips, and how they're shown and played.
@@ -41,12 +43,16 @@ struct OverlayState: Codable {
     var rotation: Double?
 }
 
-/// A comparison the user saved by name.
+/// A project: a comparison saved by name, with every edit (trims, sync points, speeds, drawings, the
+/// overlay) and its own copies of the two videos, so it opens again whatever happens to the originals.
 public struct SavedComparison: Codable, Identifiable {
     public var id = UUID()
     public var name: String
+    /// When it was last saved or opened: the most recent first.
     public var date: Date
     var state: ComparisonState
+    /// Has its own folder with copies of the videos (nil in comparisons saved before projects).
+    var hasFolder: Bool?
 }
 
 /// Keeps the saved comparisons, and the one on screen so it comes back at the next launch.
@@ -54,13 +60,17 @@ public struct SavedComparison: Codable, Identifiable {
 @MainActor @Observable
 public final class ComparisonStore {
     public private(set) var saved: [SavedComparison] = []
+    /// The project on screen, if it was opened from (or saved as) one: Save writes over it.
+    public private(set) var currentID: UUID?
+    public var current: SavedComparison? { saved.first { $0.id == currentID } }
 
     private let folder: URL
     private var savedFile: URL { folder.appendingPathComponent("Saved comparisons.json") }
     private var lastFile: URL { folder.appendingPathComponent("Last comparison.json") }
 
-    public init() {
-        folder = ComparisonStore.supportFolder
+    /// - Parameter folder: where to keep them (tests); Application Support/Mimesis otherwise.
+    public init(folder: URL? = nil) {
+        self.folder = folder ?? ComparisonStore.supportFolder
         saved = (try? JSONDecoder().decode([SavedComparison].self, from: Data(contentsOf: savedFile))) ?? []
     }
 
@@ -72,25 +82,104 @@ public final class ComparisonStore {
         return folder
     }
 
+    /// Application Support/Mimesis/Projects/<id>: a project's own copies of its videos.
+    private func folder(of id: UUID) -> URL {
+        folder.appendingPathComponent("Projects", isDirectory: true).appendingPathComponent(id.uuidString, isDirectory: true)
+    }
+
+    /// Saves what's on screen as a new project.
     public func save(_ comparison: Comparison, as name: String) {
         guard let state = comparison.state() else { return }
-        saved.insert(SavedComparison(name: name, date: .now, state: state), at: 0)
+        var project = SavedComparison(name: name, date: .now, state: state, hasFolder: true)
+        project.state = keepVideos(of: comparison, state: state, in: project.id)
+        saved.insert(project, at: 0)
+        currentID = project.id
+        write(saved, to: savedFile)
+    }
+
+    /// Saves what's on screen over the project it came from. False when there's none (ask for a name).
+    @discardableResult
+    public func saveCurrent(_ comparison: Comparison) -> Bool {
+        guard let id = currentID, let at = saved.firstIndex(where: { $0.id == id }),
+              let state = comparison.state() else { return false }
+        var project = saved.remove(at: at)
+        project.state = keepVideos(of: comparison, state: state, in: id)
+        project.hasFolder = true
+        project.date = .now
+        saved.insert(project, at: 0)
+        write(saved, to: savedFile)
+        return true
+    }
+
+    /// Copies each clip's video into the project's folder (unless it's the copy already there), and notes
+    /// its name in the state. On the same disk the copy takes no extra room until one of them changes.
+    private func keepVideos(of comparison: Comparison, state: ComparisonState, in id: UUID) -> ComparisonState {
+        var state = state
+        let files = FileManager.default
+        let target = folder(of: id)
+        try? files.createDirectory(at: target, withIntermediateDirectories: true)
+        var kept: Set<String> = []
+        for (index, clip) in comparison.clips.enumerated() {
+            guard let url = clip.url, state.clips[index] != nil else { continue }
+            let ext = url.pathExtension.isEmpty ? "mov" : url.pathExtension
+            // Named after the original, so the project's folder reads well: "A serve.mp4".
+            let name = "\(index == 0 ? "A" : "B") \(url.deletingPathExtension().lastPathComponent).\(ext)"
+            let copy = target.appendingPathComponent(name)
+            if url.standardizedFileURL != copy.standardizedFileURL {
+                let same = files.fileExists(atPath: copy.path)
+                    && (try? copy.resourceValues(forKeys: [.fileSizeKey]).fileSize) == (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize)
+                if !same {
+                    try? files.removeItem(at: copy)
+                    do { try files.copyItem(at: url, to: copy) } catch { continue }
+                }
+            }
+            state.clips[index]?.file = name
+            kept.insert(name)
+        }
+        // A video replaced since the last save: its old copy goes.
+        for old in (try? files.contentsOfDirectory(atPath: target.path)) ?? [] where !kept.contains(old) {
+            try? files.removeItem(at: target.appendingPathComponent(old))
+        }
+        return state
+    }
+
+    public func rename(_ item: SavedComparison, to name: String) {
+        guard let at = saved.firstIndex(where: { $0.id == item.id }) else { return }
+        saved[at].name = name
         write(saved, to: savedFile)
     }
 
     public func delete(_ item: SavedComparison) {
         saved.removeAll { $0.id == item.id }
+        if currentID == item.id { currentID = nil }
+        try? FileManager.default.removeItem(at: folder(of: item.id))
         write(saved, to: savedFile)
     }
 
+    /// Opens a project, and moves it to the top of the recent ones.
     public func open(_ item: SavedComparison, into comparison: Comparison) async {
-        await comparison.restore(item.state)
+        await comparison.restore(item.state, videos: item.hasFolder == true ? folder(of: item.id) : nil)
+        currentID = item.id
+        if let at = saved.firstIndex(where: { $0.id == item.id }) {
+            var project = saved.remove(at: at)
+            project.date = .now
+            saved.insert(project, at: 0)
+            write(saved, to: savedFile)
+        }
+    }
+
+    /// Starts afresh: both clips closed, no project.
+    public func closeProject(_ comparison: Comparison) {
+        comparison.linked = false
+        for clip in comparison.clips { clip.close() }
+        currentID = nil
     }
 
     /// The comparison on screen, remembered for the next launch.
     public func remember(_ comparison: Comparison) {
         if let state = comparison.state() {
             write(state, to: lastFile)
+            UserDefaults.standard.set(currentID?.uuidString, forKey: "currentProject")
         } else {
             try? FileManager.default.removeItem(at: lastFile)
         }
@@ -101,6 +190,12 @@ public final class ComparisonStore {
         guard let data = try? Data(contentsOf: lastFile),
               let state = try? JSONDecoder().decode(ComparisonState.self, from: data) else { return }
         await comparison.restore(state)
+        // Still the project it was, if its videos are the project's own copies.
+        if let id = UserDefaults.standard.string(forKey: "currentProject").flatMap(UUID.init(uuidString:)),
+           saved.contains(where: { $0.id == id }),
+           comparison.clips.compactMap(\.url).allSatisfy({ $0.path.contains(id.uuidString) }) {
+            currentID = id
+        }
     }
 
     private func write(_ value: some Encodable, to file: URL) {
@@ -132,14 +227,24 @@ extension Clip {
 
     /// Opens the clip's file again and puts back its trim, sync point, speed and mirror.
     /// False when the file can't be found any more.
-    func restore(_ state: ClipState) async -> Bool {
-        var stale = false
-        guard let url = try? URL(resolvingBookmarkData: state.bookmark, options: resolveOptions,
-                                 bookmarkDataIsStale: &stale) else { return false }
-        let accessing = url.startAccessingSecurityScopedResource()
-        let exists = FileManager.default.fileExists(atPath: url.path)
-        if accessing { url.stopAccessingSecurityScopedResource() }
-        guard exists else { return false }
+    /// - Parameter videos: a project's folder: its own copy of the video is opened when it's there.
+    func restore(_ state: ClipState, videos: URL? = nil) async -> Bool {
+        var found: URL?
+        if let videos, let file = state.file {
+            let copy = videos.appendingPathComponent(file)
+            if FileManager.default.fileExists(atPath: copy.path) { found = copy }
+        }
+        if found == nil {
+            var stale = false
+            guard let url = try? URL(resolvingBookmarkData: state.bookmark, options: resolveOptions,
+                                     bookmarkDataIsStale: &stale) else { return false }
+            let accessing = url.startAccessingSecurityScopedResource()
+            let exists = FileManager.default.fileExists(atPath: url.path)
+            if accessing { url.stopAccessingSecurityScopedResource() }
+            guard exists else { return false }
+            found = url
+        }
+        guard let url = found else { return false }
         await open(url)
         trimStart = state.trimStart
         trimEnd = state.trimEnd
@@ -168,11 +273,11 @@ extension Comparison {
                                   rotation: overlayRotation))
     }
 
-    func restore(_ state: ComparisonState) async {
+    func restore(_ state: ComparisonState, videos: URL? = nil) async {
         linked = false
         for (clip, saved) in zip(clips, state.clips) {
             if let saved {
-                if await !clip.restore(saved) { clip.close() }
+                if await !clip.restore(saved, videos: videos) { clip.close() }
             } else {
                 clip.close()
             }

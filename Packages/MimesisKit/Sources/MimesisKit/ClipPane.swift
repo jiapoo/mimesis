@@ -285,6 +285,7 @@ struct ClipTools: View {
     @Environment(Library.self) private var library
     @State private var naming = false
     @State private var newTag = ""
+    @State private var showingSpeed = false
 
     var body: some View { tools }
 
@@ -417,27 +418,25 @@ struct ClipTools: View {
 
             tagMenu
 
-            Menu {
-                ForEach([0.25, 0.5, 0.6, 0.7, 0.75, 0.8, 0.9, 1.0, 1.1, 1.25, 1.5, 2.0], id: \.self) { value in
-                    Button(speedText(value)) { clip.speed = value }
-                }
-                Divider()
-                Button("Slower by 0.05×") { clip.speed = max(0.25, clip.speed - 0.05) }
-                Button("Faster by 0.05×") { clip.speed = min(2, clip.speed + 0.05) }
-            } label: {
+            // The clip's own speed: the same button and slider as the playback speed.
+            Button { showingSpeed.toggle() } label: {
                 Label(speedText(clip.speed), systemImage: "gauge.with.dots.needle.50percent")
                     .font(.system(size: 12, weight: .semibold).monospacedDigit())
                     .foregroundStyle(clip.speed == 1 ? Color.white : Theme.onAccent)
                     .padding(.horizontal, 10)
                     .frame(height: 28)
                     .background(clip.speed == 1 ? Theme.raised : Theme.accent, in: Capsule())
+                    .contentShape(Capsule())
             }
-            .menuStyle(.button)
             .buttonStyle(.plain)
-            .menuIndicator(.hidden)
             .fixedSize()
             .disabled(linked)
-            .help("This clip's speed against the other, to match the two motions")
+            .help("This clip's own speed against the other clip, to match the two motions when they're linked")
+            .popover(isPresented: $showingSpeed, arrowEdge: .bottom) {
+                VerticalSpeedSlider(speed: Float(clip.speed), accent: Theme.accent) { clip.speed = Double($0) }
+                    .padding(6)
+                    .presentationCompactAdaptation(.popover)
+            }
         }
     }
 }
