@@ -14,7 +14,8 @@ struct ExportClipTests {
         let comparison = Comparison()
         await comparison.clips[0].open(URL(fileURLWithPath: Self.paths.0!))
         await comparison.clips[1].open(URL(fileURLWithPath: Self.paths.1!))
-        // A 1 s phase in A matched to 0.5 s in B, the span trimmed to about 2 s of A.
+        // A from 0.5 to 2.5 s with sync points at 1 and 2; B from its start with sync points at 1 and 1.5.
+        // Phases: A 0.5 s against B 1 s (1 s on screen), then A 1 s against B 0.5 s (1 s), then A's last 0.5 s.
         let a = comparison.clips[0], b = comparison.clips[1]
         a.trimStart = 0.5
         a.trimEnd = 2.5
@@ -31,7 +32,7 @@ struct ExportClipTests {
                               time: 1, always: true, color: Palette.crimson, width: 5, brush: .pen)]
         comparison.linked = true
         let range = comparison.range
-        #expect(abs((range.upperBound - range.lowerBound) - 2) < 0.01)
+        #expect(abs((range.upperBound - range.lowerBound) - 2.5) < 0.01)
 
         let file = try await Exporter.export(comparison, style: style)
         let asset = AVURLAsset(url: file)
@@ -39,7 +40,7 @@ struct ExportClipTests {
         let track = try #require(try await asset.loadTracks(withMediaType: .video).first)
         let size = try await track.load(.naturalSize)
         print("Exported \(style): \(file.path), \(duration) s, \(size)")
-        #expect(abs(duration - 2) < 0.1)
+        #expect(abs(duration - 2.5) < 0.1)
         if style == .sideBySide { #expect(size == CGSize(width: 1920, height: 1080)) }
         // A frame from the middle is there and isn't blank.
         let generator = AVAssetImageGenerator(asset: asset)

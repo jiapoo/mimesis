@@ -534,9 +534,10 @@ public struct ComparisonView: View {
     /// Everything a saved comparison keeps, so a change to any of it is remembered.
     private var snapshot: String {
         let clips = comparison.clips.map { clip in
-            "\(clip.url?.path ?? "-")|\(clip.trimStart)|\(clip.trimEnd ?? -1)|\(clip.syncs)|\(clip.speed)|\(clip.engine.mirroredHorizontally)|\(clip.drawings.hashValue)|\(clip.cutout?.state == .ready)|\(clip.cutout?.boxed == true)|\(clip.cutout?.pickedAt.map { "\($0.time),\($0.point.x)" } ?? "-")"
+            "\(clip.url?.path ?? "-")|\(clip.trimStart)|\(clip.trimEnd ?? -1)|\(clip.syncs)|\(clip.speed ?? -1)|\(clip.engine.mirroredHorizontally)|\(clip.drawings.hashValue)|\(clip.cutout?.state == .ready)|\(clip.cutout?.boxed == true)|\(clip.cutout?.pickedAt.map { "\($0.time),\($0.point.x)" } ?? "-")"
         }
         return clips.joined(separator: ";") + "|\(comparison.layout)|\(comparison.linked)|\(comparison.linkedSpeed)"
+            + "|\(comparison.segmentIndex)|\(comparison.segments.map(\.name))"
             + "|\(comparison.overlayTop)|\(comparison.overlayOpacity)|\(comparison.overlayOffset.width),\(comparison.overlayOffset.height)|\(comparison.overlayScale)|\(comparison.overlayRotation)"
     }
 
@@ -545,7 +546,11 @@ public struct ComparisonView: View {
         comparison.focus = index
         Task {
             let clip = comparison.clips[index]
-            if clip.url?.standardizedFileURL != url.standardizedFileURL { await clip.open(url) }
+            if clip.url?.standardizedFileURL != url.standardizedFileURL {
+                await clip.open(url)
+                // Another video: its share of every segment starts afresh.
+                comparison.clipReplaced(index)
+            }
             if let time { await clip.engine.seekToTime(time) }
         }
     }

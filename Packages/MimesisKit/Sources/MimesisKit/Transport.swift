@@ -69,11 +69,13 @@ struct Transport: View {
             // Left: which clip, and its own tools.
             HStack(spacing: 6) {
                 focusPicker
+                // In the overlay the bar holds the overlay's controls too: the segment menu's short form.
+                SegmentMenu(comparison: comparison, compact: compact || comparison.layout == .overlay)
                 if comparison.layout == .overlay {
                     // The overlay's own controls, here rather than over the picture.
                     OverlayControls(comparison: comparison, compact: compact)
                 } else if let clip = comparison.selected {
-                    ClipTools(clip: clip, linked: comparison.linked)
+                    ClipTools(clip: clip, comparison: comparison)
                 }
             }
             Spacer(minLength: 6)
@@ -282,14 +284,17 @@ struct Transport: View {
         }
     }
 
-    /// "+0.20 s from sync · phase 2 of 3 · B at 0.82×"
+    /// "Serve 1 · 0.42 s · phase 2 of 3 · B at 0.82×"
     private var linkedStatus: String {
-        var parts = ["\(seconds(comparison.position)) from sync"]
+        var parts = [comparison.segment.name, clock(max(0, comparison.position - comparison.range.lowerBound))]
         if let section = comparison.section {
             parts.append("phase \(section.index) of \(section.count)")
         }
-        let pace = comparison.sectionSpeed
-        if abs(pace - 1) > 0.005 { parts.append("B at \(speedText((pace * 100).rounded() / 100))") }
+        // Whichever clip is being slowed (or sped up) to match, and by how much, where the playhead is.
+        for (letter, clip) in zip(["A", "B"], comparison.clips) {
+            let pace = (comparison.pace(of: clip) * 100).rounded() / 100
+            if abs(pace - 1) > 0.005 { parts.append("\(letter) at \(speedText(pace))") }
+        }
         return parts.joined(separator: "  ·  ")
     }
 
@@ -404,5 +409,69 @@ private struct SyncDiamond: View {
                     },
                 isEnabled: movable)
             .animation(.easeOut(duration: 0.1), value: from == nil)
+    }
+}
+
+
+/// The segments, like layers: the chosen one's name, and a menu to choose another, add, rename,
+/// duplicate or remove one. Each has its own In/Out, sync points, speeds and drawings.
+struct SegmentMenu: View {
+    let comparison: Comparison
+    var compact = false
+    @State private var renaming = false
+    @State private var name = ""
+
+    var body: some View {
+        Menu {
+            ForEach(Array(comparison.segments.enumerated()), id: \.element.id) { index, segment in
+                Button {
+                    comparison.selectSegment(index)
+                } label: {
+                    if index == comparison.segmentIndex {
+                        Label(segment.name, systemImage: "checkmark")
+                    } else {
+                        Text(segment.name)
+                    }
+                }
+            }
+            Divider()
+            Button("New segment", systemImage: "plus") { comparison.addSegment() }
+            Button("Rename…", systemImage: "pencil") {
+                name = comparison.segment.name
+                renaming = true
+            }
+            Button("Duplicate", systemImage: "plus.square.on.square") { comparison.duplicateSegment() }
+            Button(comparison.segments.count > 1 ? "Delete “\(comparison.segment.name)”" : "Clear this segment",
+                   systemImage: "trash", role: .destructive) { comparison.deleteSegment() }
+        } label: {
+            HStack(spacing: 5) {
+                Image(systemName: "square.stack.3d.up")
+                    .font(.system(size: 11, weight: .semibold))
+                if !compact || comparison.segments.count > 1 {
+                    Text(compact ? "\(comparison.segmentIndex + 1)/\(comparison.segments.count)" : comparison.segment.name)
+                        .font(.system(size: 12, weight: .semibold))
+                        .lineLimit(1)
+                        .frame(maxWidth: 110)
+                        .fixedSize()
+                }
+            }
+            .foregroundStyle(.white)
+            .padding(.horizontal, 10)
+            .frame(height: 28)
+            .background(Theme.raised, in: Capsule())
+        }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .help("Segments: each is a stretch of the two clips (In to Out) with its own sync points, speeds and drawings. Choose one, or add, rename, duplicate or delete.")
+        .alert("Rename segment", isPresented: $renaming) {
+            TextField("Serve, Forehand 2…", text: $name)
+            Button("Cancel", role: .cancel) {}
+            Button("Rename") {
+                let name = name.trimmingCharacters(in: .whitespaces)
+                if !name.isEmpty { comparison.renameSegment(to: name) }
+            }
+        }
     }
 }

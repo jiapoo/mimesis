@@ -14,9 +14,7 @@ This guide goes from your first two clips to the advanced tools. If you only rea
 2. [Getting videos in](#getting-videos-in)
 3. [The screen](#the-screen)
 4. [Playing one clip](#playing-one-clip)
-5. [Trimming a clip](#trimming-a-clip)
-6. [Sync points and linking](#sync-points-and-linking)
-7. [Matching two different speeds](#matching-two-different-speeds)
+5. [Segments: lining the two clips up](#segments-lining-the-two-clips-up)
 8. [Mirroring, zooming and panning](#mirroring-zooming-and-panning)
 9. [Drawing and measuring angles](#drawing-and-measuring-angles)
 10. [Overlay: one player on top of the other](#overlay-one-player-on-top-of-the-other)
@@ -79,11 +77,11 @@ below 50 frames a second and slow motion will look jumpy. See [Filming tips](#fi
   Clear trim, Clear sync points, StroMotion, Close).
 - **The panel** at the bottom is laid out like Arete's player, and is the same on Mac, iPad and iPhone:
   - **on top, the timeline**: the time, the **progress bar**, the **frame ruler** (drag it sideways to move
-    frame by frame), and over it the **marks**: crimson ◆ sync points, yellow 🏷 tags, white • drawings (tap
+    frame by frame), and over it the **marks**: crimson ◆ sync points, white • drawings (where this segment has them), yellow 🏷 older tags (tap
     one to jump there);
   - **underneath, one row of buttons**:
     - left, **A | A🔗B | B** (A, B, or both linked) and the selected clip's own tools: **In / Out** (trim),
-      **◆ sync**, **🏷 tag**, its **speed**;
+      **◆ sync**, its **speed**; before them the **▤ segment** button;
     - middle, **frame back / play / frame forward**;
     - right, **✏ Draw on both** (when linked), **↶ Undo** (and ↷ Redo once there's something to redo), the
       playback **speed** (tap it for a slider).
@@ -99,7 +97,7 @@ below 50 frames a second and slow motion will look jumpy. See [Filming tips](#fi
 - showing **A only** or **B only** → that clip;
 - showing **both** → the **focused** clip (tap a clip, tap **A** or **B** in the panel, or press **Tab** on the Mac);
 - **A🔗B** (or **Esc** or **L** on the Mac) → the clips are **linked**: one timeline, and play and the frame
-  steps move **both**, lined up at their sync points (see [Sync points and linking](#sync-points-and-linking)).
+  steps move **both**, matched over the chosen segment (see [Segments](#segments-lining-the-two-clips-up)).
   No ring, nothing dimmed. In **Overlay**, too, A🔗B plays the two lined up. Tap **A** or **B** to unlink;
 - the play button shows the **focused clip's** state: switch to a paused clip and it shows ▶ even while the
   other clip keeps playing. Each clip loops.
@@ -119,68 +117,54 @@ below 50 frames a second and slow motion will look jumpy. See [Filming tips](#fi
 
 ---
 
-## Trimming a clip
+## Segments: lining the two clips up
 
-Trim each clip to just the stroke, so playback, linking, StroMotion and the cutout work on what matters.
+A **segment** is a named stretch of the comparison, like a layer: for each clip a **start and end** (In and
+Out), optional **sync points** in between, each clip's **speed**, and the **drawings** made on it. A comparison
+starts with one, *Segment 1*, covering the whole clips. Make one per thing you want to compare: *Serve 1*,
+*Second serve*, *Forehand*.
 
-1. Move to the first frame you want, tap **In**. It shows the time, e.g. *In 0.57*.
-2. Move to the last frame you want, tap **Out** (*Out 1.27*).
-3. The trimmed part is highlighted on the ruler; playback plays from In to Out and loops.
+### Setting one up
 
-- **Paused, the playhead goes anywhere**, in or out of the trim, so you can move to a new frame and tap In or
-  Out again to move it. Play from outside the trim starts at In.
-- **Take one away**: the **✕** on *In 0.57* or *Out 1.27*. Both at once: the clip's ⋯ › **Clear trim**.
+1. Tap **A**. Move to where the stroke starts and tap **In**; move to where it ends and tap **Out**.
+2. Tap **B** and do the same.
+3. Tap **A🔗B** to link them. Both jump to their starts and play together, looping.
+
+- Paused, the playhead goes anywhere, in or out of the stretch, so you can move In or Out by tapping it again
+  on a new frame. The **✕** on *In 0.57* or *Out 1.27* takes that one away.
 - **Undo** any of it with **↶** or **⌘Z**.
 
----
+### How the two are matched
 
-## Sync points and linking
+- **The starts line up.**
+- **With an Out on both clips, the ends line up too.** The longer stretch plays at **1×**; the shorter one is
+  **slowed** so it lasts as long. 1.0 s against 1.2 s plays at 0.83×. Nobody is ever sped up.
+- **Without an Out on both**, the clips just start together and each plays at its own pace.
+- **Sync points** (optional): a moment inside the stretch that should also line up, such as **contact**. Move to
+  it in each clip and tap **Add sync** (S). They pair up in order, A's first with B's first, and split the
+  stretch into **phases**, each matched the same way: take-back with take-back, swing with swing. On a sync
+  point the button reads **Remove sync**; drag a ◆ over the timeline to move it.
+- Linked, a label over the timeline shows where you are: *Serve 1 · 0.42 s · phase 2 of 3 · B at 0.82×*.
 
-A **sync point** is a moment that should line up between the two clips — usually **contact**.
+### Each clip's speed
 
-- **Add one**: move a clip to the moment, tap **Add sync** (or **S** on Mac). A crimson diamond appears over
-  the timeline.
-- **Remove one**: tap its diamond to go there — the sync button turns into **✕ Remove sync**; tap it. Or
-  right-click the diamond (Mac) or press and hold it (iPhone, iPad) › **Remove sync point**.
-- **Move one**: drag its diamond sideways over the timeline (only while not linked). It moves a frame at a
-  time and shows the frame as you drag.
-- **Remove all**: ⋯ › **Clear sync points**.
+The speed button beside *Add sync* shows the clip's speed in this segment. It's **automatic** (the matching
+above) until you change it: tap it and drag the slider to set your own, and tap **Auto** to go back. A speed set
+by hand shows in crimson; that clip then no longer finishes with the other.
 
-**Linking.** Tap **A🔗B** (or **L**) once each clip has a sync point:
+The **1×** button at the far right is the playback speed for both (0.25× for slow motion), on top of this.
 
-- Both clips jump to their first sync point and play, step and scrub **together**.
-- A label over the timeline says how far you are from sync: *+0.20 s from sync*.
-- Without sync points, linking lines up the clips' starts (their trim In points).
-- Tap **A** or **B** to unlink and move each clip on its own.
+### Several segments
 
----
+The **segment button** (▤ and the segment's name, left in the bar) lists them:
 
-## Matching two different speeds
+- tap one to **choose** it: both clips jump to its start, and the clips show its In/Out, sync points, speeds and
+  drawings;
+- **New segment** adds an empty one; **Duplicate** copies the chosen one to vary it;
+- **Rename…**, and **Delete** (the last one is cleared instead).
 
-Two people rarely move at the same pace: your preparation may be slower and your swing faster. Mimesis
-handles this two ways.
-
-### One speed per clip (simple)
-
-The **speed** button on a clip's tools row (e.g. **0.8×**) sets how fast that clip plays *against the
-other*. Slow B to 0.8× and every linked second of A shows 0.8 seconds of B.
-
-### Several sync points (precise) — what makes Mimesis different
-
-Mark the **same phases** in both clips, in the same order, for example:
-
-1. start of the backswing
-2. racket drop
-3. contact
-4. finish
-
-Then link. Mimesis pairs the sync points in order and, between each pair, **speeds up or slows down clip B**
-so each phase lasts exactly as long as A's. Every phase lines up, not only contact. Clip A plays normally.
-
-While linked, the label over the timeline shows the phase and B's pace there, e.g.
-*phase 2 of 3 · B at 0.82×*. When you pause, both clips land on exactly matching frames.
-
-Tip: you don't need the same number of sync points in both clips — extra ones in one clip are ignored.
+Everything is saved with the [project](#saving-and-reopening-comparisons). Opening another video in a clip
+starts that clip afresh in every segment.
 
 ---
 
@@ -257,6 +241,13 @@ what moves the top clip:
 - **◐ slider** — how see-through the top clip is (10–90%).
 - **Cut out** — see below.
 
+### Drawing in the overlay
+
+**✏** in the bar draws over the two clips together. These drawings belong to the overlay **as it's placed**: they
+show only here, and while a segment has any, the top clip is **locked**. Moving, resizing, turning, mirroring or
+swapping it asks first, and removes them if you go ahead (Undo brings them back). Drawings made on a clip by
+itself (in A | B) stay with that clip's frame and aren't affected.
+
 ### Cutting the player out
 
 The whole picture on top is confusing. **Cut out** finds the player in every frame of the top clip's trim (this
@@ -326,8 +317,8 @@ library; the file itself isn't deleted.
 
 ### Tagging moments
 
-On a clip, move to a moment and tap **🏷**: choose *Forehand, Backhand, Serve, Return, Volley, Smash, Good,
-Fault*, or **New tag…** for your own. Tags show as yellow marks over the timeline (tap to jump).
+Segments have replaced tagging (the 🏷 button is gone): name a segment instead. Tags made before still show as
+yellow marks over the timeline (tap to jump), and in the library.
 
 ### Using tags
 

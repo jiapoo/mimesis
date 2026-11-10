@@ -87,9 +87,11 @@ private struct Plan: @unchecked Sendable {
         let us = (0..<count).map { range.lowerBound + Double($0) / Exporter.frameRate * speed }
         func side(_ clip: Clip) -> Side? {
             guard let url = clip.url else { return nil }
+            // Side by side: what was drawn on each clip. Overlay: what was drawn over the two together.
+            let drawings = clip.drawings.filter { ($0.overlay == true) == (style == .overlay) }
             return Side(url: url, times: us.map { comparison.clipTime(clip, at: $0) },
                         mirrored: clip.engine.mirroredHorizontally, size: clip.engine.videoSize,
-                        drawings: clip.drawings, frameLength: clip.frameLength)
+                        drawings: drawings, frameLength: clip.frameLength)
         }
         guard let a = side(comparison.clips[0]), let b = side(comparison.clips[1]) else { return nil }
         self.style = style

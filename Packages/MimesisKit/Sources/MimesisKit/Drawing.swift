@@ -50,6 +50,9 @@ public struct Drawing: Codable, Identifiable, Hashable {
     /// Line width in points on screen.
     public var width: Double?
     public var brush: Brush?
+    /// Made in the overlay, over both pictures as they were placed then: shown only there, and removed
+    /// when the top clip is moved (the drawing would no longer be where it was put).
+    public var overlay: Bool?
 
     public enum Ink: String, Codable, CaseIterable {
         case crimson, yellow, white, cyan
@@ -227,9 +230,14 @@ extension Drawing {
 
 extension Clip {
     /// The drawings to show at the playhead: those on this frame (within half a frame), and those on every frame.
-    var visibleDrawings: [Drawing] {
+    var visibleDrawings: [Drawing] { visibleDrawings(overlay: false) }
+
+    /// - Parameter overlay: those made in the overlay, or those made on the clip by itself.
+    func visibleDrawings(overlay: Bool) -> [Drawing] {
         let now = engine.currentTime
-        return drawings.filter { $0.always || abs($0.time - now) <= frameLength * 0.6 }
+        return drawings.filter {
+            ($0.overlay == true) == overlay && ($0.always || abs($0.time - now) <= frameLength * 0.6)
+        }
     }
 }
 
@@ -239,6 +247,10 @@ struct DrawingLayer: View {
     let clip: Clip
     let editing: Bool
     let pen: Pen
+    /// In the overlay: its own drawings, apart from the clip's.
+    var overlay = false
+
+    private var shown: [Drawing] { clip.visibleDrawings(overlay: overlay) }
 
     @State private var draft: Drawing?
     @State private var moving: (id: UUID, index: Int)?
@@ -253,7 +265,7 @@ struct DrawingLayer: View {
             let frame = pictureFrame(in: space.size)
             ZStack {
                 Canvas { context, _ in
-                    for drawing in clip.visibleDrawings {
+                    for drawing in shown {
                         drawing.render(drawing.points.map { toView($0, frame) }, in: &context)
                     }
                     if let draft {
@@ -263,7 +275,7 @@ struct DrawingLayer: View {
                 }
                 if editing && pen.tool != .eraser {
                     // A shape's points, to drag into place.
-                    ForEach(clip.visibleDrawings.filter(\.isShape)) { drawing in
+                    ForEach(shown.filter(\.isShape)) { drawing in
                         ForEach(drawing.points.indices, id: \.self) { index in
                             Circle()
                                 .fill(Color.white)
@@ -298,7 +310,7 @@ struct DrawingLayer: View {
         }
         if draft == nil {
             // Starting on a shape's dot moves that point.
-            for drawing in clip.visibleDrawings.reversed() where drawing.isShape {
+            for drawing in shown.reversed() where drawing.isShape {
                 if let index = drawing.points.firstIndex(where: { distance(toView($0, frame), drag.startLocation) < grab }) {
                     moving = (drawing.id, index)
                     return
@@ -308,6 +320,7 @@ struct DrawingLayer: View {
             draft = Drawing(
                 kind: pen.tool.kind, points: [start, start], time: clip.engine.currentTime, always: pen.always,
                 color: pen.color, width: pen.width, brush: pen.tool.brush)
+            if overlay { draft?.overlay = true }
             stroke = [drag.startLocation]
         }
         guard var drawing = draft else { return }
@@ -346,7 +359,7 @@ struct DrawingLayer: View {
 
     /// The eraser takes away whole drawings it passes over, as Photos' object eraser does.
     private func erase(at point: CGPoint, _ frame: CGRect) {
-        let shown = Set(clip.visibleDrawings.map(\.id))
+        let shown = Set(shown.map(\.id))
         let gone = Set(clip.drawings.filter {
             shown.contains($0.id) && $0.touches(point, points: $0.points.map { toView($0, frame) }, tolerance: 10)
         }.map(\.id))

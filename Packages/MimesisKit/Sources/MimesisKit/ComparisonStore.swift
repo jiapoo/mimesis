@@ -22,6 +22,8 @@ struct ClipState: Codable {
     var box: Bool?
     /// In a project: the name of the project's own copy of the video, in the project's folder.
     var file: String?
+    /// The speed is the automatic one (`speed` is then only what it came to). Nil in older saves.
+    var auto: Bool?
 }
 
 /// A comparison as saved: both clips, and how they're shown and played.
@@ -32,6 +34,10 @@ struct ComparisonState: Codable {
     var linkedSpeed: Double
     /// Nil in comparisons saved before the overlay existed.
     var overlay: OverlayState?
+    /// Every segment, and the one chosen (the clips' own states repeat that one). Nil in older saves:
+    /// then the clips' states are the one segment.
+    var segments: [Segment]?
+    var segment: Int?
 }
 
 struct OverlayState: Codable {
@@ -172,6 +178,7 @@ public final class ComparisonStore {
     public func closeProject(_ comparison: Comparison) {
         comparison.linked = false
         for clip in comparison.clips { clip.close() }
+        comparison.resetSegments()
         currentID = nil
     }
 
@@ -218,11 +225,11 @@ extension Clip {
     func state() -> ClipState? {
         guard let url, let bookmark = try? url.bookmarkData(options: bookmarkOptions) else { return nil }
         return ClipState(
-            bookmark: bookmark, trimStart: trimStart, trimEnd: trimEnd, sync: syncs.first, syncs: syncs, speed: speed,
+            bookmark: bookmark, trimStart: trimStart, trimEnd: trimEnd, sync: syncs.first, syncs: syncs, speed: speed ?? 1,
             mirrored: engine.mirroredHorizontally, drawings: drawings,
             cutout: cutout?.state == .ready ? true : nil,
             pick: cutout?.pickedAt.map { [$0.time, $0.point.x, $0.point.y] },
-            box: cutout?.boxed == true ? true : nil)
+            box: cutout?.boxed == true ? true : nil, auto: speed == nil)
     }
 
     /// Opens the clip's file again and puts back its trim, sync point, speed and mirror.
@@ -249,7 +256,8 @@ extension Clip {
         trimStart = state.trimStart
         trimEnd = state.trimEnd
         syncs = state.syncs ?? state.sync.map { [$0] } ?? []
-        speed = state.speed
+        // Saved before speeds could be automatic: 1× was "not set".
+        speed = state.auto ?? (state.speed == 1) ? nil : state.speed
         drawings = state.drawings ?? []
         if state.mirrored { await engine.setMirror(horizontal: true, vertical: false) }
         if state.cutout == true {
@@ -257,7 +265,7 @@ extension Clip {
             makeCutout(pickAt: pick)
             cutout?.boxed = state.box ?? false
         }
-        await engine.seekToTime(syncTime)
+        await engine.seekToTime(trimStart)
         return true
     }
 }
@@ -267,10 +275,12 @@ extension Comparison {
     func state() -> ComparisonState? {
         let clips = clips.map { $0.state() }
         guard clips.contains(where: { $0 != nil }) else { return nil }
+        storeSegment()
         return ComparisonState(
             clips: clips, layout: layout.rawValue, linked: linked, linkedSpeed: linkedSpeed,
             overlay: OverlayState(top: overlayTop, opacity: overlayOpacity, offset: overlayOffset, scale: overlayScale,
-                                  rotation: overlayRotation))
+                                  rotation: overlayRotation),
+            segments: segments, segment: segmentIndex)
     }
 
     func restore(_ state: ComparisonState, videos: URL? = nil) async {
@@ -290,6 +300,17 @@ extension Comparison {
             overlayOffset = overlay.offset
             overlayScale = overlay.scale
             overlayRotation = overlay.rotation ?? 0
+        }
+        // The segments: as saved, or, from an older save, the one the clips came back with.
+        if let saved = state.segments, !saved.isEmpty {
+            segments = saved
+            segmentIndex = min(max(0, state.segment ?? 0), saved.count - 1)
+            // Whatever a clip that couldn't be opened had is kept; the chosen one goes on the clips.
+            loadSegment(segmentIndex)
+        } else {
+            segments = [Segment(name: "Segment 1")]
+            segmentIndex = 0
+            storeSegment()
         }
         if state.linked, canLink { linked = true }
     }

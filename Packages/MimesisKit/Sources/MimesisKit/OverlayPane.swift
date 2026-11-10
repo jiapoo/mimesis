@@ -56,6 +56,9 @@ struct OverlayPane: View {
                         .opacity(comparison.overlayOpacity)
                         .allowsHitTesting(false)
                 }
+                // Drawings over the two together, on the picture underneath (so they zoom with it).
+                DrawingLayer(clip: base, editing: comparison.drawing != nil, pen: comparison.pen, overlay: true)
+                    .frame(width: space.size.width, height: space.size.height)
             }
             .frame(width: space.size.width, height: space.size.height)
             // Zoomed, both clips together.
@@ -75,6 +78,7 @@ struct OverlayPane: View {
                                               height: start.height + drag.translation.height)
                             return
                         }
+                        guard unlocked() else { return }
                         let start = offsetBase ?? comparison.overlayOffset
                         offsetBase = start
                         comparison.overlayOffset = CGSize(
@@ -92,6 +96,7 @@ struct OverlayPane: View {
                             if base.zoom == 1 { base.pan = .zero }
                             return
                         }
+                        guard unlocked() else { return }
                         let start = scaleBase ?? comparison.overlayScale
                         scaleBase = start
                         comparison.overlayScale = min(4, max(0.25, start * pinch.magnification))
@@ -101,6 +106,7 @@ struct OverlayPane: View {
                 RotateGesture()
                     .onChanged { turn in
                         guard !picking, ui.movesTop else { return }
+                        guard unlocked() else { return }
                         let start = rotationBase ?? comparison.overlayRotation
                         rotationBase = start
                         comparison.overlayRotation = start + turn.rotation.degrees
@@ -108,7 +114,7 @@ struct OverlayPane: View {
                     .onEnded { _ in rotationBase = nil })
             .onTapGesture(count: 2) {
                 withAnimation(.easeOut(duration: 0.2)) {
-                    if ui.movesTop { comparison.resetOverlay() } else { base.resetView() }
+                    if !ui.movesTop { base.resetView() } else if unlocked() { comparison.resetOverlay() }
                 }
             }
             .onTapGesture { location in
@@ -152,6 +158,20 @@ struct OverlayPane: View {
                     .allowsHitTesting(false)
             }
         }
+        .confirmationDialog(
+            "This segment has \(comparison.overlayDrawings) drawing\(comparison.overlayDrawings == 1 ? "" : "s") made in the overlay",
+            isPresented: Binding(get: { ui.askingToUnlock }, set: { if !$0 { ui.askingToUnlock = false } }),
+            titleVisibility: .visible
+        ) {
+            Button("Remove the drawings and move \(topLetter)", role: .destructive) {
+                comparison.removeOverlayDrawings()
+                ui.pending?()
+                ui.pending = nil
+            }
+            Button("Keep the drawings", role: .cancel) { ui.pending = nil }
+        } message: {
+            Text("They were drawn over the two clips as they sit now. Moving, resizing, turning, mirroring or swapping \(topLetter) would leave them in the wrong place, so they're removed first. (Undo brings them back.)")
+        }
         .onChange(of: ui.problem) { _, problem in
             guard problem != nil else { return }
             Task {
@@ -165,12 +185,14 @@ struct OverlayPane: View {
     private var adjustments: some View {
         HStack(spacing: 6) {
             RoundButton(symbol: "arrow.up.arrow.down") {
-                comparison.overlayTop = 1 - comparison.overlayTop
-                comparison.resetOverlay()
+                ui.moving(comparison) {
+                    comparison.overlayTop = 1 - comparison.overlayTop
+                    comparison.resetOverlay()
+                }
             }
             .help("Swap: \(baseLetter) on top")
             RoundButton(symbol: "arrow.left.and.right.righttriangle.left.righttriangle.right",
-                        active: top.engine.mirroredHorizontally, action: top.toggleMirror)
+                        active: top.engine.mirroredHorizontally) { ui.moving(comparison) { top.toggleMirror() } }
                 .help("Mirror \(topLetter) side to side, e.g. a right-hander to match a left-hander")
             divider
             RoundButton(symbol: ui.aligning ? "hourglass" : "figure.stand") { ui.align(comparison) }
@@ -182,18 +204,18 @@ struct OverlayPane: View {
             .disabled(ui.aligning)
             .help("Line up the backgrounds: for two clips filmed at the same place, so the court lines match")
             divider
-            RoundButton(symbol: "rotate.left") { comparison.overlayRotation -= 1 }
+            RoundButton(symbol: "rotate.left") { ui.moving(comparison) { comparison.overlayRotation -= 1 } }
                 .help("Turn \(topLetter) 1° anticlockwise (or twist with two fingers)")
             Text("\(Int(comparison.overlayRotation.rounded()))°")
                 .font(.system(size: 11, weight: .semibold).monospacedDigit())
                 .foregroundStyle(.white)
                 .frame(minWidth: 26)
                 .help("How far \(topLetter) is turned")
-            RoundButton(symbol: "rotate.right") { comparison.overlayRotation += 1 }
+            RoundButton(symbol: "rotate.right") { ui.moving(comparison) { comparison.overlayRotation += 1 } }
                 .help("Turn \(topLetter) 1° clockwise")
             divider
             RoundButton(symbol: "arrow.counterclockwise") {
-                withAnimation(.easeOut(duration: 0.2)) { comparison.resetOverlay() }
+                ui.moving(comparison) { withAnimation(.easeOut(duration: 0.2)) { comparison.resetOverlay() } }
             }
             .disabled(comparison.overlayOffset == .zero && comparison.overlayScale == 1 && comparison.overlayRotation == 0)
             .help("Put \(topLetter) back where it started (or double-tap with ✋)")
@@ -228,6 +250,17 @@ struct OverlayPane: View {
 
     private var divider: some View {
         Rectangle().fill(Color.white.opacity(0.2)).frame(width: 1, height: 18)
+    }
+
+    /// Whether the top clip may move now. With drawings made in this overlay it's locked: asks (once per
+    /// touch) whether to remove them.
+    private func unlocked() -> Bool {
+        if comparison.overlayDrawings == 0 { return true }
+        if !ui.askingToUnlock {
+            ui.pending = nil
+            ui.askingToUnlock = true
+        }
+        return false
     }
 
     private var hint: String? {

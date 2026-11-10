@@ -316,7 +316,7 @@ private struct ToolOptions: View {
                 Text("Drag over a drawing to erase it.").font(.callout).foregroundStyle(.secondary)
                 Button(role: .destructive) {
                     for clip in clips {
-                        let shown = Set(clip.visibleDrawings.map(\.id))
+                        let shown = Set((clip.visibleDrawings(overlay: false) + clip.visibleDrawings(overlay: true)).map(\.id))
                         clip.drawings.removeAll { shown.contains($0.id) }
                     }
                     onClose()

@@ -10,9 +10,27 @@ final class OverlayUI {
     var aligning = false
     /// Shown over the overlay for a few seconds (auto-align couldn't, nobody where tapped…).
     var problem: String?
+    /// Asking whether to remove the overlay's drawings so the top clip can move; then `pending` runs.
+    var askingToUnlock = false
+    var pending: (() -> Void)?
+
+    /// Runs `change` (something that moves, resizes, turns, mirrors or swaps the top clip). Drawings made
+    /// in the overlay sit where the two pictures were: with any there, asks first, as they'd be removed.
+    func moving(_ comparison: Comparison, _ change: @escaping () -> Void) {
+        if comparison.overlayDrawings == 0 {
+            change()
+        } else {
+            pending = change
+            askingToUnlock = true
+        }
+    }
 
     /// Lines the top clip up with the one underneath: by the bodies (hips and feet), or the backgrounds.
     func align(_ comparison: Comparison, byBackground: Bool = false) {
+        guard comparison.overlayDrawings == 0 else {
+            moving(comparison) { [weak self] in self?.align(comparison, byBackground: byBackground) }
+            return
+        }
         aligning = true
         problem = nil
         Task {
@@ -145,12 +163,12 @@ struct OverlayControls: View {
     private var sizeButtons: some View {
         HStack(spacing: 4) {
             RoundButton(symbol: "minus") {
-                ui.movesTop ? resize(by: 1 / 1.1) : zoomView(by: 1 / 1.25)
+                if ui.movesTop { ui.moving(comparison) { resize(by: 1 / 1.1) } } else { zoomView(by: 1 / 1.25) }
             }
             .disabled(!ui.movesTop && base.zoom <= 1)
             .help(ui.movesTop ? "Make \(topLetter) smaller (or pinch)" : "Zoom out (or pinch)")
             RoundButton(symbol: "plus") {
-                ui.movesTop ? resize(by: 1.1) : zoomView(by: 1.25)
+                if ui.movesTop { ui.moving(comparison) { resize(by: 1.1) } } else { zoomView(by: 1.25) }
             }
             .help(ui.movesTop ? "Make \(topLetter) bigger (or pinch)" : "Zoom in on both clips (or pinch)")
         }

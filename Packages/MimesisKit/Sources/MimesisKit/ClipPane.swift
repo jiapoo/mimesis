@@ -281,54 +281,13 @@ struct ClipPane: View {
 /// against the other clip.
 struct ClipTools: View {
     let clip: Clip
-    let linked: Bool
-    @Environment(Library.self) private var library
-    @State private var naming = false
-    @State private var newTag = ""
+    let comparison: Comparison
+    private var linked: Bool { comparison.linked }
     @State private var showingSpeed = false
 
     var body: some View { tools }
 
     private func onFocus() {}
-
-    /// Tag the moment at the playhead ("Forehand", "Fault"…), to find it again in the library.
-    private var tagMenu: some View {
-        Menu {
-            ForEach(library.labels, id: \.self) { label in
-                Button(label) { tag(label) }
-            }
-            Divider()
-            Button("New tag…", systemImage: "plus") {
-                newTag = ""
-                naming = true
-            }
-        } label: {
-            Image(systemName: "tag")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(width: 34, height: 28)
-                .background(Theme.raised, in: Capsule())
-        }
-        .menuStyle(.button)
-        .buttonStyle(.plain)
-        .menuIndicator(.hidden)
-        .fixedSize()
-        .help("Tag this moment (a forehand, a fault…) to find it in the library")
-        .alert("New tag", isPresented: $naming) {
-            TextField("Split step, Kick serve…", text: $newTag)
-            Button("Cancel", role: .cancel) {}
-            Button("Tag") {
-                let label = newTag.trimmingCharacters(in: .whitespaces)
-                if !label.isEmpty { tag(label) }
-            }
-        }
-    }
-
-    private func tag(_ label: String) {
-        guard let url = clip.url else { return }
-        onFocus()
-        library.tag(url, at: clip.engine.currentTime, label: label)
-    }
 
     /// "Add sync", or "Add sync (2)" once there are some.
     private var syncLabel: String {
@@ -358,8 +317,8 @@ struct ClipTools: View {
         .buttonStyle(ChipStyle(active: clip.syncHere != nil))
         .disabled(linked)
         .fixedSize()
-        .help("Mark this frame as a sync point, or unmark it (S). Sync points pair up in order with the "
-            + "other clip's: the first lines the clips up, more make each phase in between line up too.")
+        .help("Mark this frame as a sync point inside the segment, or unmark it (S): a moment such as contact. "
+            + "Sync points pair up in order with the other clip's, so each phase between them lines up too.")
     }
 
     /// In or Out: tap to set it at the playhead; once set, its ✕ clears it.
@@ -401,13 +360,13 @@ struct ClipTools: View {
             trimButton(
                 label: clip.trimStart > 0 ? "In \(short(clip.trimStart))" : "In",
                 set: clip.trimStart > 0,
-                help: "Start the clip at the playhead ([)",
+                help: "This clip's start in the segment: the playhead ([). The two starts line up.",
                 action: clip.setTrimStart,
                 clear: clip.clearTrimStart)
             trimButton(
                 label: clip.trimEnd.map { "Out \(short($0))" } ?? "Out",
                 set: clip.trimEnd != nil,
-                help: "End the clip at the playhead (])",
+                help: "This clip's end in the segment: the playhead (]). With an end on both clips, the shorter stretch is slowed to finish with the longer.",
                 action: clip.setTrimEnd,
                 clear: clip.clearTrimEnd)
 
@@ -416,26 +375,38 @@ struct ClipTools: View {
                 syncButton(labelled: false)
             }
 
-            tagMenu
-
-            // The clip's own speed: the same button and slider as the playback speed.
+            // The clip's own speed in this segment: automatic (what matches the other clip) until set
+            // by hand; the same button and slider as the playback speed, with Auto to go back.
+            let speed = comparison.speed(of: clip)
             Button { showingSpeed.toggle() } label: {
-                Label(speedText(clip.speed), systemImage: "gauge.with.dots.needle.50percent")
+                Label(speedText((speed * 100).rounded() / 100), systemImage: clip.speed == nil ? "gauge.with.dots.needle.50percent" : "hand.point.up.left")
                     .font(.system(size: 12, weight: .semibold).monospacedDigit())
-                    .foregroundStyle(clip.speed == 1 ? Color.white : Theme.onAccent)
+                    .foregroundStyle(clip.speed == nil ? Color.white : Theme.onAccent)
                     .padding(.horizontal, 10)
                     .frame(height: 28)
-                    .background(clip.speed == 1 ? Theme.raised : Theme.accent, in: Capsule())
+                    .background(clip.speed == nil ? Theme.raised : Theme.accent, in: Capsule())
                     .contentShape(Capsule())
             }
             .buttonStyle(.plain)
             .fixedSize()
-            .disabled(linked)
-            .help("This clip's own speed against the other clip, to match the two motions when they're linked")
+            .help(clip.speed == nil
+                  ? "This clip's speed when the two play together: automatic, so its In to Out lasts as long as the other clip's (the longer one plays at 1×). Tap to set it yourself."
+                  : "This clip's speed when the two play together, set by hand. Tap, then Auto, to match the other clip again.")
             .popover(isPresented: $showingSpeed, arrowEdge: .bottom) {
-                VerticalSpeedSlider(speed: Float(clip.speed), accent: Theme.accent) { clip.speed = Double($0) }
-                    .padding(6)
-                    .presentationCompactAdaptation(.popover)
+                VStack(spacing: 8) {
+                    VerticalSpeedSlider(speed: Float(speed), accent: Theme.accent) { clip.speed = Double($0) }
+                    Button { clip.speed = nil } label: {
+                        Text("Auto")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(clip.speed == nil ? Theme.onAccent : Color.primary)
+                            .padding(.horizontal, 12).frame(height: 26)
+                            .background(clip.speed == nil ? Theme.accent : Color.primary.opacity(0.12), in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .help("The speed that matches the other clip")
+                }
+                .padding(6)
+                .presentationCompactAdaptation(.popover)
             }
         }
     }
