@@ -123,8 +123,8 @@ notes in every segment.
 
 A **segment** is a named stretch of the comparison, like a layer: for each clip a **start and end** (In and
 Out), optional **sync points** in between, each clip's **speed**, and the **drawings** made on it. A comparison
-starts with one, *Segment 1*, covering the whole clips. Make one per thing you want to compare: *Serve 1*,
-*Second serve*, *Forehand*.
+starts with one, *Segment 1*, covering the whole clips. Make one per thing you want to compare: *Take 1*,
+*Slow part*, *Finish*.
 
 ### Setting one up
 
@@ -146,7 +146,7 @@ starts with one, *Segment 1*, covering the whole clips. Make one per thing you w
   it in each clip and tap **Add sync** (S). They pair up in order, A's first with B's first, and split the
   stretch into **phases**, each matched the same way: wind-up with wind-up, follow-through with follow-through. On a sync
   point the button reads **Remove sync**; drag a ◆ over the timeline to move it.
-- Linked, a label over the timeline shows where you are: *Serve 1 · 0.42 s · phase 2 of 3 · B at 0.82×*.
+- Linked, a label over the timeline shows where you are: *Take 1 · 0.42 s · phase 2 of 3 · B at 0.82×*.
 
 ### Each clip's speed
 
@@ -323,7 +323,7 @@ yellow marks over the timeline (tap to jump), and in the library.
 - In the library, the **filter** button (top right) shows one tag across **all** clips, e.g. every Backhand,
   with **A / B** buttons to open any of them **at that moment**.
 - **Play all** (next to the filter) plays every moment with that tag **back to back** in clip A, 1.5 s either
-  side of each. The bar above the panel shows *Serve 2 of 5* and a **Stop** button.
+  side of each. The bar above the panel shows *Good 2 of 5* and a **Stop** button.
 
 ---
 
