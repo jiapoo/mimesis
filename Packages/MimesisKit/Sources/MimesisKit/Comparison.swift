@@ -195,6 +195,8 @@ public final class Comparison {
         if wasLinked { pause() }
         storeSegment()
         clips.swapAt(0, 1)
+        takes.swapAt(0, 1)
+        takeIndex.swapAt(0, 1)
         for at in segments.indices {
             segments[at].parts.swapAt(0, 1)
             segments[at].placement.top = 1 - segments[at].placement.top
@@ -205,6 +207,9 @@ public final class Comparison {
         if drawing == .clip(0) { drawing = .clip(1) } else if drawing == .clip(1) { drawing = .clip(0) }
         if wasLinked { Task { await seek(to: position) } }
     }
+    /// Each clip's takes (see `Take`): empty until a second video is added to it; and the one showing.
+    public internal(set) var takes: [[Take]] = [[], []]
+    public internal(set) var takeIndex = [0, 0]
     /// The segments (see `Segment`); the clips show `segments[segmentIndex]`.
     public internal(set) var segments = [Segment(name: "Segment 1")]
     public internal(set) var segmentIndex = 0

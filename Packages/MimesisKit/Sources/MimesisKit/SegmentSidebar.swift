@@ -7,6 +7,8 @@ import SwiftUI
 struct SegmentSidebar: View {
     let comparison: Comparison
     var onClose: (() -> Void)?
+    /// Choose another video to add to a clip (0 or 1) as a take.
+    var onAddTake: (Int) -> Void = { _ in }
 
     @State private var renaming: Segment.ID?
     @State private var name = ""
@@ -22,6 +24,7 @@ struct SegmentSidebar: View {
                     segments
                     if comparison.clips.contains(where: \.isLoaded) {
                         clips
+                        takes
                         AngleGraph(comparison: comparison)
                         drawings
                         pinned
@@ -171,6 +174,53 @@ struct SegmentSidebar: View {
         guard clip.trimStart > 0 || clip.trimEnd != nil else { return "whole clip · \(clock(end))" }
         let short = { (v: Double) in v.formatted(.number.precision(.fractionLength(2))) }
         return "\(short(start)) – \(short(end)) s · \(clock(end - start))"
+    }
+
+    // MARK: Takes (progress over time)
+
+    private var takes: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            title("Takes over time")
+            ForEach(0..<2, id: \.self) { index in
+                if comparison.clips[index].isLoaded {
+                    let list = comparison.takes[index]
+                    VStack(alignment: .leading, spacing: 4) {
+                        ForEach(Array(list.enumerated()), id: \.element.id) { at, take in
+                            let on = at == comparison.takeIndex[index]
+                            Button { Task { await comparison.selectTake(at, in: index) } } label: {
+                                HStack(spacing: 8) {
+                                    Text(index == 0 ? "A" : "B")
+                                        .font(.system(size: 10, weight: .bold))
+                                        .frame(width: 18, height: 18)
+                                        .background(on ? Theme.accent : Color.white.opacity(0.12), in: Circle())
+                                    Text(take.date.formatted(date: .abbreviated, time: .omitted))
+                                        .font(.system(size: 12, weight: on ? .semibold : .regular).monospacedDigit())
+                                    Text(take.name).font(.system(size: 11)).foregroundStyle(Theme.secondary).lineLimit(1)
+                                    Spacer(minLength: 0)
+                                }
+                                .padding(.horizontal, 6).frame(height: 28)
+                                .background(on ? Color.white.opacity(0.10) : .clear, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .help("Show this take in clip \(index == 0 ? "A" : "B"), as it was left")
+                            .contextMenu {
+                                if !on {
+                                    Button("Remove from the takes", systemImage: "minus.circle", role: .destructive) {
+                                        comparison.removeTake(at, in: index)
+                                    }
+                                }
+                            }
+                        }
+                        Button { onAddTake(index) } label: {
+                            Label(list.isEmpty ? "Add a take to \(index == 0 ? "A" : "B")…" : "Add another…", systemImage: "plus")
+                        }
+                        .buttonStyle(ChipStyle())
+                        .help("Add the same movement filmed another day to clip \(index == 0 ? "A" : "B"): each take keeps its own In/Out, sync points and drawings, against the same other clip, so you can see progress over time")
+                    }
+                }
+            }
+        }
     }
 
     // MARK: Drawings

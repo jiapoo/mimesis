@@ -230,12 +230,17 @@ The five steps below build it.
 
 ## Phase 7.6 — For people serious about improving
 
-- ⬜ Skeleton over the body with joint angles, followed through the movement (Vision body pose)
-- ⬜ Graphs across a segment, A against B: a joint's angle over time, and the time from the start to each
-      sync point
-- ⬜ Progress over time: the same movement filmed on different dates, each against one reference
-- ⬜ Notes pinned to a frame (text; voice later), shown at that frame and included in the export
-- ⬜ A report to share: key frames with their drawings, angles and notes, as a PDF
+- ✅ Skeleton over the body with joint angles, followed through the movement (Vision body pose) (2026-11-11;
+      seen working on the Mac; Vision doesn't run in the iOS Simulator)
+- ✅ Graphs across a segment, A against B: a joint's angle over time, and the time from the start to each
+      sync point (2026-11-11)
+- ✅ Progress over time: takes, the same movement filmed on different dates, each with its own edits against
+      one reference, all kept in the project (2026-11-11; tested, the sidebar's list not yet tried by hand)
+- ⬜ One graph of a joint's angle across all the takes
+- ✅ Notes pinned to a frame, shown around that frame, marked on the timeline, included in the export
+      (2026-11-11)
+- ⬜ Voice notes
+- ✅ A report to share: key frames with their drawings, angles and notes, as a PDF (2026-11-11)
 - ⬜ Not now (set aside 2026-11-11): tracing the path of a ball or a racket across frames
 
 ## Phase 8 — Release

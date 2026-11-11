@@ -201,12 +201,18 @@ extension Comparison {
     /// Another video in a clip: its share of every segment starts afresh.
     public func clipReplaced(_ index: Int) {
         for at in segments.indices { segments[at].parts[index] = Segment.Part() }
+        // With takes, the video takes the place of the take that was showing.
+        if takes[index].indices.contains(takeIndex[index]), let url = clips[index].url {
+            takes[index][takeIndex[index]] = Take(url: url)
+        }
     }
 
     /// Everything back to one empty segment (a new comparison).
     public func resetSegments() {
         segments = [Segment(name: "Segment 1")]
         segmentIndex = 0
+        takes = [[], []]
+        takeIndex = [0, 0]
     }
 
     // MARK: Speed

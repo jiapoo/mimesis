@@ -16,6 +16,8 @@ public struct ComparisonView: View {
     /// The file chooser is open for a project, not a video (iPhone and iPad).
     @State private var pickingProject = false
     @State private var reporting = false
+    /// The file chooser is open to add a take to this clip.
+    @State private var takeSide: Int?
     /// The segments' sidebar (kept between launches; an iPhone starts with it hidden).
     @AppStorage("showsSegments") private var showsSidebar = false
     /// The clip (0 or 1) open in the editor.
@@ -68,7 +70,8 @@ public struct ComparisonView: View {
                 // take the timeline's place.
                 HStack(spacing: 0) {
                 if showsSidebar && !phone {
-                    SegmentSidebar(comparison: comparison, onClose: { withAnimation(.easeOut(duration: 0.2)) { showsSidebar = false } })
+                    SegmentSidebar(comparison: comparison, onClose: { withAnimation(.easeOut(duration: 0.2)) { showsSidebar = false } },
+                                   onAddTake: { side in takeSide = side; importing = side })
                         .frame(width: 272)
                         .transition(.move(edge: .leading))
                 }
@@ -114,7 +117,8 @@ public struct ComparisonView: View {
                 // On an iPhone the segments slide in over the clips.
                 .overlay(alignment: .leading) {
                     if showsSidebar && phone {
-                        SegmentSidebar(comparison: comparison, onClose: { withAnimation(.easeOut(duration: 0.2)) { showsSidebar = false } })
+                        SegmentSidebar(comparison: comparison, onClose: { withAnimation(.easeOut(duration: 0.2)) { showsSidebar = false } },
+                                   onAddTake: { side in takeSide = side; importing = side })
                             .frame(width: 300)
                             .shadow(color: .black.opacity(0.5), radius: 12)
                             .transition(.move(edge: .leading))
@@ -309,11 +313,16 @@ public struct ComparisonView: View {
             isPresented: Binding(get: { importing != nil }, set: { if !$0 { importing = nil } }),
             allowedContentTypes: pickingProject ? [.mimesisProject, .package] : [.movie, .video, .mpeg4Movie, .quickTimeMovie]
         ) { result in
-            defer { pickingProject = false }
+            defer { pickingProject = false; takeSide = nil }
             switch result {
             case .success(let url) where pickingProject || url.pathExtension.lowercased() == ComparisonStore.fileExtension:
                 Task { await store.open(url, into: comparison) }
-            case .success(let url): open(url, in: pickSide)
+            case .success(let url):
+                if let side = takeSide {
+                    Task { await comparison.addTake(Self.keep(url), to: side) }
+                } else {
+                    open(url, in: pickSide)
+                }
             case .failure(let error): openProblem = error.localizedDescription
             }
             importing = nil
@@ -747,6 +756,7 @@ public struct ComparisonView: View {
             "\(clip.url?.path ?? "-")|\(clip.trimStart)|\(clip.trimEnd ?? -1)|\(clip.syncs)|\(clip.speed ?? -1)|\(clip.engine.mirroredHorizontally)|\(clip.drawings.hashValue)|\(clip.notes.map { "\($0.time)\($0.text)" })|\(clip.cutout?.state == .ready)|\(clip.cutout?.boxed == true)|\(clip.cutout?.pickedAt.map { "\($0.time),\($0.point.x)" } ?? "-")"
         }
         return clips.joined(separator: ";") + "|\(comparison.layout)|\(comparison.linked)|\(comparison.linkedSpeed)"
+            + "|\(comparison.takes.map { $0.map(\.url.lastPathComponent) })\(comparison.takeIndex)"
             + "|\(comparison.segmentIndex)|\(comparison.segments.map { $0.name + ($0.notes ?? "") })"
             + "|\(comparison.overlayTop)|\(comparison.overlayOpacity)|\(comparison.overlayOffset.width),\(comparison.overlayOffset.height)|\(comparison.overlayScale)|\(comparison.overlayRotation)"
     }

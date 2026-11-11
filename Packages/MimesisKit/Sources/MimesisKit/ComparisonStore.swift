@@ -38,6 +38,18 @@ struct ComparisonState: Codable {
     /// then the clips' states are the one segment.
     var segments: [Segment]?
     var segment: Int?
+    /// Each clip's takes and the one showing. Nil without takes.
+    var takes: [[TakeState]]?
+    var take: [Int]?
+}
+
+/// A take as saved: where its video is, when it was filmed, and its share of each segment.
+struct TakeState: Codable {
+    var bookmark: Data
+    /// In a project: the name of the project's own copy.
+    var file: String?
+    var date: Date
+    var parts: [String: Segment.Part]
 }
 
 struct OverlayState: Codable {
@@ -166,6 +178,25 @@ public final class ComparisonStore {
             }
             state.clips[index]?.file = name
             kept.insert(name)
+        }
+        // The other takes' videos too.
+        for (slot, takes) in comparison.takes.enumerated() {
+            for (at, take) in takes.enumerated() where state.takes?[slot].indices.contains(at) == true {
+                var name = take.url.lastPathComponent
+                if take.url.deletingLastPathComponent().standardizedFileURL != target.standardizedFileURL {
+                    let copy = target.appendingPathComponent(name)
+                    let same = files.fileExists(atPath: copy.path)
+                        && (try? copy.resourceValues(forKeys: [.fileSizeKey]).fileSize) == (try? take.url.resourceValues(forKeys: [.fileSizeKey]).fileSize)
+                    if !same {
+                        if files.fileExists(atPath: copy.path) {
+                            name = "\(take.url.deletingPathExtension().lastPathComponent) \(at + 1).\(take.url.pathExtension)"
+                        }
+                        do { try files.copyItem(at: take.url, to: target.appendingPathComponent(name)) } catch { continue }
+                    }
+                }
+                state.takes?[slot][at].file = name
+                kept.insert(name)
+            }
         }
         // A video replaced since the last save: its old copy goes.
         for old in (try? files.contentsOfDirectory(atPath: target.path)) ?? [] where !kept.contains(old) {
@@ -383,11 +414,25 @@ extension Comparison {
         let clips = clips.map { $0.state() }
         guard clips.contains(where: { $0 != nil }) else { return nil }
         storeSegment()
+        // The takes, each with its share of every segment (the one showing: as the clip has it now).
+        var savedTakes: [[TakeState]]?
+        if takes.contains(where: { !$0.isEmpty }) {
+            savedTakes = takes.enumerated().map { slot, list in
+                list.enumerated().compactMap { at, take -> TakeState? in
+                    guard let bookmark = try? take.url.bookmarkData(options: bookmarkOptions) else { return nil }
+                    var parts: [String: Segment.Part] = [:]
+                    for segment in segments {
+                        parts[segment.id.uuidString] = at == takeIndex[slot] ? segment.parts[slot] : take.parts[segment.id]
+                    }
+                    return TakeState(bookmark: bookmark, file: nil, date: take.date, parts: parts)
+                }
+            }
+        }
         return ComparisonState(
             clips: clips, layout: layout.rawValue, linked: linked, linkedSpeed: linkedSpeed,
             overlay: OverlayState(top: overlayTop, opacity: overlayOpacity, offset: overlayOffset, scale: overlayScale,
                                   rotation: overlayRotation),
-            segments: segments, segment: segmentIndex)
+            segments: segments, segment: segmentIndex, takes: savedTakes, take: savedTakes == nil ? nil : takeIndex)
     }
 
     func restore(_ state: ComparisonState, videos: URL? = nil) async {
@@ -418,6 +463,34 @@ extension Comparison {
             segments = [Segment(name: "Segment 1")]
             segmentIndex = 0
             storeSegment()
+        }
+        // The takes: each one's video from the project's copy, else where it was.
+        takes = [[], []]
+        takeIndex = [0, 0]
+        if let saved = state.takes {
+            for (slot, list) in saved.enumerated().prefix(2) {
+                var found: [Take] = []
+                var showing = 0
+                for (at, item) in list.enumerated() {
+                    var url: URL?
+                    if let videos, let file = item.file, FileManager.default.fileExists(atPath: videos.appendingPathComponent(file).path) {
+                        url = videos.appendingPathComponent(file)
+                    } else {
+                        var stale = false
+                        url = try? URL(resolvingBookmarkData: item.bookmark, options: resolveOptions, bookmarkDataIsStale: &stale)
+                        _ = url?.startAccessingSecurityScopedResource()
+                    }
+                    guard let url, FileManager.default.fileExists(atPath: url.path) else { continue }
+                    var take = Take(url: url, date: item.date)
+                    for (key, part) in item.parts { if let id = UUID(uuidString: key) { take.parts[id] = part } }
+                    if at == (state.take?[slot] ?? 0) { showing = found.count }
+                    found.append(take)
+                }
+                if found.count > 1 {
+                    takes[slot] = found
+                    takeIndex[slot] = showing
+                }
+            }
         }
         if state.linked, canLink { linked = true }
     }

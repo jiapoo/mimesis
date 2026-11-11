@@ -1,7 +1,7 @@
 # Mimesis — how to use it
 
 Mimesis puts two videos of a motion side by side, or one on top of the other, so you can see exactly where
-your stroke differs from the one you learn from. It works on Mac, iPad and iPhone.
+yours differs from the one you learn from: a sport, a dance step, an instrument, a rehab exercise, a craft. It works on Mac, iPad and iPhone.
 
 This guide goes from your first two clips to the advanced tools. If you only read one part, read
 **[A first comparison in five minutes](#a-first-comparison-in-five-minutes)**.
@@ -15,33 +15,36 @@ This guide goes from your first two clips to the advanced tools. If you only rea
 3. [The screen](#the-screen)
 4. [Playing one clip](#playing-one-clip)
 5. [Segments: lining the two clips up](#segments-lining-the-two-clips-up)
-8. [Mirroring, zooming and panning](#mirroring-zooming-and-panning)
-9. [Drawing and measuring angles](#drawing-and-measuring-angles)
-10. [Overlay: one player on top of the other](#overlay-one-player-on-top-of-the-other)
-11. [StroMotion: a whole stroke in one picture](#stromotion-a-whole-stroke-in-one-picture)
-12. [Court mode: watch yourself a few seconds late](#court-mode-watch-yourself-a-few-seconds-late)
-13. [Tags and the library](#tags-and-the-library)
-14. [Saving and reopening comparisons](#saving-and-reopening-comparisons)
-15. [Exporting a video](#exporting-a-video)
-16. [Opening videos from Arete, Imago and other apps](#opening-videos-from-arete-imago-and-other-apps)
-17. [Keyboard shortcuts (Mac)](#keyboard-shortcuts-mac)
-18. [Filming tips](#filming-tips)
-19. [Worked example: your forehand vs. Alcaraz](#worked-example-your-forehand-vs-alcaraz)
-20. [Good to know](#good-to-know)
+6. [Mirroring, zooming and panning](#mirroring-zooming-and-panning)
+7. [Drawing and measuring angles](#drawing-and-measuring-angles)
+8. [Overlay: one player on top of the other](#overlay-one-player-on-top-of-the-other)
+9. [StroMotion: a whole stroke in one picture](#stromotion-a-whole-stroke-in-one-picture)
+10. [Live replay: watch yourself a few seconds late](#live-replay-watch-yourself-a-few-seconds-late)
+11. [Tags and the library](#tags-and-the-library)
+12. [Saving and reopening comparisons](#saving-and-reopening-comparisons)
+13. [Skeleton, angles and graphs](#skeleton-angles-and-graphs)
+14. [Notes on frames](#notes-on-frames)
+15. [Takes: progress over time](#takes-progress-over-time)
+16. [Editing a clip, and the report](#editing-a-clip-and-the-report)
+17. [Exporting a video](#exporting-a-video)
+18. [Opening videos from Arete, Imago and other apps](#opening-videos-from-arete-imago-and-other-apps)
+19. [Keyboard shortcuts (Mac)](#keyboard-shortcuts-mac)
+20. [Filming tips](#filming-tips)
+21. [Worked example: yours against a reference](#worked-example-yours-against-a-reference)
+22. [Good to know](#good-to-know)
 
 ---
 
 ## A first comparison in five minutes
 
-1. **Open two clips.** On the welcome screen, tap **Photos** or **Files** on the *Clip A* card (your swing)
-   and then on the *Clip B* card (the one you learn from).
-2. **Find the moment of contact in A.** Tap clip A to select it (it gets a crimson outline), then drag sideways
-   on the video, or use the frame buttons at the bottom, until the racket meets the ball.
-   Tap **Add sync**. A crimson diamond appears above the timeline.
-3. **Do the same in B.** Select B, find its contact frame, tap **Add sync**.
-4. **Link them.** Tap **A🔗B** (bottom left of the bar). Both clips now jump to contact.
-5. **Watch.** Press play, or step frame by frame. Both clips move together, lined up at contact.
-   Set the speed (bottom right, e.g. **0.25×**) for slow motion.
+1. **Open two clips.** On the welcome screen, tap **Photos** or **Files** on the *Clip A* card (yours) and then
+   on the *Clip B* card (the one you learn from).
+2. **Mark the movement in A.** Tap clip A (it gets a crimson outline). Move to where the movement starts (drag
+   sideways on the video, or use the frame buttons) and tap **In**; move to where it ends and tap **Out**.
+3. **Do the same in B.**
+4. **Link them.** Tap **A🔗B** (bottom left). Both clips jump to their starts.
+5. **Watch.** Press play, or step frame by frame. They start together and end together: the shorter one is
+   slowed to match. Set the speed (bottom right, e.g. **0.25×**) for slow motion.
 
 That's the heart of Mimesis. Everything else helps you see the difference more clearly.
 
@@ -57,7 +60,7 @@ You can bring a video in five ways:
 | **Files** (iCloud Drive, a folder on the Mac…) | The **Files** button. |
 | **Drag and drop** | Drop a video onto an empty clip card (Mac and iPad). |
 | **Another app** | Share › **Mimesis** on iPhone/iPad; *Open With › Mimesis* or drop it on the Dock icon on the Mac. See [Opening videos from other apps](#opening-videos-from-arete-imago-and-other-apps). |
-| **Court mode** | Film yourself and keep the last seconds as clip A or B. See [Court mode](#court-mode-watch-yourself-a-few-seconds-late). |
+| **Live replay** | Film yourself and keep the last seconds as clip A or B. See [Live replay](#live-replay-watch-yourself-a-few-seconds-late). |
 | **The library** | Every clip you've opened before. See [Tags and the library](#tags-and-the-library). |
 
 To **replace** a clip, use its **⋯** menu › *Open video…* or *From Photos…*. To remove it, ⋯ › *Close*.
@@ -69,38 +72,37 @@ below 50 frames a second and slow motion will look jumpy. See [Filming tips](#fi
 
 ## The screen
 
-- **The videos fill the screen, touching.** Side by side when the window is wide, one above the other when it's
-  tall (an iPad held upright). **On iPhone, Mimesis runs sideways only**: the clips side by side, the controls
-  in a dock under them, so nothing covers a clip.
-- **Each clip** shows only its letter and time (top left). The **focused** clip — the one you tapped last — has
-  a thin crimson edge and its buttons top right: **✏ Draw**, **⇋ Mirror**, **⋯** (Sound, Open video, From Photos,
-  Clear trim, Clear sync points, StroMotion, Close).
-- **The panel** at the bottom is laid out like Arete's player, and is the same on Mac, iPad and iPhone:
-  - **on top, the timeline**: the time, the **progress bar**, the **frame ruler** (drag it sideways to move
-    frame by frame), and over it the **marks**: crimson ◆ sync points, white • drawings (where this segment has them), yellow 🏷 older tags (tap
-    one to jump there);
-  - **underneath, one row of buttons**:
-    - left, **A | A🔗B | B** (A, B, or both linked) and the selected clip's own tools: **In / Out** (trim),
-      **◆ sync**, its **speed**; before them the **▤ segment** button;
-    - middle, **frame back / play / frame forward**;
-    - right, **✏ Draw on both** (when linked), **↶ Undo** (and ↷ Redo once there's something to redo), the
-      playback **speed** (tap it for a slider).
-- As in Arete's player, the **timeline** runs across the bottom of the videos from edge to edge,
-  see-through, and the **bar** of buttons under them is solid. It's the same on Mac, iPad and iPhone; the
-  iPhone's bar also holds the top bar's controls (the **layout** button and **⋯**).
-- **Top bar**: **A | B / A / B / Overlay**, and **⋯** (Save comparison, Saved comparisons, Library, Court mode,
-  Export video). On the Mac they sit in the window's title bar, level with the close, minimise and zoom
-  buttons.
+- **The videos fill the screen, touching**: side by side when the window is wide, one above the other when it's
+  tall (an iPad held upright). On iPhone, Mimesis runs sideways only.
+- **Each clip** shows its letter and time (top left). The **selected** clip has a thin crimson edge and its
+  buttons top right: **✏ Draw**, **⇋ Mirror**, **🧍 Skeleton**, **⟳ Edit** (turn, flip, crop, trim), **⋯** (Sound,
+  Open video, From Photos, Clear trim, Clear sync points, StroMotion, Edit clip, Revert to the original, Close).
+- **The timeline** runs across the bottom of the videos, see-through: the time, the progress bar, the frame
+  ruler (drag it sideways to move frame by frame), and over it the **marks**: crimson ◆ sync points, a pencil
+  where a frame has drawings, a yellow speech bubble where a note is pinned. Tap a mark to go there.
+- **The bar** under the videos, left to right:
+  - **▤ Segments**: shows or hides the sidebar (below); it reads the chosen segment's name;
+  - **A | A🔗B | B**: which clip the controls drive, or both linked;
+  - the selected clip's **In / Out**, **◆ sync** and **speed** (while the sidebar is hidden; it has them too);
+  - **frame back / play / frame forward**;
+  - **✏ Draw on both** (when linked), **↶ Undo** (and ↷ Redo), the playback **speed** (tap it for a slider).
+- **The Segments sidebar** (left side; a panel that slides in on iPhone) is the workspace:
+  - the **segments**, with each one's length and number of drawings; **+** adds one; Rename, Duplicate, Delete;
+  - **In, Out, sync and speed** for clip A and for clip B;
+  - **Takes over time**: other videos of the same movement in a clip (see [Takes](#takes-progress-over-time));
+  - **Angles**: a joint's angle through the segment, A against B, and the timing (see [Skeleton](#skeleton-angles-and-graphs));
+  - **Drawings**: each frame that has drawings, with a small picture; tap to go there; ‹ › step between them;
+  - **Notes on frames** and **About this segment**.
+- **Top bar**: **A | B / A / B / Overlay**, **⇄** (swap A and B), and **⋯** (projects, library, Live replay,
+  export, report). On the Mac it's the window's title bar, and the **File** menu has New, Open, Open Recent,
+  Save, Save As and Export.
 
-**Which clip do the panel and play button move?** When the clips are linked: both. Otherwise:
+**Which clip do the controls and the play button move?** Linked (**A🔗B**, or Esc / L on the Mac): both,
+matched over the chosen segment. Otherwise the **selected** clip: tap a clip, tap **A** or **B** in the bar,
+or press **Tab**. The play button shows the selected clip's state; each clip loops.
 
-- showing **A only** or **B only** → that clip;
-- showing **both** → the **focused** clip (tap a clip, tap **A** or **B** in the panel, or press **Tab** on the Mac);
-- **A🔗B** (or **Esc** or **L** on the Mac) → the clips are **linked**: one timeline, and play and the frame
-  steps move **both**, matched over the chosen segment (see [Segments](#segments-lining-the-two-clips-up)).
-  No ring, nothing dimmed. In **Overlay**, too, A🔗B plays the two lined up. Tap **A** or **B** to unlink;
-- the play button shows the **focused clip's** state: switch to a paused clip and it shows ▶ even while the
-  other clip keeps playing. Each clip loops.
+**Swap A and B** (⇄): the two videos change places, each keeping its In/Out, sync points, speed, drawings and
+notes in every segment.
 
 ---
 
@@ -142,7 +144,7 @@ starts with one, *Segment 1*, covering the whole clips. Make one per thing you w
 - **Without an Out on both**, the clips just start together and each plays at its own pace.
 - **Sync points** (optional): a moment inside the stretch that should also line up, such as **contact**. Move to
   it in each clip and tap **Add sync** (S). They pair up in order, A's first with B's first, and split the
-  stretch into **phases**, each matched the same way: take-back with take-back, swing with swing. On a sync
+  stretch into **phases**, each matched the same way: wind-up with wind-up, follow-through with follow-through. On a sync
   point the button reads **Remove sync**; drag a ◆ over the timeline to move it.
 - Linked, a label over the timeline shows where you are: *Serve 1 · 0.42 s · phase 2 of 3 · B at 0.82×*.
 
@@ -179,41 +181,37 @@ starts that clip afresh in every segment.
 
 ## Drawing and measuring angles
 
-Drawing works like **Markup in Photos**. Tap **✏** on a clip: it pauses, and the drawing tools take the
-timeline's place at the bottom. **Linked (A+B)**, there's one **✏** in the bar instead, and it draws on
-**both** clips with the same pen.
+Tap **✏** on a clip (linked: the one **✏** in the bar draws on both). The clip pauses and the drawing tools
+appear, laid out as in Photoshop. The timeline stays, so you can step to another frame and keep drawing.
 
-**The toolbar**, left to right:
+**Down the left: the tools**
 
-- **↶ ↷** undo and redo (also ⌘Z, ⇧⌘Z).
-- **The pens**: **pen**, **marker** (wide and see-through, for highlighting), **pencil** (fine, with a
-  grain), and the **eraser** (drag over a drawing to take it away). The one in your hand stands up, showing its
-  colour and how thick it draws. **Tap it again** for its **width** (five sizes) and **opacity**; the eraser's
-  options erase everything on this frame or on the clip.
-- **+** the shapes: **line**, **arrow**, **rectangle**, **circle**, and **angle**. Once chosen, the + shows that
-  shape; its width and opacity are in the same menu.
-- **The colours**: crimson, yellow, white, cyan, green, black, and the **colour wheel** for any other (on
-  iPhone and iPad it's the same picker as Photos': grid, spectrum, sliders, and its eyedropper).
-- **□ / ▤** this frame or every frame: a drawing on *this frame* only shows on the frame it was drawn on (good
-  for marking contact); *every frame* shows it throughout (good for a reference line like the baseline).
-- **Done**.
-
-Each tool keeps its own colour and width, as in Photos: switch to the marker and back, and the pen is as you
-left it.
-
-| Shape | How to draw |
+| Tool | What it does |
 |---|---|
-| **Line** | Drag from one end to the other. |
-| **Arrow** | Drag from the tail to the point. |
-| **Rectangle** | Drag from one corner to the other. |
-| **Circle** | Drag from the centre outwards. |
-| **Angle** | Drag from the **joint** (elbow, knee, shoulder) along one arm; the second arm opens at 40°. Then drag either arm's white dot into place. The angle is shown in degrees. |
+| **Select** (arrow) | Click a drawing to choose it: its box and handles appear. Drag it to move it; drag a handle to reshape it. Click anywhere else to let go. |
+| **Pen** | A solid line by hand. |
+| **Marker** | Wide and see-through, for highlighting. |
+| **Pencil** | Fine, with a grain. |
+| **Eraser** | Drag over a drawing to remove it. |
+| **Line**, **Arrow**, **Rectangle**, **Circle** | Drag from one end (or corner, or the centre) to the other. |
+| **Angle** | Drag from the **joint** along one arm; the second arm opens at 40°. Choose it with Select and drag its handles into place. The angle is written in degrees. |
 
-Shapes keep **white dots** while drawing: drag one to adjust the shape.
+**Across the top: the chosen tool's options**
 
-Drawings stay on the player through zoom, pan, resizing and mirroring, appear as white dots over the
-timeline (tap to jump there), are saved with the comparison, and are included when you
-[export a video](#exporting-a-video).
+- **Undo / redo**.
+- **Colours**: six swatches and the colour wheel for any other.
+- **Thickness**: a slider from 0.5 pt, with a dot as thick as the line and the width in points. The slider is
+  finer at the thin end.
+- **Opacity**.
+- **This frame / Every frame**: a drawing on *this frame* only shows on the frame it was drawn on; *every
+  frame* shows it throughout (a reference line).
+- With a drawing chosen, the bar changes **that drawing**: colour, thickness, opacity, and a **trash** button
+  (or the Delete key).
+- **Done** (or Esc).
+
+Each tool keeps its own colour and thickness. Drawings stay on the picture through zoom, pan, resizing and
+mirroring, are saved with the segment, are listed in the sidebar, are marked with a pencil over the
+timeline, and are included in exported videos and the report.
 
 ---
 
@@ -252,11 +250,11 @@ itself (in A | B) stay with that clip's frame and aren't affected.
 
 The whole picture on top is confusing. **Cut out** finds the player in every frame of the top clip's trim (this
 takes a few seconds the first time — trim it to the stroke first; up to 600 frames; tap the progress to stop).
-Then only the player and racket are drawn over your clip. The cutout is saved, so next time it's ready at once.
+Then only the person (and what they hold) is drawn over your clip. The cutout is saved, so next time it's ready at once.
 
 Once it's cut out, **Cutout** in the bar turns it on and off, and its options appear at the top, beside the label:
 
-- **⬚ Box** — a soft box around the player instead of their outline, for when the outline loses the racket.
+- **⬚ Box** — a soft box around the person instead of their outline, for when the outline loses what they hold.
 - **🖌 Tint** — colours the top player crimson so the two bodies are easy to tell apart.
 - **👆 Pick the player** — when others are in frame (opponent, umpire, ball kids): then tap the player you want.
   They're followed through every frame. **👥** shows everyone again.
@@ -268,7 +266,7 @@ Once it's cut out, **Cutout** in the bar turns it on and off, and its options ap
   and resizes the top one so their hips and feet sit on yours. Step to a frame where both players are fully
   visible first. Nudge by hand afterwards if needed.
 - **Line up the backgrounds** (⧉, top right): for two clips filmed **at the same place** (same
-  court, same camera spot, different days). It lines up the court lines and fences, whoever is playing. If the
+  place, same camera spot, different days). It lines up everything that stands still, whoever is in it. If the
   places don't match, it says so.
 
 > Cutting out, picking a player and auto-align use Apple's Vision and need a real iPhone, iPad or Mac
@@ -279,9 +277,9 @@ Once it's cut out, **Cutout** in the bar turns it on and off, and its options ap
 ## StroMotion: a whole stroke in one picture
 
 A clip's **⋯ › StroMotion…** puts its player, cut out at several moments, into **one image** over the
-background — earlier moments fainter, the last solid — so you see the whole path of the racket and body.
+background — earlier moments fainter, the last solid — so you see the whole path of the movement.
 
-1. Trim the clip to the stroke (or set two or more sync points, e.g. racket drop and finish).
+1. Set In and Out around the movement (or two or more sync points inside it).
 2. Open StroMotion, choose **how many moments** (3–12; 6 is a good start), and — if the clip has sync points —
    **Whole trim** or **First to last sync point**.
 3. **Make**. Then **Share or save** the picture, or **Make again** with a different number.
@@ -290,18 +288,18 @@ If others are in frame, pick the player in the overlay first; StroMotion uses th
 
 ---
 
-## Court mode: watch yourself a few seconds late
+## Live replay: watch yourself a few seconds late
 
-**⋯ › Court mode…** (⌘K, or *Film at the court* on the welcome screen). Put your iPhone or iPad on the fence
-or a stand facing the court.
+**⋯ › Live replay…** (⌘K, or *Live replay* on the welcome screen). Put your iPhone or iPad on a stand facing
+where you practise.
 
-- The camera is shown **5 seconds behind** by default: hit a serve, turn around, and watch the serve you
-  just hit. Change it with **− / +** (1–10 s, or Live).
+- The camera is shown **5 seconds behind** by default: do the movement, turn around, and watch what you
+  just did. Change it with **− / +** (1–10 s, or Live).
 - **Save last 6 s** keeps the 6 seconds you just watched as **clip A** or **clip B** and opens it in the
   comparison, ready for sync points and the overlay.
 - It records at 60 frames a second when the camera allows.
 
-> Court mode needs a real camera; it hasn't been tried at a court yet — please tell me how it behaves
+> Live replay needs a real camera; it hasn't been tried on a real device yet — please tell me how it behaves
 > (picture, delay, battery).
 
 ---
@@ -332,17 +330,64 @@ yellow marks over the timeline (tap to jump), and in the library.
 ## Saving and reopening comparisons
 
 - Mimesis **remembers what's on screen** and brings it back the next time you open it.
-- A **project** keeps a comparison for good: every edit (trims, sync points, speeds, mirroring, drawings, the
-  overlay, the cutout) **and its own copies of both videos**, so it opens again even if the originals are
-  moved or deleted.
-  - **⋯ › Save project…** (⌘S) asks for a name the first time; after that ⌘S saves over the same project
-    (the menu reads *Save “name”*).
-  - **⋯ › Save as new project…** (⇧⌘S) makes another one from what's on screen.
-  - **⋯ › Open recent** lists the latest eight; the welcome screen shows the latest four.
-  - **⋯ › All projects…** (⇧⌘O) lists them all, most recent first: tap to open, swipe to delete,
-    right-click (press and hold) to rename.
+- A **project** is a file, **Name.mimesis**, with every segment and edit **and its own copies of the videos**
+  (every take too). Copy it, AirDrop it or keep it in iCloud Drive: it opens on any Mac, iPad or iPhone.
+  - **Mac**: **File › Save** (⌘S) asks where to save and under what name the first time, then saves in place;
+    **Save As…** (⇧⌘S); **Open…** (⌘O); **Open Recent**; or double-click a project in Finder.
+  - **iPhone and iPad**: **⋯ › Save project…** asks for a name and saves it in the **Mimesis** folder in the
+    Files app; move or share it from there. **⋯ › Open project…** finds one anywhere in Files.
+  - **Recent projects** are on the welcome screen and under **⋯ › Open recent**.
   - **⋯ › New comparison** (⌘N) closes both clips and starts afresh.
-- The copies are kept inside Mimesis. On the same disk a copy takes no extra room.
+- A project is as large as its videos. On the same disk a copy takes no extra room.
+
+---
+
+## Skeleton, angles and graphs
+
+- **🧍 on a clip** follows the body through the clip's In to Out (a few seconds of work; an hourglass shows
+  meanwhile) and draws its **skeleton** over the video, with the **angle at the elbows and knees** written
+  beside them, changing as the clip plays. With several people in frame it follows the biggest one.
+- **Sidebar › Angles** graphs one joint's angle through the segment, **A against B on the same time axis**
+  (matched moments one above the other), with a white line at the playhead and the two values and how far
+  apart they are. Its menu chooses the joint (elbows, shoulders, hips, knees) and which angles the skeleton
+  writes. **Measure again** after moving In or Out.
+- **Timing** underneath: each clip's own time from its In to each sync point, and from In to Out.
+- Angles are those seen on screen (in the picture), not in three dimensions: film from the side for a joint
+  that bends towards the camera.
+
+---
+
+## Notes on frames
+
+**Sidebar › Notes on frames › + A here** (or B) pins a note to the frame that clip is showing. It appears over
+the clip for about a second and a half around that moment, has a yellow mark over the timeline, is listed in
+the sidebar (tap to go there; right-click or press and hold to change or delete it), and is written into
+exported videos and the report. **About this segment** holds a longer note for the whole segment.
+
+---
+
+## Takes: progress over time
+
+A clip can hold several **takes**: the same movement filmed on different days.
+
+- **Sidebar › Takes over time › Add a take to A…** adds another video to clip A. The one there becomes the
+  first take. They're listed by the date they were filmed.
+- Tap a take to show it. **Each take keeps its own In/Out, sync points, speed, drawings and notes** in every
+  segment, against the same clip B, so you can go from last month's to today's and see what changed.
+- To compare two of your own takes with each other, open one of them in clip B.
+- A project keeps every take's video.
+
+---
+
+## Editing a clip, and the report
+
+- **⟳ on a clip** (or **⌘T**) opens it in the editor: **turn** a quarter, **flip**, **crop**, **trim**. Saving puts the
+  edited copy in the clip; the original file isn't changed, and the clip's ⋯ › **Revert to the original** goes
+  back. Because the picture or the length has changed, that clip's In/Out, sync points, drawings and notes
+  start afresh.
+- **⋯ › Report (PDF)…** makes a document to share with a coach or a student: each segment with its note, each
+  clip's stretch and sync times, and its **key frames** (those with a sync point, a drawing or a pinned note)
+  from both clips with the drawings on them, the note, and the joint angle when the body has been measured.
 
 ---
 
@@ -356,7 +401,10 @@ yellow marks over the timeline (tap to jump), and in the library.
 - The overlay comes out as on screen: position, size, turn, mirroring, cutout, tint.
 - Drawings are included.
 
-When it's done, **Share or save** (Files, Photos, AirDrop, Messages…).
+Notes pinned to frames are written into the video around their moment.
+
+When it's done: on the Mac, **Save as…** asks where to save it and under what name (or **Share**); on iPhone and
+iPad, **Share or save** (Files, Photos, AirDrop, Messages…).
 
 ---
 
@@ -412,11 +460,12 @@ On iPhone and iPad a copy is kept in Mimesis so the library can open it again la
 
 | Keys | Does |
 |---|---|
-| ⌘S / ⇧⌘S | Save the project / save as a new one |
-| ⇧⌘O | All projects |
+| ⌘S / ⇧⌘S | Save the project / Save As |
+| ⌘O | Open a project |
+| ⌘T | Edit the selected clip |
 | ⌘N | New comparison |
 | ⌘L | Library |
-| ⌘K | Court mode |
+| ⌘K | Live replay |
 | ⌘E | Export video |
 
 ---
@@ -426,7 +475,7 @@ On iPhone and iPad a copy is kept in Mimesis so the library can open it again la
 The app can only show what the camera caught.
 
 - **Frame rate matters most.** Use **Slo-mo (240 fps)** on iPhone for strokes, or at least **60 fps**.
-  At 30 fps the racket moves too far between frames to see contact.
+  At 30 fps a fast movement goes too far between frames to see its key moment.
 - **Hold the camera still** — a tripod or the fence. A moving camera makes the overlay and background
   alignment much harder.
 - **Same angle as the clip you compare with.** Behind the baseline, or side-on at the net post — match the
@@ -437,22 +486,21 @@ The app can only show what the camera caught.
 
 ---
 
-## Worked example: your forehand vs. Alcaraz
+## Worked example: yours against a reference
 
-You're left-handed; Alcaraz is right-handed.
+You're left-handed; the person in the reference video is right-handed.
 
-1. Open **your forehand** as **A** and the **Alcaraz** clip as **B**.
-2. **Trim** each to one forehand (In just before the unit turn, Out after the finish).
-3. **Mirror B** (⇋) so he swings the same way as you.
-4. In each clip, add **sync points** at the same four phases: unit turn, racket drop, **contact**, finish.
-5. **Link** (A🔗B) and set the speed to **0.25×**. Play: every phase lines up; the label shows how much faster
-   or slower he is in each.
-6. Pause at contact. **Draw an angle** at your elbow and at his (✏ in the bar › + › Angle). Compare the numbers.
-7. Switch to **Overlay**. **Cut out B**; if his opponent is in frame, **Pick player** and tap him. Turn on
-   **Tint**. Tap **auto-align** so his hips and feet sit on yours.
-8. Step frame by frame through the swing and watch where the crimson body leaves yours.
-9. **Tag** your contact frame *Forehand*, write a **note** in the library ("contact too close to body").
-10. **Export** the overlay at 0.25× and send it to your coach. **Save** the comparison to come back to it.
+1. Open **your video** as **A** and the **reference** as **B**.
+2. In each, set **In** just before the movement and **Out** just after it.
+3. **Mirror B** (⇋) so they move the same way as you.
+4. In each clip, add **sync points** at the same key moments (for a throw: wind-up, release). Name the
+   segment in the sidebar.
+5. **Link** (A🔗B) and set the speed to **0.25×**. Every phase lines up; the label shows who is slowed in each.
+6. Turn on the **skeleton** (🧍) on both and open **Angles** in the sidebar: see where the two curves part.
+7. Pause where they differ most. **Draw** on the frame, and **pin a note** to it.
+8. Switch to **Overlay**. **Cut out** the top clip, **Tint** it, and **line up the bodies**.
+9. Add next week's video as a **take** of A and do it again: go between the takes to see progress.
+10. **Save** the project, and share the **report** or an **exported video** at 0.25×.
 
 ---
 
@@ -464,5 +512,5 @@ You're left-handed; Alcaraz is right-handed.
   Program License Agreement is accepted in the developer account.
 - **Compare in Mimesis on iPhone/iPad** from Arete and Imago needs the same agreement (a shared App Group);
   until then, use Share › Mimesis there, one video at a time.
-- Not yet tried on real devices: court mode at the court, the cutout and auto-align on iPhone/iPad, iCloud sync
+- Not yet tried on real devices: Live replay, the cutout and auto-align on iPhone/iPad, iCloud sync
   between two devices. See [ROADMAP.md](ROADMAP.md) for everything done and still to do.
