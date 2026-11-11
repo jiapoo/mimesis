@@ -17,6 +17,8 @@ public struct Segment: Codable, Identifiable, Equatable {
         /// Set by hand; nil plays at the speed that matches the other clip.
         public var speed: Double?
         public var drawings: [Drawing] = []
+        /// Notes pinned to frames of this clip. Nil in older saves.
+        public var notes: [FrameNote]?
     }
 
     /// Where the top clip sits over the other in the overlay.
@@ -37,6 +39,17 @@ public struct Segment: Codable, Identifiable, Equatable {
     public init(name: String) {
         self.name = name
     }
+}
+
+/// A note pinned to a frame of a clip: shown over the clip around that moment, marked on the timeline,
+/// listed in the sidebar and written into exported videos.
+public struct FrameNote: Codable, Equatable, Identifiable, Sendable {
+    public var id = UUID()
+    public var time: Double
+    public var text: String
+
+    /// How long before and after its frame a note shows while playing.
+    static let reach = 0.75
 }
 
 /// What lines one clip up in a segment, for working out how the two play together.
@@ -94,7 +107,7 @@ extension Comparison {
         for (index, clip) in clips.enumerated() {
             segments[segmentIndex].parts[index] = Segment.Part(
                 trimStart: clip.trimStart, trimEnd: clip.trimEnd, syncs: clip.syncs, speed: clip.speed,
-                drawings: clip.drawings)
+                drawings: clip.drawings, notes: clip.notes.isEmpty ? nil : clip.notes)
         }
         segments[segmentIndex].placement = Segment.Placement(
             top: overlayTop, offset: overlayOffset, scale: overlayScale, rotation: overlayRotation)
@@ -111,6 +124,7 @@ extension Comparison {
             clip.syncs = part.syncs
             clip.speed = part.speed
             clip.drawings = part.drawings
+            clip.notes = part.notes ?? []
         }
         overlayTop = segment.placement.top
         overlayOffset = segment.placement.offset

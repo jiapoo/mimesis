@@ -63,6 +63,7 @@ private struct Plan: @unchecked Sendable {
         let size: CGSize
         let drawings: [Drawing]
         let frameLength: Double
+        var notes: [FrameNote] = []
     }
 
     let style: Exporter.Style
@@ -92,7 +93,7 @@ private struct Plan: @unchecked Sendable {
             let drawings = clip.drawings.filter { ($0.overlay == true) == (style == .overlay) }
             return Side(url: url, times: us.map { comparison.clipTime(clip, at: $0) },
                         mirrored: clip.engine.mirroredHorizontally, size: clip.engine.videoSize,
-                        drawings: drawings, frameLength: clip.frameLength)
+                        drawings: drawings, frameLength: clip.frameLength, notes: clip.notes)
         }
         guard let a = side(comparison.clips[0]), let b = side(comparison.clips[1]) else { return nil }
         self.style = style
@@ -242,7 +243,9 @@ private struct Plan: @unchecked Sendable {
     /// A clip's marks for one output frame, as an image the size of that frame (empty when there are none).
     private static func marks(_ side: Side, index: Int, over frame: CIImage) -> CIImage {
         let shown = DrawingImage.visible(side.drawings, at: side.times[index], frameLength: side.frameLength)
-        guard let image = DrawingImage.image(shown, size: frame.extent.size, mirrored: side.mirrored) else { return .empty() }
+        // Notes pinned around this frame.
+        let captions = side.notes.filter { abs($0.time - side.times[index]) <= FrameNote.reach }.map(\.text)
+        guard let image = DrawingImage.image(shown, captions: captions, size: frame.extent.size, mirrored: side.mirrored) else { return .empty() }
         return CIImage(cgImage: image)
     }
 

@@ -11,8 +11,9 @@ enum DrawingImage {
     }
 
     /// - Parameter mirrored: the frame is shown mirrored, so the marks (stored as filmed) are flipped too.
-    static func image(_ drawings: [Drawing], size: CGSize, mirrored: Bool) -> CGImage? {
-        guard !drawings.isEmpty, size.width > 0, size.height > 0 else { return nil }
+    /// - Parameter captions: notes pinned around this frame, written at the bottom left.
+    static func image(_ drawings: [Drawing], captions: [String] = [], size: CGSize, mirrored: Bool) -> CGImage? {
+        guard !(drawings.isEmpty && captions.isEmpty), size.width > 0, size.height > 0 else { return nil }
         let width = Int(size.width), height = Int(size.height)
         guard let context = CGContext(
             data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
@@ -68,6 +69,32 @@ enum DrawingImage {
                 context.strokePath()
             }
             if let label = g.label { draw(label.text, at: label.at, size: 15 * unit, in: context) }
+        }
+        // Notes: white on a dark strip, one above the other from the bottom left.
+        var bottom = size.height - 22 * unit
+        for caption in captions.reversed() {
+            let font = CTFontCreateWithName("Helvetica-Bold" as CFString, 15 * unit, nil)
+            let attributes: [NSAttributedString.Key: Any] = [
+                NSAttributedString.Key(kCTFontAttributeName as String): font,
+                NSAttributedString.Key(kCTForegroundColorAttributeName as String): CGColor(gray: 1, alpha: 1),
+            ]
+            let line = CTLineCreateWithAttributedString(NSAttributedString(string: caption, attributes: attributes))
+            let bounds = CTLineGetImageBounds(line, context)
+            let pad = 7 * unit
+            let box = CGRect(x: 16 * unit, y: bottom - bounds.height - pad * 2,
+                             width: min(size.width - 32 * unit, bounds.width + pad * 2), height: bounds.height + pad * 2)
+            context.setFillColor(CGColor(gray: 0, alpha: 0.62))
+            context.addPath(CGPath(roundedRect: box, cornerWidth: 6 * unit, cornerHeight: 6 * unit, transform: nil))
+            context.fillPath()
+            context.saveGState()
+            context.clip(to: box)
+            // Text draws upright only in a y-up space: undo the flip around the line.
+            context.translateBy(x: box.minX + pad, y: box.maxY - pad)
+            context.scaleBy(x: 1, y: -1)
+            context.textPosition = CGPoint(x: -bounds.minX, y: -bounds.minY)
+            CTLineDraw(line, context)
+            context.restoreGState()
+            bottom = box.minY - 5 * unit
         }
         return context.makeImage()
     }

@@ -7,6 +7,13 @@ import Observation
 public final class Clip {
     public let engine = VideoEngine()
     public private(set) var url: URL?
+    /// Notes pinned to frames (the chosen segment's).
+    public var notes: [FrameNote] = []
+    /// The notes to show at the playhead.
+    var visibleNotes: [FrameNote] {
+        let now = engine.currentTime
+        return notes.filter { abs($0.time - now) <= max(FrameNote.reach, frameLength) }
+    }
     /// The body followed through the clip's stretch, once asked for (not saved: it's found again), and
     /// whether its skeleton shows over the video.
     var poseTrack: PoseTrack?
@@ -62,6 +69,7 @@ public final class Clip {
         zoom = 1
         pan = .zero
         drawings = []
+        notes = []
         dropCutout()
         await engine.loadVideo(url: newURL)
     }

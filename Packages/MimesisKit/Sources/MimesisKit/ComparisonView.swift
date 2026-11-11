@@ -738,7 +738,7 @@ public struct ComparisonView: View {
     /// Everything a saved comparison keeps, so a change to any of it is remembered.
     private var snapshot: String {
         let clips = comparison.clips.map { clip in
-            "\(clip.url?.path ?? "-")|\(clip.trimStart)|\(clip.trimEnd ?? -1)|\(clip.syncs)|\(clip.speed ?? -1)|\(clip.engine.mirroredHorizontally)|\(clip.drawings.hashValue)|\(clip.cutout?.state == .ready)|\(clip.cutout?.boxed == true)|\(clip.cutout?.pickedAt.map { "\($0.time),\($0.point.x)" } ?? "-")"
+            "\(clip.url?.path ?? "-")|\(clip.trimStart)|\(clip.trimEnd ?? -1)|\(clip.syncs)|\(clip.speed ?? -1)|\(clip.engine.mirroredHorizontally)|\(clip.drawings.hashValue)|\(clip.notes.map { "\($0.time)\($0.text)" })|\(clip.cutout?.state == .ready)|\(clip.cutout?.boxed == true)|\(clip.cutout?.pickedAt.map { "\($0.time),\($0.point.x)" } ?? "-")"
         }
         return clips.joined(separator: ";") + "|\(comparison.layout)|\(comparison.linked)|\(comparison.linkedSpeed)"
             + "|\(comparison.segmentIndex)|\(comparison.segments.map { $0.name + ($0.notes ?? "") })"

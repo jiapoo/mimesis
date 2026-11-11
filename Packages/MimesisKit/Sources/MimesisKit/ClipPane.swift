@@ -184,6 +184,24 @@ struct ClipPane: View {
             }
             .padding(10)
         }
+        // Notes pinned around this moment, above the timeline.
+        .overlay(alignment: .bottomLeading) {
+            VStack(alignment: .leading, spacing: 4) {
+                ForEach(clip.visibleNotes) { note in
+                    Label(note.text, systemImage: "text.bubble.fill")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 10).padding(.vertical, 6)
+                        .background(Color.black.opacity(0.62), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                        .overlay(alignment: .leading) {
+                            RoundedRectangle(cornerRadius: 2).fill(Color(red: 1, green: 0.84, blue: 0.2)).frame(width: 3).padding(.vertical, 5)
+                        }
+                }
+            }
+            .padding(.leading, 12)
+            .padding(.bottom, 96)
+            .allowsHitTesting(false)
+        }
         .animation(.easeOut(duration: 0.18), value: drawing)
         .animation(.easeOut(duration: 0.15), value: focused)
     }

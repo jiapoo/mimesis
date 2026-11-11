@@ -10,6 +10,9 @@ struct SegmentSidebar: View {
 
     @State private var renaming: Segment.ID?
     @State private var name = ""
+    /// The note being written or changed: its clip, its id when it exists already.
+    @State private var noting: (clip: Int, id: UUID?)?
+    @State private var noteText = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -19,7 +22,9 @@ struct SegmentSidebar: View {
                     segments
                     if comparison.clips.contains(where: \.isLoaded) {
                         clips
+                        AngleGraph(comparison: comparison)
                         drawings
+                        pinned
                         notes
                     }
                 }
@@ -219,11 +224,78 @@ struct SegmentSidebar: View {
         }
     }
 
+    // MARK: Notes pinned to frames
+
+    private var pinned: some View {
+        let index = comparison.clips.firstIndex { $0 === comparison.focused } ?? 0
+        let all: [(clip: Int, note: FrameNote)] = comparison.clips.enumerated()
+            .flatMap { at, clip in clip.notes.map { (clip: at, note: $0) } }
+            .sorted { ($0.clip, $0.note.time) < ($1.clip, $1.note.time) }
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                title("Notes on frames")
+                Spacer()
+                Button {
+                    noteText = ""
+                    noting = (index, nil)
+                } label: {
+                    Label("\(index == 0 ? "A" : "B") here", systemImage: "plus")
+                }
+                .buttonStyle(ChipStyle())
+                .help("Pin a note to the frame clip \(index == 0 ? "A" : "B") is showing: it appears over the clip around that moment, and in exported videos")
+            }
+            ForEach(all, id: \.note.id) { item in
+                Button {
+                    comparison.go(to: DrawnFrame(clip: item.clip, time: item.note.time, everyFrame: false, overlay: false,
+                                                 count: 0, colors: [], ids: []))
+                } label: {
+                    HStack(alignment: .top, spacing: 8) {
+                        Text("\(item.clip == 0 ? "A" : "B") \(clock(item.note.time))")
+                            .font(.system(size: 11, weight: .semibold).monospacedDigit())
+                            .foregroundStyle(Color(red: 1, green: 0.84, blue: 0.2))
+                        Text(item.note.text).font(.system(size: 12)).multilineTextAlignment(.leading)
+                        Spacer(minLength: 0)
+                    }
+                    .padding(8)
+                    .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .help("Go to this frame")
+                .contextMenu {
+                    Button("Change…", systemImage: "pencil") {
+                        noteText = item.note.text
+                        noting = (item.clip, item.note.id)
+                    }
+                    Button("Delete", systemImage: "trash", role: .destructive) {
+                        comparison.clips[item.clip].notes.removeAll { $0.id == item.note.id }
+                    }
+                }
+            }
+        }
+        .alert(noting?.id == nil ? "Note on this frame" : "Change the note",
+               isPresented: Binding(get: { noting != nil }, set: { if !$0 { noting = nil } })) {
+            TextField("What to notice here", text: $noteText)
+            Button("Cancel", role: .cancel) {}
+            Button("Save") {
+                guard let noting else { return }
+                let text = noteText.trimmingCharacters(in: .whitespacesAndNewlines)
+                let clip = comparison.clips[noting.clip]
+                if let id = noting.id, let at = clip.notes.firstIndex(where: { $0.id == id }) {
+                    if text.isEmpty { clip.notes.remove(at: at) } else { clip.notes[at].text = text }
+                } else if !text.isEmpty {
+                    clip.notes.append(FrameNote(time: clip.engine.currentTime, text: text))
+                    clip.notes.sort { $0.time < $1.time }
+                }
+            }
+        }
+    }
+
     // MARK: Notes
 
     private var notes: some View {
         VStack(alignment: .leading, spacing: 6) {
-            title("Notes")
+            title("About this segment")
             TextField("What to look at in this segment", text: Binding(
                 get: { comparison.segment.notes ?? "" },
                 set: { comparison.setNotes($0) }), axis: .vertical)

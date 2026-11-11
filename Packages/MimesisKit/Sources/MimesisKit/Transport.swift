@@ -242,6 +242,17 @@ struct Transport: View {
                         .position(x: x(tag.time), y: 7)
                         .help(tag.label)
                     }
+                    // Notes pinned to frames.
+                    ForEach(clip.notes) { note in
+                        markButton(at: note.time, clip: clip) {
+                            Image(systemName: "text.bubble.fill")
+                                .font(.system(size: 10))
+                                .foregroundStyle(Color(red: 1, green: 0.84, blue: 0.2))
+                                .shadow(color: .black.opacity(0.6), radius: 1)
+                        }
+                        .position(x: x(note.time), y: 7)
+                        .help(note.text)
+                    }
                     // Frames with drawings: a pencil mark in the drawing's colour.
                     ForEach(drawingTimes, id: \.self) { t in
                         markButton(at: t, clip: clip) {
