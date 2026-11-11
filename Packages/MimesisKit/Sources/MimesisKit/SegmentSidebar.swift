@@ -1,34 +1,40 @@
+import AreteMedia
 import AVFoundation
 import SwiftUI
 
 /// The workspace for segments, down the left side (a panel that slides in on an iPhone): the list of
-/// segments, and for the chosen one each clip's In/Out, sync points and speed, the frames that have
-/// drawings, and notes.
+/// segments, and for the chosen one each clip's In/Out, sync points and speed, the body's angles, the
+/// frames that have drawings, the takes, and notes. Names and notes are edited in place: double-click.
 struct SegmentSidebar: View {
     let comparison: Comparison
     var onClose: (() -> Void)?
     /// Choose another video to add to a clip (0 or 1) as a take.
     var onAddTake: (Int) -> Void = { _ in }
 
-    @State private var renaming: Segment.ID?
-    @State private var name = ""
-    /// The note being written or changed: its clip, its id when it exists already.
-    @State private var noting: (clip: Int, id: UUID?)?
-    @State private var noteText = ""
+    /// What's being typed into, in place.
+    private enum Field: Hashable {
+        case segment(UUID), note(UUID), about
+    }
+
+    @FocusState private var field: Field?
+    /// The text being edited, and what it's for (nil: nothing is being edited).
+    @State private var editing: Field?
+    @State private var text = ""
+    @State private var speedFor: Int?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             header
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 18) {
                     segments
                     if comparison.clips.contains(where: \.isLoaded) {
                         clips
-                        takes
                         AngleGraph(comparison: comparison)
                         drawings
                         pinned
-                        notes
+                        about
+                        takes
                     }
                 }
                 .padding(12)
@@ -38,14 +44,13 @@ struct SegmentSidebar: View {
         .background(Theme.card)
         .overlay(alignment: .trailing) { Rectangle().fill(Theme.line).frame(width: 1) }
         .foregroundStyle(.white)
-        .alert("Rename segment", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
-            TextField("Take 1, Slow part…", text: $name)
-            Button("Cancel", role: .cancel) {}
-            Button("Rename") {
-                let name = name.trimmingCharacters(in: .whitespaces)
-                if let renaming, !name.isEmpty { comparison.renameSegment(renaming, to: name) }
-            }
+        // While typing here, the letter keys and Space type: they don't play, link or mark.
+        .onChange(of: editing) { _, now in comparison.typing = now != nil }
+        .onChange(of: field) { _, now in
+            // Clicking away from the field ends the edit, keeping what was typed.
+            if now == nil, editing != nil { commit() }
         }
+        .onDisappear { comparison.typing = false }
     }
 
     private var header: some View {
@@ -64,19 +69,70 @@ struct SegmentSidebar: View {
         .overlay(alignment: .bottom) { Rectangle().fill(Theme.line).frame(height: 1) }
     }
 
+    // MARK: Editing in place
+
+    private func edit(_ what: Field, _ current: String) {
+        if editing != nil { commit() }
+        text = current
+        editing = what
+        field = what
+    }
+
+    private func commit() {
+        guard let what = editing else { return }
+        let typed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        switch what {
+        case .segment(let id):
+            if !typed.isEmpty { comparison.renameSegment(id, to: typed) }
+        case .note(let id):
+            for clip in comparison.clips {
+                guard let at = clip.notes.firstIndex(where: { $0.id == id }) else { continue }
+                // A note left empty is removed.
+                if typed.isEmpty { clip.notes.remove(at: at) } else { clip.notes[at].text = typed }
+            }
+        case .about:
+            comparison.setNotes(typed)
+        }
+        editing = nil
+        field = nil
+    }
+
+    private func cancel() {
+        // A note just added and never written goes.
+        if case .note(let id)? = editing {
+            for clip in comparison.clips { clip.notes.removeAll { $0.id == id && $0.text.isEmpty } }
+        }
+        editing = nil
+        field = nil
+    }
+
+    /// A one-line field for the text being edited: Return keeps it, Esc leaves it as it was.
+    private func inlineField(_ what: Field, prompt: String, size: CGFloat = 13) -> some View {
+        TextField(prompt, text: $text)
+            .textFieldStyle(.plain)
+            .font(.system(size: size))
+            .focused($field, equals: what)
+            .onSubmit { commit() }
+            #if os(macOS)
+            .onExitCommand { cancel() }
+            #endif
+    }
+
     // MARK: The list
 
     private var segments: some View {
         VStack(spacing: 4) {
             ForEach(Array(comparison.segments.enumerated()), id: \.element.id) { index, segment in
                 let on = index == comparison.segmentIndex
-                Button { comparison.selectSegment(index) } label: {
-                    HStack(spacing: 8) {
-                        Text("\(index + 1)")
-                            .font(.system(size: 11, weight: .bold).monospacedDigit())
-                            .foregroundStyle(on ? Theme.onAccent : Theme.secondary)
-                            .frame(width: 20, height: 20)
-                            .background(on ? Theme.accent : Color.white.opacity(0.08), in: Circle())
+                HStack(spacing: 8) {
+                    Text("\(index + 1)")
+                        .font(.system(size: 11, weight: .bold).monospacedDigit())
+                        .foregroundStyle(on ? Theme.onAccent : Theme.secondary)
+                        .frame(width: 20, height: 20)
+                        .background(on ? Theme.accent : Color.white.opacity(0.08), in: Circle())
+                    if editing == .segment(segment.id) {
+                        inlineField(.segment(segment.id), prompt: "Name")
+                    } else {
                         Text(segment.name)
                             .font(.system(size: 13, weight: on ? .semibold : .regular))
                             .lineLimit(1)
@@ -93,18 +149,17 @@ struct SegmentSidebar: View {
                                 .foregroundStyle(Theme.secondary)
                         }
                     }
-                    .padding(.horizontal, 8)
-                    .frame(height: 34)
-                    .background(on ? Color.white.opacity(0.10) : .clear, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
-                .help("Choose this segment: both clips go to its start")
+                .padding(.horizontal, 8)
+                .frame(height: 34)
+                .background(on ? Color.white.opacity(0.10) : .clear, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .contentShape(Rectangle())
+                // Double-click the name to rename it; one click chooses the segment.
+                .onTapGesture(count: 2) { edit(.segment(segment.id), segment.name) }
+                .onTapGesture { comparison.selectSegment(index) }
+                .help("Click to choose this segment; double-click to rename it; right-click for more")
                 .contextMenu {
-                    Button("Rename…", systemImage: "pencil") {
-                        name = segment.name
-                        renaming = segment.id
-                    }
+                    Button("Rename", systemImage: "pencil") { edit(.segment(segment.id), segment.name) }
                     Button("Duplicate", systemImage: "plus.square.on.square") {
                         comparison.selectSegment(index)
                         comparison.duplicateSegment()
@@ -122,103 +177,111 @@ struct SegmentSidebar: View {
                     }
                 }
             }
-            HStack(spacing: 6) {
-                Button("Rename") {
-                    name = comparison.segment.name
-                    renaming = comparison.segment.id
-                }
-                Button("Duplicate") { comparison.duplicateSegment() }
-                Button(comparison.segments.count > 1 ? "Delete" : "Clear") { comparison.deleteSegment() }
-            }
-            .buttonStyle(ChipStyle())
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.top, 4)
         }
     }
 
     // MARK: Each clip's share
 
+    /// One card per clip: In, Out, sync and speed side by side, each a name over its value. Tap In or Out
+    /// to set it at that clip's playhead (its ✕ clears it), Sync to add or remove a sync point there,
+    /// Speed for its slider.
     private var clips: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            title("In, Out, sync and speed")
+        VStack(alignment: .leading, spacing: 8) {
             ForEach(0..<2, id: \.self) { index in
                 let clip = comparison.clips[index]
-                if clip.isLoaded {
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack(spacing: 6) {
-                            Text(index == 0 ? "A" : "B")
-                                .font(.system(size: 11, weight: .bold))
-                                .frame(width: 20, height: 20)
-                                .background(Color.white.opacity(0.18), in: Circle())
-                            Text(span(clip))
-                                .font(.system(size: 11).monospacedDigit())
-                                .foregroundStyle(Theme.secondary)
-                        }
-                        // Each acts at that clip's own playhead.
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            ClipTools(clip: clip, comparison: comparison)
-                        }
-                    }
-                }
+                if clip.isLoaded { card(index, clip) }
             }
             if comparison.linked {
-                Text("Linked: choose A or B to move its In, Out or sync points.")
+                Text("Linked: choose A or B to change In, Out or sync points.")
                     .font(.system(size: 11)).foregroundStyle(Theme.secondary)
             }
         }
     }
 
-    /// "0.57 – 1.27 s · 0.70 s"
-    private func span(_ clip: Clip) -> String {
-        let start = clip.trimStart, end = clip.end
-        guard clip.trimStart > 0 || clip.trimEnd != nil else { return "whole clip · \(clock(end))" }
+    private func card(_ index: Int, _ clip: Clip) -> some View {
         let short = { (v: Double) in v.formatted(.number.precision(.fractionLength(2))) }
-        return "\(short(start)) – \(short(end)) s · \(clock(end - start))"
+        let speed = comparison.speed(of: clip)
+        let locked = comparison.linked
+        return HStack(spacing: 0) {
+            Text(index == 0 ? "A" : "B")
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(comparison.selected === clip ? Theme.onAccent : .white)
+                .frame(width: 24, height: 24)
+                .background(comparison.selected === clip ? Theme.accent : Color.white.opacity(0.14), in: Circle())
+                .padding(.horizontal, 8)
+            cell("In", clip.trimStart > 0 ? short(clip.trimStart) : "start", set: clip.trimStart > 0,
+                 help: "Start clip \(index == 0 ? "A" : "B") here, at its playhead ([)",
+                 clear: clip.trimStart > 0 ? { clip.clearTrimStart() } : nil) { clip.setTrimStart() }
+                .disabled(locked)
+            line
+            cell("Out", clip.trimEnd.map(short) ?? "end", set: clip.trimEnd != nil,
+                 help: "End clip \(index == 0 ? "A" : "B") here, at its playhead (])",
+                 clear: clip.trimEnd != nil ? { clip.clearTrimEnd() } : nil) { clip.setTrimEnd() }
+                .disabled(locked)
+            line
+            cell("Sync", clip.syncHere != nil ? "remove" : (clip.syncs.isEmpty ? "add" : "\(clip.syncs.count) · add"),
+                 set: clip.syncHere != nil,
+                 help: "Add a sync point at clip \(index == 0 ? "A" : "B")'s playhead, or remove the one there (S)",
+                 clear: nil) { clip.toggleSync() }
+                .disabled(locked)
+            line
+            cell("Speed", speedText((speed * 100).rounded() / 100) + (clip.speed == nil ? "" : " ✎"), set: clip.speed != nil,
+                 help: clip.speed == nil ? "Automatic: matched to the other clip. Tap to set it yourself." : "Set by hand. Tap, then Auto, to match the other clip again.",
+                 clear: clip.speed != nil ? { clip.speed = nil } : nil) { speedFor = index }
+                .popover(isPresented: Binding(get: { speedFor == index }, set: { if !$0 { speedFor = nil } }), arrowEdge: .trailing) {
+                    VStack(spacing: 8) {
+                        VerticalSpeedSlider(speed: Float(speed), accent: Theme.accent) { clip.speed = Double($0) }
+                        Button("Auto") { clip.speed = nil }
+                            .buttonStyle(ChipStyle(active: clip.speed == nil))
+                            .help("The speed that matches the other clip")
+                    }
+                    .padding(8)
+                    .presentationCompactAdaptation(.popover)
+                }
+        }
+        .frame(height: 46)
+        .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Color.white.opacity(0.07)))
+        .contentShape(Rectangle())
     }
 
-    // MARK: Takes (progress over time)
+    private var line: some View {
+        Rectangle().fill(Color.white.opacity(0.08)).frame(width: 1, height: 26)
+    }
 
-    private var takes: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            title("Takes over time")
-            ForEach(0..<2, id: \.self) { index in
-                if comparison.clips[index].isLoaded {
-                    let list = comparison.takes[index]
-                    VStack(alignment: .leading, spacing: 4) {
-                        ForEach(Array(list.enumerated()), id: \.element.id) { at, take in
-                            let on = at == comparison.takeIndex[index]
-                            Button { Task { await comparison.selectTake(at, in: index) } } label: {
-                                HStack(spacing: 8) {
-                                    Text(index == 0 ? "A" : "B")
-                                        .font(.system(size: 10, weight: .bold))
-                                        .frame(width: 18, height: 18)
-                                        .background(on ? Theme.accent : Color.white.opacity(0.12), in: Circle())
-                                    Text(take.date.formatted(date: .abbreviated, time: .omitted))
-                                        .font(.system(size: 12, weight: on ? .semibold : .regular).monospacedDigit())
-                                    Text(take.name).font(.system(size: 11)).foregroundStyle(Theme.secondary).lineLimit(1)
-                                    Spacer(minLength: 0)
-                                }
-                                .padding(.horizontal, 6).frame(height: 28)
-                                .background(on ? Color.white.opacity(0.10) : .clear, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
-                                .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-                            .help("Show this take in clip \(index == 0 ? "A" : "B"), as it was left")
-                            .contextMenu {
-                                if !on {
-                                    Button("Remove from the takes", systemImage: "minus.circle", role: .destructive) {
-                                        comparison.removeTake(at, in: index)
-                                    }
-                                }
-                            }
-                        }
-                        Button { onAddTake(index) } label: {
-                            Label(list.isEmpty ? "Add a take to \(index == 0 ? "A" : "B")…" : "Add another…", systemImage: "plus")
-                        }
-                        .buttonStyle(ChipStyle())
-                        .help("Add the same movement filmed another day to clip \(index == 0 ? "A" : "B"): each take keeps its own In/Out, sync points and drawings, against the same other clip, so you can see progress over time")
-                    }
+    /// One value of a clip's card: its name over the value, the whole cell a button; set by hand it
+    /// shows in the accent, with an ✕ in the corner to clear it.
+    private func cell(_ name: String, _ value: String, set: Bool, help: String, clear: (() -> Void)?,
+                      action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack(spacing: 2) {
+                Text(name.uppercased())
+                    .font(.system(size: 8.5, weight: .bold)).kerning(0.5)
+                    .foregroundStyle(Theme.secondary)
+                Text(value)
+                    .font(.system(size: 12, weight: .semibold).monospacedDigit())
+                    .foregroundStyle(set ? Theme.accent : .white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(help)
+        .overlay(alignment: .topTrailing) {
+            if let clear {
+                Button(action: clear) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 7, weight: .heavy))
+                        .foregroundStyle(.white.opacity(0.8))
+                        .frame(width: 14, height: 14)
+                        .background(Color.white.opacity(0.14), in: Circle())
+                        .padding(2)
+                        .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
+                .help("Clear \(name)")
             }
         }
     }
@@ -286,8 +349,12 @@ struct SegmentSidebar: View {
                 title("Notes on frames")
                 Spacer()
                 Button {
-                    noteText = ""
-                    noting = (index, nil)
+                    // A new note on the frame the clip shows, written right here.
+                    let clip = comparison.clips[index]
+                    let note = FrameNote(time: clip.engine.currentTime, text: "")
+                    clip.notes.append(note)
+                    clip.notes.sort { $0.time < $1.time }
+                    edit(.note(note.id), "")
                 } label: {
                     Label("\(index == 0 ? "A" : "B") here", systemImage: "plus")
                 }
@@ -295,65 +362,132 @@ struct SegmentSidebar: View {
                 .help("Pin a note to the frame clip \(index == 0 ? "A" : "B") is showing: it appears over the clip around that moment, and in exported videos")
             }
             ForEach(all, id: \.note.id) { item in
-                Button {
-                    comparison.go(to: DrawnFrame(clip: item.clip, time: item.note.time, everyFrame: false, overlay: false,
-                                                 count: 0, colors: [], ids: []))
-                } label: {
-                    HStack(alignment: .top, spacing: 8) {
-                        Text("\(item.clip == 0 ? "A" : "B") \(clock(item.note.time))")
-                            .font(.system(size: 11, weight: .semibold).monospacedDigit())
-                            .foregroundStyle(Color(red: 1, green: 0.84, blue: 0.2))
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text("\(item.clip == 0 ? "A" : "B") \(clock(item.note.time))")
+                        .font(.system(size: 11, weight: .semibold).monospacedDigit())
+                        .foregroundStyle(Color(red: 1, green: 0.84, blue: 0.2))
+                    if editing == .note(item.note.id) {
+                        inlineField(.note(item.note.id), prompt: "What to notice here", size: 12)
+                    } else {
                         Text(item.note.text).font(.system(size: 12)).multilineTextAlignment(.leading)
                         Spacer(minLength: 0)
                     }
-                    .padding(8)
-                    .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
-                .help("Go to this frame")
+                .padding(8)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.white.opacity(editing == .note(item.note.id) ? 0.10 : 0.05),
+                            in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .contentShape(Rectangle())
+                // Double-click to change it; one click goes to its frame.
+                .onTapGesture(count: 2) { edit(.note(item.note.id), item.note.text) }
+                .onTapGesture {
+                    comparison.go(to: DrawnFrame(clip: item.clip, time: item.note.time, everyFrame: false, overlay: false,
+                                                 count: 0, colors: [], ids: []))
+                }
+                .help("Click to go to this frame; double-click to change the note")
                 .contextMenu {
-                    Button("Change…", systemImage: "pencil") {
-                        noteText = item.note.text
-                        noting = (item.clip, item.note.id)
-                    }
+                    Button("Change", systemImage: "pencil") { edit(.note(item.note.id), item.note.text) }
                     Button("Delete", systemImage: "trash", role: .destructive) {
                         comparison.clips[item.clip].notes.removeAll { $0.id == item.note.id }
                     }
                 }
             }
         }
-        .alert(noting?.id == nil ? "Note on this frame" : "Change the note",
-               isPresented: Binding(get: { noting != nil }, set: { if !$0 { noting = nil } })) {
-            TextField("What to notice here", text: $noteText)
-            Button("Cancel", role: .cancel) {}
-            Button("Save") {
-                guard let noting else { return }
-                let text = noteText.trimmingCharacters(in: .whitespacesAndNewlines)
-                let clip = comparison.clips[noting.clip]
-                if let id = noting.id, let at = clip.notes.firstIndex(where: { $0.id == id }) {
-                    if text.isEmpty { clip.notes.remove(at: at) } else { clip.notes[at].text = text }
-                } else if !text.isEmpty {
-                    clip.notes.append(FrameNote(time: clip.engine.currentTime, text: text))
-                    clip.notes.sort { $0.time < $1.time }
+    }
+
+    // MARK: About the segment
+
+    /// A longer note for the whole segment: read as text; double-click to write, Done to finish.
+    private var about: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                title("About this segment")
+                Spacer()
+                if editing == .about {
+                    Button("Done") { commit() }
+                        .buttonStyle(ChipStyle(active: true))
+                        .help("Finish writing (Esc leaves it as it was)")
                 }
+            }
+            if editing == .about {
+                TextField("What to look at in this segment", text: $text, axis: .vertical)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 12))
+                    .lineLimit(3...12)
+                    .focused($field, equals: .about)
+                    #if os(macOS)
+                    .onExitCommand { cancel() }
+                    #endif
+                    .padding(8)
+                    .background(Color.white.opacity(0.10), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Theme.accent.opacity(0.6)))
+            } else {
+                let written = comparison.segment.notes ?? ""
+                Text(written.isEmpty ? "Double-click to write what to look at in this segment." : written)
+                    .font(.system(size: 12))
+                    .foregroundStyle(written.isEmpty ? Theme.secondary : .white)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(8)
+                    .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .contentShape(Rectangle())
+                    .onTapGesture(count: 2) { edit(.about, written) }
+                    .help("Double-click to write")
             }
         }
     }
 
-    // MARK: Notes
+    // MARK: Takes (progress over time)
 
-    private var notes: some View {
+    private var takes: some View {
         VStack(alignment: .leading, spacing: 6) {
-            title("About this segment")
-            TextField("What to look at in this segment", text: Binding(
-                get: { comparison.segment.notes ?? "" },
-                set: { comparison.setNotes($0) }), axis: .vertical)
-                .textFieldStyle(.plain)
-                .font(.system(size: 12))
-                .lineLimit(3...10)
-                .padding(8)
-                .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            HStack(spacing: 6) {
+                title("Takes over time")
+                Spacer()
+                ForEach(0..<2, id: \.self) { index in
+                    if comparison.clips[index].isLoaded {
+                        Button { onAddTake(index) } label: { Label(index == 0 ? "A" : "B", systemImage: "plus") }
+                            .buttonStyle(ChipStyle())
+                            .help("Add the same movement filmed another day to clip \(index == 0 ? "A" : "B"). Each take keeps its own In/Out, sync points and drawings, against the same other clip.")
+                    }
+                }
+            }
+            let any = comparison.takes.contains { !$0.isEmpty }
+            if !any {
+                Text("Add another video of the same movement to a clip to compare days.")
+                    .font(.system(size: 11)).foregroundStyle(Theme.secondary)
+            }
+            ForEach(0..<2, id: \.self) { index in
+                ForEach(Array(comparison.takes[index].enumerated()), id: \.element.id) { at, take in
+                    let on = at == comparison.takeIndex[index]
+                    HStack(spacing: 8) {
+                        Text(index == 0 ? "A" : "B")
+                            .font(.system(size: 10, weight: .bold))
+                            .frame(width: 18, height: 18)
+                            .background(on ? Theme.accent : Color.white.opacity(0.12), in: Circle())
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text(take.date.formatted(date: .abbreviated, time: .omitted))
+                                .font(.system(size: 12, weight: on ? .semibold : .regular).monospacedDigit())
+                            Text(take.name).font(.system(size: 10)).foregroundStyle(Theme.secondary).lineLimit(1)
+                        }
+                        Spacer(minLength: 0)
+                        Button { Task { await comparison.removeTake(at, in: index) } } label: {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 8, weight: .heavy))
+                                .foregroundStyle(.white.opacity(0.8))
+                                .frame(width: 18, height: 18)
+                                .background(Color.white.opacity(0.12), in: Circle())
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .help("Remove this take from the list (its video file isn't deleted)")
+                    }
+                    .padding(.horizontal, 8).frame(height: 36)
+                    .background(on ? Color.white.opacity(0.10) : Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .contentShape(Rectangle())
+                    .onTapGesture { Task { await comparison.selectTake(at, in: index) } }
+                    .help("Show this take in clip \(index == 0 ? "A" : "B"), as it was left")
+                }
+            }
         }
     }
 

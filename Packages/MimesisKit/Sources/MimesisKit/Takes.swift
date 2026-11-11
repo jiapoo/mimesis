@@ -74,8 +74,12 @@ extension Comparison {
         goToStart()
     }
 
-    /// Takes a take off the list (not the one showing).
-    public func removeTake(_ at: Int, in index: Int) {
+    /// Takes a take off the list (its video file stays). The one showing: another is shown first.
+    public func removeTake(_ at: Int, in index: Int) async {
+        guard takes[index].indices.contains(at), takes[index].count > 1 else { return }
+        if at == takeIndex[index] {
+            await selectTake(at == 0 ? 1 : at - 1, in: index)
+        }
         guard takes[index].indices.contains(at), at != takeIndex[index] else { return }
         let showing = takes[index][takeIndex[index]].id
         takes[index].remove(at: at)

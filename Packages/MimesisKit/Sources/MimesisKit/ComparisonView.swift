@@ -884,6 +884,7 @@ public struct ComparisonView: View {
             key("z", [.command, .shift]) { comparison.history.redo(comparison) }
         }
         .hidden()
+        .disabled(comparison.typing)
         if comparison.linked {
             Group {
                 key(.space) { comparison.togglePlay() }
@@ -894,10 +895,11 @@ public struct ComparisonView: View {
                 key(.home) { comparison.pause(); Task { await comparison.seek(to: comparison.range.lowerBound) } }
             }
             .hidden()
+            .disabled(comparison.typing)
             .id("linked")
         } else if let clip = comparison.focused {
             // A fresh set for each clip, so the keys never drive the one focused before.
-            MovistKeys(engine: clip.engine)
+            MovistKeys(engine: clip.engine, enabled: !comparison.typing)
                 .id(ObjectIdentifier(clip))
         }
     }

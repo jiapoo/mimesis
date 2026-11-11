@@ -231,6 +231,8 @@ public final class Comparison {
 
     /// What's being drawn on, if anything.
     public var drawing: DrawTarget?
+    /// Text is being typed (a name or a note in the sidebar): the keys type, they don't play or mark.
+    var typing = false
     let pen = Pen()
     /// The joint angles written on the skeletons.
     var skeletonAngles = JointAngle.usual
