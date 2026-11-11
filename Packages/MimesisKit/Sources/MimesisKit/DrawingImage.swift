@@ -39,14 +39,19 @@ enum DrawingImage {
             // A dark edge under the colour, as on screen, so marks read on any background.
             if look.shadow {
                 context.addPath(g.path)
-                context.setStrokeColor(CGColor(gray: 0, alpha: 0.4))
-                context.setLineWidth(width + 2.5 * unit)
+                context.setStrokeColor(CGColor(gray: 0, alpha: 0.35))
+                context.setLineWidth(width + Drawing.edge(for: CGFloat(drawing.resolvedWidth)) * unit)
                 context.strokePath()
             }
             context.addPath(g.path)
             context.setStrokeColor(color.cgColor)
             context.setLineWidth(width)
             context.strokePath()
+            if let head = g.head {
+                context.addPath(head)
+                context.setFillColor(color.cgColor)
+                context.fillPath()
+            }
             if look.grain {
                 context.addPath(g.path)
                 context.setStrokeColor(CGColor(gray: 0, alpha: 0.18))

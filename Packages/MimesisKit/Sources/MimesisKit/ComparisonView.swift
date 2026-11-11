@@ -76,24 +76,32 @@ public struct ComparisonView: View {
                         GeometryReader { space in
                             panes(wide: space.size.width >= space.size.height)
                         }
+                        // The drawing tools, as in Photoshop: the tools down the left, the chosen tool's
+                        // options across the top.
+                        .overlay(alignment: .topLeading) {
+                            if comparison.drawing != nil {
+                                markup(.strip, compact: phone).padding(.leading, 8).padding(.top, phone ? 50 : 96)
+                                    .transition(.move(edge: .leading).combined(with: .opacity))
+                            }
+                        }
+                        .overlay(alignment: .top) {
+                            if comparison.drawing != nil {
+                                // The whole bar where it fits; a shorter one where it doesn't (an iPhone, or
+                                // the sidebar open in a small window).
+                                ViewThatFits(in: .horizontal) {
+                                    markup(.options, compact: false)
+                                    markup(.options, compact: true)
+                                    ScrollView(.horizontal, showsIndicators: false) { markup(.options, compact: true) }
+                                }
+                                .padding(.horizontal, 8)
+                                .padding(.top, phone ? 6 : 48)
+                                .transition(.move(edge: .top).combined(with: .opacity))
+                            }
+                        }
                         VStack(spacing: 6) {
                             if let reel, reel.running { ReelBar(reel: reel).padding(.horizontal, 12) }
-                            if let target = comparison.drawing {
-                                MarkupTools(
-                                    clips: target == .both ? comparison.clips.filter(\.isLoaded)
-                                        : [comparison.clips[target == .clip(1) ? 1 : 0]],
-                                    pen: comparison.pen,
-                                    canUndo: comparison.history.canUndo,
-                                    canRedo: comparison.history.canRedo,
-                                    onUndo: { comparison.history.undo(comparison) },
-                                    onRedo: { comparison.history.redo(comparison) },
-                                    onDone: { comparison.drawing = nil })
-                                .padding(.bottom, 12)
-                                .transition(.move(edge: .bottom).combined(with: .opacity))
-                            } else {
-                                Transport(comparison: comparison, part: .timeline)
-                                    .transition(.opacity)
-                            }
+                            // The timeline stays while drawing, to step to another frame.
+                            Transport(comparison: comparison, part: .timeline)
                         }
                         .animation(.easeOut(duration: 0.2), value: comparison.drawing)
                     }
@@ -697,6 +705,24 @@ public struct ComparisonView: View {
         return true
     }
 
+    private func markup(_ part: MarkupTools.Part, compact: Bool) -> some View {
+        let target = comparison.drawing
+        return MarkupTools(
+            part: part,
+            clips: target == .both ? comparison.clips.filter(\.isLoaded)
+                : [comparison.clips[target == .clip(1) ? 1 : 0]],
+            pen: comparison.pen,
+            canUndo: comparison.history.canUndo,
+            canRedo: comparison.history.canRedo,
+            onUndo: { comparison.history.undo(comparison) },
+            onRedo: { comparison.history.redo(comparison) },
+            onDone: {
+                comparison.pen.selected = nil
+                comparison.drawing = nil
+            },
+            compact: compact)
+    }
+
     private func editor(_ target: EditTarget) -> some View {
         MediaEditView(url: target.url, accent: Theme.accent,
                       onCancel: { editing = nil },
@@ -746,11 +772,19 @@ public struct ComparisonView: View {
             key("\t") { switchFocus() }
             // Esc: stop drawing; else watch both clips (neither dimmed).
             key(.escape) {
-                if comparison.drawing != nil {
+                if comparison.pen.selected != nil {
+                    comparison.pen.selected = nil
+                } else if comparison.drawing != nil {
                     comparison.drawing = nil
                 } else if comparison.canLink {
                     comparison.linked = true
                 }
+            }
+            // While drawing: Delete removes the chosen drawing.
+            key(.delete) {
+                guard comparison.drawing != nil, let id = comparison.pen.selected else { return }
+                for clip in comparison.clips { clip.drawings.removeAll { $0.id == id } }
+                comparison.pen.selected = nil
             }
             key("z", [.command]) { comparison.history.undo(comparison) }
             key("z", [.command, .shift]) { comparison.history.redo(comparison) }

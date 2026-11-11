@@ -104,6 +104,8 @@ extension Drawing {
         var arc: CGMutablePath?
         /// The angle's reading and where it goes.
         var label: (text: String, at: CGPoint)?
+        /// An arrow's head, filled.
+        var head: CGMutablePath?
     }
 
     /// - Parameter unit: how big one screen point is where it's drawn (1 on screen).
@@ -116,16 +118,25 @@ extension Drawing {
         case .line:
             g.path.addLines(between: points)
         case .arrow:
-            g.path.addLines(between: points)
-            if points.count == 2, hypot(points[1].x - points[0].x, points[1].y - points[0].y) > 4 {
-                let angle = atan2(points[1].y - points[0].y, points[1].x - points[0].x)
-                let wing = max(14 * unit, width * 4)
-                for side in [-1.0, 1.0] {
-                    let a = angle + .pi + side * .pi / 7
-                    g.path.move(to: points[1])
-                    g.path.addLine(to: CGPoint(x: points[1].x + wing * cos(a), y: points[1].y + wing * sin(a)))
-                }
+            guard points.count == 2 else { break }
+            let length = hypot(points[1].x - points[0].x, points[1].y - points[0].y)
+            guard length > 4 else {
+                g.path.addLines(between: points)
+                break
             }
+            // A solid, pointed head, sized to the line; the line stops at its base.
+            let angle = atan2(points[1].y - points[0].y, points[1].x - points[0].x)
+            let head = min(length * 0.6, max(9 * unit, width * 3.6))
+            let half = head * 0.42
+            let base = CGPoint(x: points[1].x - head * cos(angle), y: points[1].y - head * sin(angle))
+            g.path.move(to: points[0])
+            g.path.addLine(to: CGPoint(x: base.x + head * 0.2 * cos(angle), y: base.y + head * 0.2 * sin(angle)))
+            let tip = CGMutablePath()
+            tip.move(to: points[1])
+            tip.addLine(to: CGPoint(x: base.x - half * sin(angle), y: base.y + half * cos(angle)))
+            tip.addLine(to: CGPoint(x: base.x + half * sin(angle), y: base.y - half * cos(angle)))
+            tip.closeSubpath()
+            g.head = tip
         case .circle:
             guard points.count == 2 else { break }
             let r = hypot(points[1].x - points[0].x, points[1].y - points[0].y)
@@ -200,11 +211,17 @@ extension Drawing {
         let look = self.look
         let color = resolvedColor.with(alpha: resolvedColor.a * look.alpha).color
         let cap: CGLineCap = look.square ? .square : .round
+        // A thin dark edge, in proportion to the line, so a fine line stays fine.
+        let edge = Self.edge(for: width)
         if look.shadow {
-            context.stroke(path, with: .color(.black.opacity(0.4)),
-                           style: StrokeStyle(lineWidth: width + 2.5, lineCap: cap, lineJoin: .round))
+            context.stroke(path, with: .color(.black.opacity(0.35)),
+                           style: StrokeStyle(lineWidth: width + edge, lineCap: cap, lineJoin: .round))
+            if let head = g.head {
+                context.stroke(Path(head), with: .color(.black.opacity(0.35)), style: StrokeStyle(lineWidth: edge, lineJoin: .round))
+            }
         }
         context.stroke(path, with: .color(color), style: StrokeStyle(lineWidth: width, lineCap: cap, lineJoin: .round))
+        if let head = g.head { context.fill(Path(head), with: .color(color)) }
         if look.grain {
             context.stroke(path, with: .color(.black.opacity(0.18)),
                            style: StrokeStyle(lineWidth: max(0.6, width * 0.45), lineCap: .butt, dash: [0.8, 1.6]))
@@ -217,6 +234,17 @@ extension Drawing {
                 Text(label.text).font(.system(size: 15, weight: .bold).monospacedDigit()).foregroundStyle(.white),
                 at: label.at)
         }
+    }
+
+    /// How much wider the dark edge under a line is than the line.
+    static func edge(for width: CGFloat) -> CGFloat { min(2.5, max(0.8, width * 0.45)) }
+
+    /// The box around the drawing, its points in view coordinates.
+    func bounds(_ points: [CGPoint]) -> CGRect {
+        let g = geometry(points, unit: 1)
+        var box = g.path.boundingBoxOfPath
+        if let head = g.head { box = box.union(head.boundingBoxOfPath) }
+        return box.insetBy(dx: -CGFloat(resolvedWidth) / 2 - 4, dy: -CGFloat(resolvedWidth) / 2 - 4)
     }
 
     /// Whether `point` touches the drawing (both in view coordinates).
@@ -253,12 +281,20 @@ struct DrawingLayer: View {
     private var shown: [Drawing] { clip.visibleDrawings(overlay: overlay) }
 
     @State private var draft: Drawing?
-    @State private var moving: (id: UUID, index: Int)?
+    /// What a drag with the select tool is doing: moving one point of the chosen drawing, or all of it.
+    @State private var moving: Move?
     /// The stroke being drawn, in view points.
     @State private var stroke: [CGPoint] = []
 
-    /// How close to a dot a drag must start to move it.
-    private let grab: CGFloat = 22
+    private struct Move {
+        let id: UUID
+        /// The point being dragged; nil moves the whole drawing.
+        let point: Int?
+        let from: [CGPoint]
+    }
+
+    /// How close to a handle a drag must start to move it.
+    private let grab: CGFloat = 16
 
     var body: some View {
         GeometryReader { space in
@@ -273,15 +309,23 @@ struct DrawingLayer: View {
                         draft.render(points, in: &context)
                     }
                 }
-                if editing && pen.tool != .eraser {
-                    // A shape's points, to drag into place.
-                    ForEach(shown.filter(\.isShape)) { drawing in
-                        ForEach(drawing.points.indices, id: \.self) { index in
+                // Only the chosen drawing shows its box and handles (as in Photoshop): the rest stay clean.
+                if editing, let chosen = shown.first(where: { $0.id == pen.selected }) {
+                    let points = chosen.points.map { toView($0, frame) }
+                    let box = chosen.bounds(points)
+                    Rectangle()
+                        .strokeBorder(Color.white.opacity(0.9), style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
+                        .frame(width: max(8, box.width), height: max(8, box.height))
+                        .position(x: box.midX, y: box.midY)
+                        .allowsHitTesting(false)
+                    if chosen.isShape {
+                        ForEach(points.indices, id: \.self) { index in
                             Circle()
                                 .fill(Color.white)
-                                .overlay(Circle().strokeBorder(drawing.resolvedColor.solid.color, lineWidth: 2))
-                                .frame(width: 12, height: 12)
-                                .position(toView(drawing.points[index], frame))
+                                .overlay(Circle().strokeBorder(Theme.accent, lineWidth: 1.5))
+                                .frame(width: 9, height: 9)
+                                .position(points[index])
+                                .allowsHitTesting(false)
                         }
                     }
                 }
@@ -296,26 +340,53 @@ struct DrawingLayer: View {
         .allowsHitTesting(editing)
     }
 
-    // MARK: - Making, moving and erasing
+    // MARK: - Making, choosing, moving and erasing
 
     private func changed(_ drag: DragGesture.Value, _ frame: CGRect) {
-        if pen.tool == .eraser {
+        switch pen.tool {
+        case .eraser:
             erase(at: drag.location, frame)
-            return
+        case .select:
+            select(drag, frame)
+        default:
+            draw(drag, frame)
         }
-        let here = toVideo(drag.location, frame)
-        if let moving, let at = clip.drawings.firstIndex(where: { $0.id == moving.id }) {
-            clip.drawings[at].points[moving.index] = here
-            return
-        }
-        if draft == nil {
-            // Starting on a shape's dot moves that point.
-            for drawing in shown.reversed() where drawing.isShape {
-                if let index = drawing.points.firstIndex(where: { distance(toView($0, frame), drag.startLocation) < grab }) {
-                    moving = (drawing.id, index)
-                    return
-                }
+    }
+
+    /// The select tool: press a drawing to choose it, drag to move it, drag one of its handles to
+    /// reshape it; press anywhere else and nothing is chosen.
+    private func select(_ drag: DragGesture.Value, _ frame: CGRect) {
+        if moving == nil, drag.translation == .zero || distance(drag.startLocation, drag.location) < 1 {
+            // The press: a handle of the chosen drawing, else the drawing under the pointer, else nothing.
+            if let chosen = shown.first(where: { $0.id == pen.selected }), chosen.isShape,
+               let index = chosen.points.firstIndex(where: { distance(toView($0, frame), drag.startLocation) < grab }) {
+                moving = Move(id: chosen.id, point: index, from: chosen.points)
+                return
             }
+            if let hit = shown.reversed().first(where: {
+                $0.touches(drag.startLocation, points: $0.points.map { toView($0, frame) }, tolerance: 8)
+            }) {
+                pen.select(hit)
+                moving = Move(id: hit.id, point: nil, from: hit.points)
+            } else {
+                pen.selected = nil
+            }
+            return
+        }
+        guard let moving, let at = clip.drawings.firstIndex(where: { $0.id == moving.id }) else { return }
+        if let point = moving.point {
+            clip.drawings[at].points[point] = toVideo(drag.location, frame)
+        } else {
+            let start = toVideo(drag.startLocation, frame), here = toVideo(drag.location, frame)
+            let dx = here.x - start.x, dy = here.y - start.y
+            clip.drawings[at].points = moving.from.map { CGPoint(x: $0.x + dx, y: $0.y + dy) }
+        }
+    }
+
+    private func draw(_ drag: DragGesture.Value, _ frame: CGRect) {
+        let here = toVideo(drag.location, frame)
+        if draft == nil {
+            pen.selected = nil
             let start = toVideo(drag.startLocation, frame)
             draft = Drawing(
                 kind: pen.tool.kind, points: [start, start], time: clip.engine.currentTime, always: pen.always,
@@ -345,7 +416,7 @@ struct DrawingLayer: View {
             moving = nil
             stroke = []
         }
-        guard moving == nil, var drawing = draft else { return }
+        guard var drawing = draft else { return }
         if drawing.kind == .freehand {
             // A tap leaves a dot, as a pen does.
             if stroke.count == 1 { stroke.append(CGPoint(x: stroke[0].x + 0.5, y: stroke[0].y)) }
