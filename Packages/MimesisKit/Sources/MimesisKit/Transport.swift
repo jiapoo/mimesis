@@ -13,6 +13,10 @@ struct Transport: View {
     let part: Part
     /// More controls at the end of the bar (an iPhone's layout and menu: it has no top bar).
     var extras: AnyView?
+    /// The segments' sidebar is showing (it has each clip's tools, so the bar leaves them out), and the
+    /// button that shows or hides it.
+    var sidebarShown = false
+    var onSidebar: () -> Void = {}
     @Environment(Library.self) private var library
     @State private var showingSpeed = false
 
@@ -68,9 +72,9 @@ struct Transport: View {
         HStack(spacing: 8) {
             // Left: which clip, and its own tools.
             HStack(spacing: 6) {
+                // Far left: the segments (the chosen one's name; shows or hides their sidebar).
+                segmentButton
                 focusPicker
-                // In the overlay the bar holds the overlay's controls too: the segment menu's short form.
-                SegmentMenu(comparison: comparison, compact: compact || comparison.layout == .overlay)
                 if comparison.layout == .overlay {
                     // The overlay's own controls, here rather than over the picture.
                     OverlayControls(comparison: comparison, compact: compact)
@@ -78,7 +82,7 @@ struct Transport: View {
                     if let clip = comparison.selected {
                         ClipTools(clip: clip, comparison: comparison, speedOnly: true)
                     }
-                } else if let clip = comparison.selected {
+                } else if let clip = comparison.selected, !sidebarShown {
                     ClipTools(clip: clip, comparison: comparison)
                 }
             }
@@ -118,6 +122,33 @@ struct Transport: View {
         .background(Theme.card)
         .overlay(alignment: .top) { Rectangle().fill(Theme.line).frame(height: 1) }
         .disabled(comparison.focused == nil)
+    }
+
+    private var segmentButton: some View {
+        Button(action: onSidebar) {
+            HStack(spacing: 5) {
+                Image(systemName: "sidebar.left")
+                    .font(.system(size: 11, weight: .semibold))
+                if !compact && comparison.layout != .overlay {
+                    Text(comparison.segment.name)
+                        .font(.system(size: 12, weight: .semibold))
+                        .lineLimit(1)
+                        .frame(maxWidth: 110)
+                        .fixedSize()
+                } else if comparison.segments.count > 1 {
+                    Text("\(comparison.segmentIndex + 1)/\(comparison.segments.count)")
+                        .font(.system(size: 12, weight: .semibold).monospacedDigit())
+                }
+            }
+            .foregroundStyle(sidebarShown ? Theme.onAccent : .white)
+            .padding(.horizontal, 10)
+            .frame(height: 28)
+            .background(sidebarShown ? Theme.accent : Theme.raised, in: Capsule())
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .fixedSize()
+        .help("Segments: show or hide the sidebar with the list of segments, each clip's In/Out, sync points and speed, the drawings and notes")
     }
 
     /// Which clip the controls drive: A, B, or A+B: linked, both playing and stepping together, lined up
@@ -198,7 +229,7 @@ struct Transport: View {
     @ViewBuilder private var marks: some View {
         if let clip = rulerClip, clip.engine.duration > 0 {
             let duration = clip.engine.duration
-            let drawingTimes = Array(Set(clip.drawings.map { ($0.time * 100).rounded() / 100 })).sorted()
+            let drawingTimes = Array(Set(clip.drawings.filter { !$0.always }.map { ($0.time * 100).rounded() / 100 })).sorted()
             GeometryReader { space in
                 let x = { (t: Double) in CGFloat(t / duration) * space.size.width }
                 ZStack(alignment: .topLeading) {
@@ -211,11 +242,16 @@ struct Transport: View {
                         .position(x: x(tag.time), y: 7)
                         .help(tag.label)
                     }
+                    // Frames with drawings: a pencil mark in the drawing's colour.
                     ForEach(drawingTimes, id: \.self) { t in
                         markButton(at: t, clip: clip) {
-                            Circle().fill(Color.white).frame(width: 6, height: 6)
+                            Image(systemName: "pencil.tip")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(drawingColor(clip, at: t))
+                                .shadow(color: .black.opacity(0.6), radius: 1)
                         }
                         .position(x: x(t), y: 7)
+                        .help("This frame has drawings: tap to go there")
                     }
                     ForEach(Array(clip.syncs.enumerated()), id: \.offset) { index, t in
                         SyncDiamond(
@@ -228,6 +264,10 @@ struct Transport: View {
             .frame(height: 14)
             .help("Sync points, tags and drawings: tap one to go there")
         }
+    }
+
+    private func drawingColor(_ clip: Clip, at time: Double) -> Color {
+        clip.drawings.first { abs($0.time - time) < 0.006 }?.resolvedColor.solid.color ?? .white
     }
 
     private func jump(to time: Double, clip: Clip) {

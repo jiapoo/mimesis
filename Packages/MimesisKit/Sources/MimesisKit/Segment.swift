@@ -31,6 +31,8 @@ public struct Segment: Codable, Identifiable, Equatable {
     public var name: String
     public var parts = [Part(), Part()]
     public var placement = Placement()
+    /// What to look at in it, in the user's words.
+    public var notes: String?
 
     public init(name: String) {
         self.name = name

@@ -15,6 +15,8 @@ public struct ComparisonView: View {
     @State private var pickSide = 0
     /// The file chooser is open for a project, not a video (iPhone and iPad).
     @State private var pickingProject = false
+    /// The segments' sidebar (kept between launches; an iPhone starts with it hidden).
+    @AppStorage("showsSegments") private var showsSidebar = false
     /// The clip (0 or 1) open in the editor.
     @State private var editing: EditTarget?
     @State private var openProblem: String?
@@ -63,6 +65,12 @@ public struct ComparisonView: View {
                 // their bottom, see-through; and a solid bar of buttons under them. (A phone only runs
                 // sideways, so the clips are side by side there too.) While drawing, the drawing tools
                 // take the timeline's place.
+                HStack(spacing: 0) {
+                if showsSidebar && !phone {
+                    SegmentSidebar(comparison: comparison, onClose: { withAnimation(.easeOut(duration: 0.2)) { showsSidebar = false } })
+                        .frame(width: 272)
+                        .transition(.move(edge: .leading))
+                }
                 VStack(spacing: 0) {
                     ZStack(alignment: .bottom) {
                         GeometryReader { space in
@@ -89,7 +97,19 @@ public struct ComparisonView: View {
                         }
                         .animation(.easeOut(duration: 0.2), value: comparison.drawing)
                     }
-                    Transport(comparison: comparison, part: .bar, extras: phone ? AnyView(dockExtras) : nil)
+                    Transport(comparison: comparison, part: .bar, extras: phone ? AnyView(dockExtras) : nil,
+                              sidebarShown: showsSidebar,
+                              onSidebar: { withAnimation(.easeOut(duration: 0.2)) { showsSidebar.toggle() } })
+                }
+                }
+                // On an iPhone the segments slide in over the clips.
+                .overlay(alignment: .leading) {
+                    if showsSidebar && phone {
+                        SegmentSidebar(comparison: comparison, onClose: { withAnimation(.easeOut(duration: 0.2)) { showsSidebar = false } })
+                            .frame(width: 300)
+                            .shadow(color: .black.opacity(0.5), radius: 12)
+                            .transition(.move(edge: .leading))
+                    }
                 }
                 .transition(.opacity)
             }
@@ -695,7 +715,7 @@ public struct ComparisonView: View {
             "\(clip.url?.path ?? "-")|\(clip.trimStart)|\(clip.trimEnd ?? -1)|\(clip.syncs)|\(clip.speed ?? -1)|\(clip.engine.mirroredHorizontally)|\(clip.drawings.hashValue)|\(clip.cutout?.state == .ready)|\(clip.cutout?.boxed == true)|\(clip.cutout?.pickedAt.map { "\($0.time),\($0.point.x)" } ?? "-")"
         }
         return clips.joined(separator: ";") + "|\(comparison.layout)|\(comparison.linked)|\(comparison.linkedSpeed)"
-            + "|\(comparison.segmentIndex)|\(comparison.segments.map(\.name))"
+            + "|\(comparison.segmentIndex)|\(comparison.segments.map { $0.name + ($0.notes ?? "") })"
             + "|\(comparison.overlayTop)|\(comparison.overlayOpacity)|\(comparison.overlayOffset.width),\(comparison.overlayOffset.height)|\(comparison.overlayScale)|\(comparison.overlayRotation)"
     }
 
