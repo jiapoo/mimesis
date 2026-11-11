@@ -88,10 +88,11 @@ public struct ComparisonView: View {
                         }
                         // The drawing tools, as in Photoshop: the tools down the left, the chosen tool's
                         // options across the top.
-                        .overlay(alignment: .topLeading) {
+                        // (On the right: the segments are on the left.)
+                        .overlay(alignment: .topTrailing) {
                             if comparison.drawing != nil {
-                                markup(.strip, compact: phone).padding(.leading, 8).padding(.top, phone ? 50 : 96)
-                                    .transition(.move(edge: .leading).combined(with: .opacity))
+                                markup(.strip, compact: phone).padding(.trailing, 8).padding(.top, phone ? 50 : 96)
+                                    .transition(.move(edge: .trailing).combined(with: .opacity))
                             }
                         }
                         .overlay(alignment: .top) {
@@ -200,7 +201,15 @@ public struct ComparisonView: View {
         // Catch it first, unless someone is typing.
         .onAppear {
             guard tabMonitor == nil else { return }
-            tabMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            tabMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .keyUp]) { event in
+                // While drawing, holding Space pans the zoomed video with a drag (as in Photoshop), and
+                // doesn't play.
+                if event.keyCode == 49, comparison.drawing != nil, !comparison.typing,
+                   !(event.window?.firstResponder is NSText), event.window?.attachedSheet == nil {
+                    comparison.pen.panning = event.type == .keyDown
+                    return nil
+                }
+                guard event.type == .keyDown else { return event }
                 guard event.keyCode == 48, // Tab
                       event.modifierFlags.intersection([.command, .option, .control, .shift]).isEmpty,
                       !(event.window?.firstResponder is NSText),

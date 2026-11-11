@@ -60,7 +60,7 @@ struct OverlayPane: View {
                         .allowsHitTesting(false)
                 }
                 // Drawings over the two together, on the picture underneath (so they zoom with it).
-                DrawingLayer(clip: base, editing: comparison.drawing != nil, pen: comparison.pen, overlay: true)
+                DrawingLayer(clip: base, editing: comparison.drawing != nil && !comparison.pen.panning, pen: comparison.pen, overlay: true)
                     .frame(width: space.size.width, height: space.size.height)
             }
             .frame(width: space.size.width, height: space.size.height)
@@ -74,7 +74,8 @@ struct OverlayPane: View {
                 DragGesture(minimumDistance: 2)
                     .onChanged { drag in
                         guard !picking else { return }
-                        if !ui.movesTop {
+                        // (Space held while drawing pans, whatever touches usually do.)
+                        if !ui.movesTop || comparison.pen.panning {
                             let start = panBase ?? base.pan
                             panBase = start
                             base.pan = CGSize(width: start.width + drag.translation.width,

@@ -48,7 +48,7 @@ final class Pen {
             case .arrow: "Arrow (A)"
             case .rectangle: "Rectangle (R)"
             case .circle: "Circle (O)"
-            case .angle: "Angle, in degrees: drag from the joint (G)"
+            case .angle: "Angle, in degrees: drag the first arm from the joint, then drag again for the second arm"
             }
         }
 
@@ -97,6 +97,8 @@ final class Pen {
         didSet { if tool != .select { selected = nil } }
     }
     var always = false
+    /// Space is held (Mac): drags pan the zoomed video instead of drawing.
+    var panning = false
     /// The drawing chosen with the select tool: its box and handles show, and the options bar changes it.
     var selected: UUID?
     private var colors: [Tool: Drawing.RGBA] = [:]
@@ -233,15 +235,7 @@ struct MarkupTools: View {
 
     private var options: some View {
         HStack(spacing: 10) {
-            HStack(spacing: 2) {
-                RoundButton(symbol: "arrow.uturn.backward", size: 28, action: onUndo)
-                    .disabled(!canUndo).opacity(canUndo ? 1 : 0.4)
-                    .help("Undo (⌘Z)")
-                RoundButton(symbol: "arrow.uturn.forward", size: 28, action: onRedo)
-                    .disabled(!canRedo).opacity(canRedo ? 1 : 0.4)
-                    .help("Redo (⇧⌘Z)")
-            }
-            divider
+            // (Undo and redo are in the top bar; on an iPhone, in the bar under the clips.)
             if hasLook {
                 colours
                 divider
@@ -250,8 +244,13 @@ struct MarkupTools: View {
                     divider
                     opacity
                 }
+                if pen.tool == .angle {
+                    divider
+                    Text("Drag one arm from the joint, then drag again for the other")
+                        .font(.system(size: 11)).foregroundStyle(Theme.secondary)
+                }
             } else {
-                Text(pen.tool == .eraser ? "Drag over a drawing to erase it" : "Click a drawing to choose it; drag to move it")
+                Text(pen.tool == .eraser ? "Drag over a drawing to erase it" : "Click a drawing to choose it; drag to move or resize it")
                     .font(.system(size: 12)).foregroundStyle(Theme.secondary)
             }
             divider
@@ -265,6 +264,8 @@ struct MarkupTools: View {
                 .buttonStyle(ChipStyle())
                 .help("Erase everything drawn on this frame")
             } else if chosen != nil {
+                RoundButton(symbol: "plus.square.on.square", size: 28) { duplicate() }
+                    .help("Duplicate the chosen drawing")
                 RoundButton(symbol: "trash", size: 28) {
                     let id = pen.selected
                     for clip in clips { clip.drawings.removeAll { $0.id == id } }
@@ -291,6 +292,19 @@ struct MarkupTools: View {
         .background(Color.black.opacity(0.4), in: Capsule())
         .overlay(Capsule().strokeBorder(Color.white.opacity(0.1)))
         .fixedSize()
+    }
+
+    /// A copy of the chosen drawing, a little down and to the right, chosen in its place.
+    private func duplicate() {
+        guard let id = pen.selected else { return }
+        for clip in clips {
+            guard let original = clip.drawings.first(where: { $0.id == id }) else { continue }
+            var copy = original
+            copy.id = UUID()
+            copy.points = original.points.map { CGPoint(x: $0.x + 0.02, y: $0.y + 0.02) }
+            clip.drawings.append(copy)
+            pen.select(copy)
+        }
     }
 
     private var colours: some View {

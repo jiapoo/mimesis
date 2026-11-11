@@ -288,9 +288,22 @@ struct DrawingLayer: View {
 
     private struct Move {
         let id: UUID
-        /// The point being dragged; nil moves the whole drawing.
+        /// The point being dragged; nil moves the whole drawing (or resizes it, with `corner`).
         let point: Int?
         let from: [CGPoint]
+        /// Resizing by a corner of the box: which corner (0 top left, clockwise), the box, and the
+        /// drawing's points, all as they were on screen at the start.
+        var corner: Int?
+        var box: CGRect = .zero
+        var fromView: [CGPoint] = []
+    }
+
+    /// An angle whose first arm is drawn: the next drag places its second arm.
+    @State private var pendingAngle: UUID?
+
+    private func corners(_ box: CGRect) -> [CGPoint] {
+        [CGPoint(x: box.minX, y: box.minY), CGPoint(x: box.maxX, y: box.minY),
+         CGPoint(x: box.maxX, y: box.maxY), CGPoint(x: box.minX, y: box.maxY)]
     }
 
     /// How close to a handle a drag must start to move it.
@@ -318,15 +331,16 @@ struct DrawingLayer: View {
                         .frame(width: max(8, box.width), height: max(8, box.height))
                         .position(x: box.midX, y: box.midY)
                         .allowsHitTesting(false)
-                    if chosen.isShape {
-                        ForEach(points.indices, id: \.self) { index in
-                            Circle()
-                                .fill(Color.white)
-                                .overlay(Circle().strokeBorder(Theme.accent, lineWidth: 1.5))
-                                .frame(width: 9, height: 9)
-                                .position(points[index])
-                                .allowsHitTesting(false)
+                    // A shape's own points reshape it; a hand-drawn stroke resizes by the corners of its box.
+                    let handles = chosen.isShape ? points : corners(box)
+                    ForEach(handles.indices, id: \.self) { index in
+                        Group {
+                            if chosen.isShape { Circle().fill(Color.white).overlay(Circle().strokeBorder(Theme.accent, lineWidth: 1.5)) }
+                            else { Rectangle().fill(Color.white).overlay(Rectangle().strokeBorder(Theme.accent, lineWidth: 1.5)) }
                         }
+                        .frame(width: 9, height: 9)
+                        .position(handles[index])
+                        .allowsHitTesting(false)
                     }
                 }
             }
@@ -358,10 +372,17 @@ struct DrawingLayer: View {
     private func select(_ drag: DragGesture.Value, _ frame: CGRect) {
         if moving == nil, drag.translation == .zero || distance(drag.startLocation, drag.location) < 1 {
             // The press: a handle of the chosen drawing, else the drawing under the pointer, else nothing.
-            if let chosen = shown.first(where: { $0.id == pen.selected }), chosen.isShape,
-               let index = chosen.points.firstIndex(where: { distance(toView($0, frame), drag.startLocation) < grab }) {
-                moving = Move(id: chosen.id, point: index, from: chosen.points)
-                return
+            if let chosen = shown.first(where: { $0.id == pen.selected }) {
+                let points = chosen.points.map { toView($0, frame) }
+                if chosen.isShape, let index = points.firstIndex(where: { distance($0, drag.startLocation) < grab }) {
+                    moving = Move(id: chosen.id, point: index, from: chosen.points)
+                    return
+                }
+                let box = chosen.bounds(points)
+                if !chosen.isShape, let corner = corners(box).firstIndex(where: { distance($0, drag.startLocation) < grab }) {
+                    moving = Move(id: chosen.id, point: nil, from: chosen.points, corner: corner, box: box, fromView: points)
+                    return
+                }
             }
             if let hit = shown.reversed().first(where: {
                 $0.touches(drag.startLocation, points: $0.points.map { toView($0, frame) }, tolerance: 8)
@@ -376,6 +397,15 @@ struct DrawingLayer: View {
         guard let moving, let at = clip.drawings.firstIndex(where: { $0.id == moving.id }) else { return }
         if let point = moving.point {
             clip.drawings[at].points[point] = toVideo(drag.location, frame)
+        } else if let corner = moving.corner {
+            // Resize about the opposite corner, wider and taller as the corner is dragged.
+            let from = corners(moving.box)
+            let anchor = from[(corner + 2) % 4], grabbed = from[corner]
+            let sx = abs(grabbed.x - anchor.x) > 1 ? (drag.location.x - anchor.x) / (grabbed.x - anchor.x) : 1
+            let sy = abs(grabbed.y - anchor.y) > 1 ? (drag.location.y - anchor.y) / (grabbed.y - anchor.y) : 1
+            clip.drawings[at].points = moving.fromView.map { p in
+                toVideo(CGPoint(x: anchor.x + (p.x - anchor.x) * max(0.05, sx), y: anchor.y + (p.y - anchor.y) * max(0.05, sy)), frame)
+            }
         } else {
             let start = toVideo(drag.startLocation, frame), here = toVideo(drag.location, frame)
             let dx = here.x - start.x, dy = here.y - start.y
@@ -385,6 +415,14 @@ struct DrawingLayer: View {
 
     private func draw(_ drag: DragGesture.Value, _ frame: CGRect) {
         let here = toVideo(drag.location, frame)
+        // An angle's second drag: its other arm follows the pointer, to any angle.
+        if draft == nil, pen.tool == .angle, let pending = pendingAngle,
+           let at = clip.drawings.firstIndex(where: { $0.id == pending }), clip.drawings[at].points.count == 3 {
+            clip.drawings[at].points[2] = here
+            return
+        }
+        // A press that hasn't moved yet draws nothing: it may be a click on a drawing, to choose it.
+        if draft == nil, distance(drag.startLocation, drag.location) < 3 { return }
         if draft == nil {
             pen.selected = nil
             let start = toVideo(drag.startLocation, frame)
@@ -416,6 +454,31 @@ struct DrawingLayer: View {
             moving = nil
             stroke = []
         }
+        if pen.tool.draws, draft == nil {
+            // The angle's second arm is placed.
+            if pendingAngle != nil {
+                pendingAngle = nil
+                return
+            }
+            // A click, not a drag: on a drawing, it's chosen (as with the select tool), to move or change.
+            if let hit = shown.reversed().first(where: {
+                $0.touches(drag.startLocation, points: $0.points.map { toView($0, frame) }, tolerance: 8)
+            }) {
+                pen.tool = .select
+                pen.select(hit)
+                return
+            }
+            // On nothing: a pen leaves a dot.
+            if pen.tool.kind == .freehand {
+                var dot = Drawing(kind: .freehand, points: [], time: clip.engine.currentTime, always: pen.always,
+                                  color: pen.color, width: pen.width, brush: pen.tool.brush)
+                if overlay { dot.overlay = true }
+                let p = drag.startLocation
+                dot.points = [toVideo(p, frame), toVideo(CGPoint(x: p.x + 0.5, y: p.y), frame)]
+                clip.drawings.append(dot)
+            }
+            return
+        }
         guard var drawing = draft else { return }
         if drawing.kind == .freehand {
             // A tap leaves a dot, as a pen does.
@@ -426,6 +489,8 @@ struct DrawingLayer: View {
             guard distance(drag.startLocation, drag.location) > 8 else { return }
         }
         clip.drawings.append(drawing)
+        // An angle: its first arm is drawn; the next drag places the second.
+        pendingAngle = drawing.kind == .angle ? drawing.id : nil
     }
 
     /// The eraser takes away whole drawings it passes over, as Photos' object eraser does.

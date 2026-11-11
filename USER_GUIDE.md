@@ -85,15 +85,19 @@ below 50 frames a second and slow motion will look jumpy. See [Filming tips](#fi
   - **A | A🔗B | B**: which clip the controls drive, or both linked;
   - the selected clip's **In / Out**, **◆ sync** and **speed** (while the sidebar is hidden; it has them too);
   - **frame back / play / frame forward**;
-  - **✏ Draw on both** (when linked), **↶ Undo** (and ↷ Redo), the playback **speed** (tap it for a slider).
+  - **✏ Draw on both** (when linked), the playback **speed** (tap it for a slider).
 - **The Segments sidebar** (left side; a panel that slides in on iPhone) is the workspace:
-  - the **segments**, with each one's length and number of drawings; **+** adds one; Rename, Duplicate, Delete;
-  - **In, Out, sync and speed** for clip A and for clip B;
-  - **Takes over time**: other videos of the same movement in a clip (see [Takes](#takes-progress-over-time));
+  - the **segments**, with each one's length and number of drawings; **+** adds one; **double-click a name to
+    rename it**; right-click (press and hold) for Duplicate, Move up / down and Delete;
+  - a **card for clip A and one for clip B**: **In**, **Out**, **Sync** and **Speed**, each a name over its
+    value. Tap one to set it at that clip's playhead; a small ✕ clears it;
   - **Angles**: a joint's angle through the segment, A against B, and the timing (see [Skeleton](#skeleton-angles-and-graphs));
   - **Drawings**: each frame that has drawings, with a small picture; tap to go there; ‹ › step between them;
-  - **Notes on frames** and **About this segment**.
-- **Top bar**: **A | B / A / B / Overlay**, **⇄** (swap A and B), and **⋯** (projects, library, Live replay,
+  - **Notes on frames**: **+ A here** adds one and you type it right there; double-click a note to change it;
+  - **About this segment**: double-click to write, **Done** to finish;
+  - **Takes over time**: other videos of the same movement in a clip (see [Takes](#takes-progress-over-time)).
+  - Drag the sidebar's **right edge** to make it wider or narrower.
+- **Top bar**: **↶ ↷** undo and redo, **A | B / A / B / Overlay**, **⇄** (swap A and B), and **⋯** (projects, library, Live replay,
   export, report). On the Mac it's the window's title bar, and the **File** menu has New, Open, Open Recent,
   Save, Save As and Export.
 
@@ -184,29 +188,30 @@ starts that clip afresh in every segment.
 Tap **✏** on a clip (linked: the one **✏** in the bar draws on both). The clip pauses and the drawing tools
 appear, laid out as in Photoshop. The timeline stays, so you can step to another frame and keep drawing.
 
-**Down the left: the tools**
+**Down the right: the tools**
 
 | Tool | What it does |
 |---|---|
-| **Select** (arrow) | Click a drawing to choose it: its box and handles appear. Drag it to move it; drag a handle to reshape it. Click anywhere else to let go. |
+| **Select** (arrow) | Click a drawing to choose it: its box and handles appear. Drag it to move it; drag a handle to reshape a shape, or a corner of the box to resize a hand-drawn stroke. Click anywhere else to let go. **With any tool, a click on a drawing chooses it too.** |
 | **Pen** | A solid line by hand. |
 | **Marker** | Wide and see-through, for highlighting. |
 | **Pencil** | Fine, with a grain. |
 | **Eraser** | Drag over a drawing to remove it. |
 | **Line**, **Arrow**, **Rectangle**, **Circle** | Drag from one end (or corner, or the centre) to the other. |
-| **Angle** | Drag from the **joint** along one arm; the second arm opens at 40°. Choose it with Select and drag its handles into place. The angle is written in degrees. |
+| **Angle** | Drag the **first arm** from the joint; then **drag again**, and the second arm follows the pointer to any angle. The angle is written in degrees. Its handles adjust it afterwards. |
 
 **Across the top: the chosen tool's options**
 
-- **Undo / redo**.
 - **Colours**: six swatches and the colour wheel for any other.
 - **Thickness**: a slider from 0.5 pt, with a dot as thick as the line and the width in points. The slider is
   finer at the thin end.
 - **Opacity**.
 - **This frame / Every frame**: a drawing on *this frame* only shows on the frame it was drawn on; *every
   frame* shows it throughout (a reference line).
-- With a drawing chosen, the bar changes **that drawing**: colour, thickness, opacity, and a **trash** button
-  (or the Delete key).
+- With a drawing chosen, the bar changes **that drawing**: colour, thickness, opacity, **duplicate**, and a
+  **trash** button (or the Delete key).
+- **Hold Space and drag** (Mac) to move a zoomed-in picture while drawing, as in Photoshop.
+- Undo and redo are in the top bar (⌘Z, ⇧⌘Z).
 - **Done** (or Esc).
 
 Each tool keeps its own colour and thickness. Drawings stay on the picture through zoom, pan, resizing and
@@ -215,20 +220,22 @@ timeline, and are included in exported videos and the report.
 
 ---
 
-## Overlay: one player on top of the other
+## Overlay: one clip on top of the other
 
 Choose **Overlay** in the top bar (on iPhone: the layout menu at the right of the bar; needs both clips).
 The **top** clip (B, unless you swap) is drawn over the other, see-through. Choose **A🔗B** to play the two lined
 up at their sync points.
 
-**At the top**, as on a clip: the "B over A" label (and, once cut out, the cutout's options), and on the right
-what moves the top clip:
+Everything for the overlay sits **over the picture**, in two rows at the top, so the bar underneath is the
+same as in the other layouts (with A or B chosen it shows that clip's In, Out, Sync and Speed).
+
+**First row**: the "B over A" label, and on the right what moves the top clip:
 
 - **⇅ Swap** which clip is on top · **⇋ Mirror** it (a right-hander to match a left-hander);
-- **🧍 Line up the bodies** · **⧉ Line up the backgrounds** (see below);
+- **👥 Line up the bodies** · **⧉ Line up the backgrounds** (see below);
 - **⟲ 0° ⟳** turn it a degree at a time (a tilted camera) · **↺ Put it back**.
 
-**In the bar** under the videos, in place of the clip tools (trim and sync points are set in **A | B**):
+**Second row**:
 
 - **✋ / 🔍** — what touches do:
   - **✋ Move** the top clip: drag to move it, pinch to resize, twist with two fingers to turn it. Double-tap
@@ -237,7 +244,7 @@ what moves the top clip:
     button top right) to see it all.
 - **− +** — with ✋, make the top clip smaller or bigger; with 🔍, zoom out or in (handy with a mouse).
 - **◐ slider** — how see-through the top clip is (10–90%).
-- **Cut out** — see below.
+- **The cutout chip** — see below.
 
 ### Drawing in the overlay
 
@@ -246,23 +253,28 @@ show only here, and while a segment has any, the top clip is **locked**. Moving,
 swapping it asks first, and removes them if you go ahead (Undo brings them back). Drawings made on a clip by
 itself (in A | B) stay with that clip's frame and aren't affected.
 
-### Cutting the player out
+### Cutting the person out
 
-The whole picture on top is confusing. **Cut out** finds the player in every frame of the top clip's trim (this
-takes a few seconds the first time — trim it to the stroke first; up to 600 frames; tap the progress to stop).
-Then only the person (and what they hold) is drawn over your clip. The cutout is saved, so next time it's ready at once.
+The whole picture on top is confusing. The **cutout chip** reads, for example, **Ⓑ Cut out**:
 
-Once it's cut out, **Cutout** in the bar turns it on and off, and its options appear at the top, beside the label:
+- **The letter** is the clip on top, the one that gets cut out. Tap it to put the other clip on top instead.
+  If a cutout is already made, Mimesis warns that it will be removed (it belongs to the clip on top).
+- **Cut out** finds the person in every frame of that clip's In to Out (a few seconds the first time; up to 600
+  frames; tap the progress to stop). Then only the person, and what they hold, is drawn over the other clip.
+- Once made, the chip switches between **Cut out** and **Whole** (the cutout is kept), and its **✕ removes the
+  cutout** altogether, back to how the clip was.
+
+With the cutout on, its options appear beside the chip:
 
 - **⬚ Box** — a soft box around the person instead of their outline, for when the outline loses what they hold.
-- **🖌 Tint** — colours the top player crimson so the two bodies are easy to tell apart.
-- **👆 Pick the player** — when others are in frame (opponent, umpire, ball kids): then tap the player you want.
-  They're followed through every frame. **👥** shows everyone again.
-- **↻ Cut out again** — e.g. after changing the trim.
+- **🖌 Tint** — colours the top person crimson so the two bodies are easy to tell apart.
+- **👆 Pick the person** — when others are in frame: then tap the one you want. They're followed through every
+  frame. **👥** shows everyone again.
+- **↻ Cut out again** — e.g. after changing In or Out.
 
 ### Lining the two up automatically
 
-- **Line up the bodies** (🧍, top right): finds both players' hips and feet in the frames on screen and moves
+- **Line up the bodies** (👥, top right): finds both players' hips and feet in the frames on screen and moves
   and resizes the top one so their hips and feet sit on yours. Step to a frame where both players are fully
   visible first. Nudge by hand afterwards if needed.
 - **Line up the backgrounds** (⧉, top right): for two clips filmed **at the same place** (same
@@ -337,7 +349,12 @@ yellow marks over the timeline (tap to jump), and in the library.
   - **iPhone and iPad**: **⋯ › Save project…** asks for a name and saves it in the **Mimesis** folder in the
     Files app; move or share it from there. **⋯ › Open project…** finds one anywhere in Files.
   - **Recent projects** are on the welcome screen and under **⋯ › Open recent**.
-  - **⋯ › New comparison** (⌘N) closes both clips and starts afresh.
+  - **⋯ › New** (⌘N), at the top of the menu, closes both clips and starts afresh; with something open it asks
+    first: **Save**, **Don't Save** or Cancel.
+  - **To delete a project**: **⋯ › Recent projects…** lists each with **where it is** (its full path on the Mac),
+    a **Show in Finder** button and a **trash** button (on the Mac it goes to the Trash; on iPhone and iPad the
+    file is deleted). The original videos are never touched. On the Mac you can also just delete the
+    `.mimesis` file in Finder; on iPhone and iPad, in the Files app under *On My iPhone › Mimesis*.
 - A project is as large as its videos. On the same disk a copy takes no extra room.
 
 ---
@@ -359,9 +376,10 @@ yellow marks over the timeline (tap to jump), and in the library.
 
 ## Notes on frames
 
-**Sidebar › Notes on frames › + A here** (or B) pins a note to the frame that clip is showing. It appears over
+**Sidebar › Notes on frames › + A here** (or B) pins a note to the frame that clip is showing; type it right
+there and press Return. It appears over
 the clip for about a second and a half around that moment, has a yellow mark over the timeline, is listed in
-the sidebar (tap to go there; right-click or press and hold to change or delete it), and is written into
+the sidebar (click to go there; double-click to change it; right-click or press and hold to delete it), and is written into
 exported videos and the report. **About this segment** holds a longer note for the whole segment.
 
 ---
@@ -370,9 +388,9 @@ exported videos and the report. **About this segment** holds a longer note for t
 
 A clip can hold several **takes**: the same movement filmed on different days.
 
-- **Sidebar › Takes over time › Add a take to A…** adds another video to clip A. The one there becomes the
+- **Sidebar › Takes over time › + A** adds another video to clip A. The one there becomes the
   first take. They're listed by the date they were filmed.
-- Tap a take to show it. **Each take keeps its own In/Out, sync points, speed, drawings and notes** in every
+- Tap a take to show it; its **✕** takes it off the list (the video file isn't deleted). **Each take keeps its own In/Out, sync points, speed, drawings and notes** in every
   segment, against the same clip B, so you can go from last month's to today's and see what changed.
 - To compare two of your own takes with each other, open one of them in clip B.
 - A project keeps every take's video.
