@@ -50,7 +50,7 @@ final class CourtCamera {
 
     func start() async {
         guard await AVCaptureDevice.requestAccess(for: .video) else {
-            state = .unavailable("Mimesis needs the camera for court mode: allow it in Settings › Privacy › Camera.")
+            state = .unavailable("Mimesis needs the camera for Live replay: allow it in Settings › Privacy › Camera.")
             return
         }
         #if os(iOS)
@@ -133,7 +133,7 @@ final class CourtCamera {
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         let stamp = Date().formatted(.iso8601.year().month().day().time(includingFractionalSeconds: false))
             .replacingOccurrences(of: ":", with: ".")
-        let file = folder.appendingPathComponent("Court \(stamp).mov")
+        let file = folder.appendingPathComponent("Replay \(stamp).mov")
         try? FileManager.default.removeItem(at: file)
 
         let writer = try AVAssetWriter(outputURL: file, fileType: .mov)

@@ -22,7 +22,7 @@ enum AlignError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .noFrame(let clip): "Couldn't read \(clip)'s frame."
-        case .noBody(let clip): "No body found in \(clip)'s frame: step to a frame where the whole player shows."
+        case .noBody(let clip): "No body found in \(clip)'s frame: step to a frame where the whole body shows."
         }
     }
 }

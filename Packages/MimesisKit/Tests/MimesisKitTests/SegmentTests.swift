@@ -88,4 +88,23 @@ struct SegmentTests {
         comparison.removeOverlayDrawings()
         #expect(a.drawings.map(\.id) == [own.id])
     }
+
+    @Test func swappingAAndBTakesEachVideosEditsWithIt() {
+        let comparison = Comparison()
+        let first = comparison.clips[0], second = comparison.clips[1]
+        first.trimStart = 1
+        second.syncs = [0.5]
+        comparison.addSegment()
+        first.trimStart = 3
+        comparison.focus = 0
+        comparison.overlayTop = 1
+
+        comparison.swapClips()
+        #expect(comparison.clips[1] === first && comparison.clips[0] === second)
+        // In the chosen segment, and in the other one.
+        #expect(comparison.clips[1].trimStart == 3)
+        #expect(comparison.focus == 1 && comparison.overlayTop == 0)
+        comparison.selectSegment(0)
+        #expect(comparison.clips[1].trimStart == 1 && comparison.clips[0].syncs == [0.5])
+    }
 }

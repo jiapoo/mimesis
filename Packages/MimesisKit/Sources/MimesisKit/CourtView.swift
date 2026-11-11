@@ -68,7 +68,7 @@ struct CourtView: View {
             }
             .buttonStyle(.plain)
             .keyboardShortcut(.cancelAction)
-            .help("Close court mode (Esc)")
+            .help("Close Live replay (Esc)")
             Spacer()
             Text(camera.delay == 0 ? "Live" : "\(Int(camera.delay)) s behind")
                 .font(.system(size: 15, weight: .semibold))

@@ -167,7 +167,26 @@ public final class Comparison {
         }
     }
 
-    public let clips = [Clip(), Clip()]
+    public private(set) var clips = [Clip(), Clip()]
+
+    /// Swaps the two videos: A becomes B and B becomes A, each with everything that's its own (In/Out,
+    /// sync points, speed, drawings, cutout) in every segment. The same video stays selected, and the
+    /// same one stays on top in the overlay, so drawings made there are still right.
+    public func swapClips() {
+        let wasLinked = linked
+        if wasLinked { pause() }
+        storeSegment()
+        clips.swapAt(0, 1)
+        for at in segments.indices {
+            segments[at].parts.swapAt(0, 1)
+            segments[at].placement.top = 1 - segments[at].placement.top
+        }
+        focus = 1 - focus
+        if layout == .left { layout = .right } else if layout == .right { layout = .left }
+        overlayTop = 1 - overlayTop
+        if drawing == .clip(0) { drawing = .clip(1) } else if drawing == .clip(1) { drawing = .clip(0) }
+        if wasLinked { Task { await seek(to: position) } }
+    }
     /// The segments (see `Segment`); the clips show `segments[segmentIndex]`.
     public internal(set) var segments = [Segment(name: "Segment 1")]
     public internal(set) var segmentIndex = 0

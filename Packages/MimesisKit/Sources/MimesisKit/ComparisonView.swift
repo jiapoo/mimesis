@@ -355,6 +355,20 @@ public struct ComparisonView: View {
                     .opacity(unavailable ? 0.4 : 1)
                     .help(layout.explanation)
                 }
+                if bothLoaded {
+                    Rectangle().fill(Color.white.opacity(0.15)).frame(width: 1, height: 16).padding(.horizontal, 3)
+                    Button {
+                        withAnimation(.easeOut(duration: 0.25)) { comparison.swapClips() }
+                    } label: {
+                        Image(systemName: "arrow.left.arrow.right")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(Color.white.opacity(0.85))
+                            .frame(width: 34, height: 30)
+                            .contentShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .help("Swap A and B: each video keeps its In/Out, sync points, speed and drawings")
+                }
             }
             .padding(3)
             .background(Theme.raised, in: Capsule())
@@ -399,6 +413,9 @@ public struct ComparisonView: View {
                 }
                 Button("All projects…", systemImage: "list.bullet.rectangle") { browsing = true }
                     .keyboardShortcut("o", modifiers: [.command, .shift])
+                if phone && bothLoaded {
+                    Button("Swap A and B", systemImage: "arrow.left.arrow.right") { comparison.swapClips() }
+                }
                 Button("New comparison", systemImage: "plus") { store.closeProject(comparison) }
                     .disabled(!anyLoaded)
                     .keyboardShortcut("n", modifiers: .command)
@@ -406,7 +423,7 @@ public struct ComparisonView: View {
                 Button("Library…", systemImage: "books.vertical") { showingLibrary = true }
                     .keyboardShortcut("l", modifiers: .command)
                 Divider()
-                Button("Court mode…", systemImage: "camera.viewfinder") { court = true }
+                Button("Live replay…", systemImage: "camera.viewfinder") { court = true }
                     .keyboardShortcut("k", modifiers: .command)
                 Button("Export video…", systemImage: "film") { exporting = true }
                     .disabled(!comparison.canLink)
@@ -426,8 +443,8 @@ public struct ComparisonView: View {
             .buttonStyle(.plain)
             .menuIndicator(.hidden)
             .fixedSize()
-            .help(phone && anyLoaded ? "Show A | B, A, B or Overlay; save, saved comparisons, library, court mode, export"
-                  : "Save, saved comparisons, library, court mode, export")
+            .help(phone && anyLoaded ? "Show A | B, A, B or Overlay; projects, library, Live replay, export"
+                  : "Projects, library, Live replay, export")
     }
 
     /// Videos dropped on the window: two fill A and B; one goes on the side it was dropped on, or, with

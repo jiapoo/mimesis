@@ -74,6 +74,10 @@ struct Transport: View {
                 if comparison.layout == .overlay {
                     // The overlay's own controls, here rather than over the picture.
                     OverlayControls(comparison: comparison, compact: compact)
+                    // A or B chosen: its own speed in this segment.
+                    if let clip = comparison.selected {
+                        ClipTools(clip: clip, comparison: comparison, speedOnly: true)
+                    }
                 } else if let clip = comparison.selected {
                     ClipTools(clip: clip, comparison: comparison)
                 }
@@ -284,7 +288,7 @@ struct Transport: View {
         }
     }
 
-    /// "Serve 1 · 0.42 s · phase 2 of 3 · B at 0.82×"
+    /// "Take 1 · 0.42 s · phase 2 of 3 · B at 0.82×"
     private var linkedStatus: String {
         var parts = [comparison.segment.name, clock(max(0, comparison.position - comparison.range.lowerBound))]
         if let section = comparison.section {
@@ -466,7 +470,7 @@ struct SegmentMenu: View {
         .fixedSize()
         .help("Segments: each is a stretch of the two clips (In to Out) with its own sync points, speeds and drawings. Choose one, or add, rename, duplicate or delete.")
         .alert("Rename segment", isPresented: $renaming) {
-            TextField("Serve, Forehand 2…", text: $name)
+            TextField("Take 1, Slow part…", text: $name)
             Button("Cancel", role: .cancel) {}
             Button("Rename") {
                 let name = name.trimmingCharacters(in: .whitespaces)

@@ -75,9 +75,9 @@ struct WelcomeView: View {
     private func hero(alignment: HorizontalAlignment) -> some View {
         VStack(alignment: alignment, spacing: sideways ? 10 : 14) {
             EchoMark().frame(width: sideways ? 56 : 76, height: sideways ? 56 : 76)
-            Text("Compare two swings")
+            Text("Compare two videos")
                 .font(.system(size: sideways ? 24 : 28, weight: .bold))
-            Text("Put your stroke beside the one you learn from: line them up at contact, slow them down, and see where you differ.")
+            Text("Put your video beside the one you learn from: line them up, slow them down, draw on them, and see where they differ.")
                 .font(.system(size: sideways ? 14 : 15))
                 .foregroundStyle(Theme.secondary)
                 .multilineTextAlignment(alignment == .center ? .center : .leading)
@@ -96,7 +96,7 @@ struct WelcomeView: View {
         VStack(spacing: 10) {
             HStack(spacing: 10) {
                 Button(action: onCourt) {
-                    Label("Film at the court", systemImage: "camera.viewfinder")
+                    Label("Live replay", systemImage: "camera.viewfinder")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(WideButtonStyle())
@@ -162,7 +162,7 @@ struct WelcomeView: View {
     }
 
     @ViewBuilder private var slots: some View {
-        slot(0, title: "Clip A", detail: "Your swing")
+        slot(0, title: "Clip A", detail: "Yours")
         slot(1, title: "Clip B", detail: "The one to learn from")
     }
 

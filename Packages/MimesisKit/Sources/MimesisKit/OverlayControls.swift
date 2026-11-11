@@ -125,7 +125,7 @@ struct OverlayControls: View {
             }
             .buttonStyle(ChipStyle(active: true))
             .fixedSize()
-            .help("Find the player in every frame of \(topLetter)'s trim, so only the player shows over \(baseLetter)")
+            .help("Find the person in every frame of \(topLetter)'s stretch, so only they show over \(baseLetter)")
         case .preparing(let done)?:
             Button { top.dropCutout() } label: {
                 HStack(spacing: 6) {
@@ -146,7 +146,7 @@ struct OverlayControls: View {
                 }
                 .buttonStyle(ChipStyle(active: cutout.enabled))
                 .fixedSize()
-                .help(cutout.shortened ? "Only the first \(Cutout.frameLimit) frames of the trim are cut out: trim \(topLetter) to the swing"
+                .help(cutout.shortened ? "Only the first \(Cutout.frameLimit) frames are cut out: set \(topLetter)'s In and Out around the movement"
                       : "Show \(topLetter) cut out, or whole")
             }
         case .failed(let why)?:

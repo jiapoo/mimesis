@@ -80,7 +80,7 @@ struct ClipPane: View {
                 .frame(width: 64, height: 64)
             VStack(spacing: 4) {
                 Text("Clip \(letter)").font(.system(size: 17, weight: .semibold))
-                Text(letter == "A" ? "Your swing, or the one to learn from" : "The one to compare it with")
+                Text(letter == "A" ? "Yours, or the one to learn from" : "The one to compare it with")
                     .font(.system(size: 13)).foregroundStyle(Theme.secondary)
             }
             HStack(spacing: 8) {
@@ -285,7 +285,48 @@ struct ClipTools: View {
     private var linked: Bool { comparison.linked }
     @State private var showingSpeed = false
 
-    var body: some View { tools }
+    /// Only the speed (in the overlay, whose bar holds the overlay's own controls).
+    var speedOnly = false
+
+    @ViewBuilder var body: some View {
+        if speedOnly { speedButton } else { tools }
+    }
+
+    private var speedButton: some View {
+        // The clip's own speed in this segment: automatic (what matches the other clip) until set
+        // by hand; the same button and slider as the playback speed, with Auto to go back.
+        let speed = comparison.speed(of: clip)
+        return Button { showingSpeed.toggle() } label: {
+            Label(speedText((speed * 100).rounded() / 100), systemImage: clip.speed == nil ? "gauge.with.dots.needle.50percent" : "hand.point.up.left")
+                .font(.system(size: 12, weight: .semibold).monospacedDigit())
+                .foregroundStyle(clip.speed == nil ? Color.white : Theme.onAccent)
+                .padding(.horizontal, 10)
+                .frame(height: 28)
+                .background(clip.speed == nil ? Theme.raised : Theme.accent, in: Capsule())
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .fixedSize()
+        .help(clip.speed == nil
+              ? "This clip's speed when the two play together: automatic, so its In to Out lasts as long as the other clip's (the longer one plays at 1×). Tap to set it yourself."
+              : "This clip's speed when the two play together, set by hand. Tap, then Auto, to match the other clip again.")
+        .popover(isPresented: $showingSpeed, arrowEdge: .bottom) {
+            VStack(spacing: 8) {
+                VerticalSpeedSlider(speed: Float(speed), accent: Theme.accent) { clip.speed = Double($0) }
+                Button { clip.speed = nil } label: {
+                    Text("Auto")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(clip.speed == nil ? Theme.onAccent : Color.primary)
+                        .padding(.horizontal, 12).frame(height: 26)
+                        .background(clip.speed == nil ? Theme.accent : Color.primary.opacity(0.12), in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .help("The speed that matches the other clip")
+            }
+            .padding(6)
+            .presentationCompactAdaptation(.popover)
+        }
+    }
 
     private func onFocus() {}
 
@@ -375,39 +416,7 @@ struct ClipTools: View {
                 syncButton(labelled: false)
             }
 
-            // The clip's own speed in this segment: automatic (what matches the other clip) until set
-            // by hand; the same button and slider as the playback speed, with Auto to go back.
-            let speed = comparison.speed(of: clip)
-            Button { showingSpeed.toggle() } label: {
-                Label(speedText((speed * 100).rounded() / 100), systemImage: clip.speed == nil ? "gauge.with.dots.needle.50percent" : "hand.point.up.left")
-                    .font(.system(size: 12, weight: .semibold).monospacedDigit())
-                    .foregroundStyle(clip.speed == nil ? Color.white : Theme.onAccent)
-                    .padding(.horizontal, 10)
-                    .frame(height: 28)
-                    .background(clip.speed == nil ? Theme.raised : Theme.accent, in: Capsule())
-                    .contentShape(Capsule())
-            }
-            .buttonStyle(.plain)
-            .fixedSize()
-            .help(clip.speed == nil
-                  ? "This clip's speed when the two play together: automatic, so its In to Out lasts as long as the other clip's (the longer one plays at 1×). Tap to set it yourself."
-                  : "This clip's speed when the two play together, set by hand. Tap, then Auto, to match the other clip again.")
-            .popover(isPresented: $showingSpeed, arrowEdge: .bottom) {
-                VStack(spacing: 8) {
-                    VerticalSpeedSlider(speed: Float(speed), accent: Theme.accent) { clip.speed = Double($0) }
-                    Button { clip.speed = nil } label: {
-                        Text("Auto")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(clip.speed == nil ? Theme.onAccent : Color.primary)
-                            .padding(.horizontal, 12).frame(height: 26)
-                            .background(clip.speed == nil ? Theme.accent : Color.primary.opacity(0.12), in: Capsule())
-                    }
-                    .buttonStyle(.plain)
-                    .help("The speed that matches the other clip")
-                }
-                .padding(6)
-                .presentationCompactAdaptation(.popover)
-            }
+            speedButton
         }
     }
 }

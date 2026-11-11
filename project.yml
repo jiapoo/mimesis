@@ -35,7 +35,7 @@ targets:
       properties:
         CFBundleDisplayName: Mimesis
         LSApplicationCategoryType: public.app-category.sports
-        NSCameraUsageDescription: Court mode shows the camera a few seconds late, so you can watch the stroke you just hit.
+        NSCameraUsageDescription: Live replay shows the camera a few seconds late, so you can watch what you just did.
         # Mimesis opens videos from other apps: Share › Mimesis on iPhone and iPad, Open With and the Dock icon on the Mac.
         CFBundleDocumentTypes:
           - CFBundleTypeName: Video
@@ -74,7 +74,7 @@ targets:
         UISupportedInterfaceOrientations: [UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
         UISupportedInterfaceOrientations~ipad: [UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
         UIFileSharingEnabled: true
-        NSCameraUsageDescription: Court mode shows the camera a few seconds late, so you can watch the stroke you just hit.
+        NSCameraUsageDescription: Live replay shows the camera a few seconds late, so you can watch what you just did.
         # Mimesis opens videos from other apps: Share › Mimesis on iPhone and iPad, Open With and the Dock icon on the Mac.
         CFBundleDocumentTypes:
           - CFBundleTypeName: Video

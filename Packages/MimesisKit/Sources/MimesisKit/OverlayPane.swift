@@ -202,7 +202,7 @@ struct OverlayPane: View {
                 ui.align(comparison, byBackground: true)
             }
             .disabled(ui.aligning)
-            .help("Line up the backgrounds: for two clips filmed at the same place, so the court lines match")
+            .help("Line up the backgrounds: for two clips filmed at the same place, so everything that stands still matches")
             divider
             RoundButton(symbol: "rotate.left") { ui.moving(comparison) { comparison.overlayRotation -= 1 } }
                 .help("Turn \(topLetter) 1° anticlockwise (or twist with two fingers)")
@@ -229,15 +229,15 @@ struct OverlayPane: View {
         if let cutout = top.cutout, cutout.state == .ready, cutout.enabled {
             HStack(spacing: 6) {
                 RoundButton(symbol: "rectangle.dashed", active: cutout.boxed) { cutout.boxed.toggle() }
-                    .help("A soft box around \(topLetter)'s player instead of their outline, for when the outline loses the racket")
+                    .help("A soft box around \(topLetter)'s person instead of their outline, for when the outline loses what they hold")
                 RoundButton(symbol: "paintbrush", active: cutout.tinted) { cutout.tinted.toggle() }
-                    .help("Tint \(topLetter)'s player crimson, to tell the two bodies apart")
+                    .help("Tint \(topLetter)'s person crimson, to tell the two bodies apart")
                 if cutout.hasSeveral {
                     RoundButton(symbol: "hand.tap", active: ui.picking || cutout.picked != nil) { ui.picking.toggle() }
-                        .help("Keep only one player when \(topLetter) has others in frame: then tap them")
+                        .help("Keep only one person when \(topLetter) has others in frame: then tap them")
                     if cutout.picked != nil {
                         RoundButton(symbol: "person.2") { cutout.pickEveryone() }
-                            .help("Show everyone found in \(topLetter), not only the player picked")
+                            .help("Show everyone found in \(topLetter), not only the person picked")
                     }
                 }
                 RoundButton(symbol: "arrow.clockwise") { top.makeCutout(fresh: true) }
@@ -265,7 +265,7 @@ struct OverlayPane: View {
 
     private var hint: String? {
         if let problem = ui.problem { return problem }
-        if picking { return "Tap \(topLetter)'s player" }
+        if picking { return "Tap the person in \(topLetter)" }
         return nil
     }
 
@@ -307,13 +307,13 @@ struct OverlayPane: View {
         var point = CGPoint(x: (local.x - shown.minX) / shown.width, y: (local.y - shown.minY) / shown.height)
         if top.engine.mirroredHorizontally { point.x = 1 - point.x }
         guard (0...1).contains(point.x), (0...1).contains(point.y) else {
-            ui.problem = "Tap on \(topLetter)'s player."
+            ui.problem = "Tap on the person in \(topLetter)."
             return
         }
         if cutout.pick(at: top.engine.currentTime, point: point) {
             ui.picking = false
         } else {
-            ui.problem = "Nobody there: tap on \(topLetter)'s player."
+            ui.problem = "Nobody there: tap on the person in \(topLetter)."
         }
     }
 
