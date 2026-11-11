@@ -4,8 +4,8 @@ import SwiftUI
 /// A mark drawn on a clip: a pen, marker or pencil stroke, or a line, arrow, rectangle, circle or angle.
 /// Points are in the video picture itself, 0–1 across and down (as filmed, before mirroring),
 /// so a drawing stays on the player through zoom, pan, resizing and mirroring.
-public struct Drawing: Codable, Identifiable, Hashable {
-    public enum Kind: String, Codable, CaseIterable, Identifiable {
+public struct Drawing: Codable, Identifiable, Hashable, Sendable {
+    public enum Kind: String, Codable, CaseIterable, Identifiable, Sendable {
         case line, arrow, circle, angle, rectangle
         /// Drawn by hand with a pen, marker or pencil.
         case freehand
@@ -13,7 +13,7 @@ public struct Drawing: Codable, Identifiable, Hashable {
     }
 
     /// What a freehand stroke was drawn with (shapes are drawn with the pen).
-    public enum Brush: String, Codable, CaseIterable, Identifiable {
+    public enum Brush: String, Codable, CaseIterable, Identifiable, Sendable {
         case pen, marker, pencil
         public var id: Self { self }
     }
@@ -54,7 +54,7 @@ public struct Drawing: Codable, Identifiable, Hashable {
     /// when the top clip is moved (the drawing would no longer be where it was put).
     public var overlay: Bool?
 
-    public enum Ink: String, Codable, CaseIterable {
+    public enum Ink: String, Codable, CaseIterable, Sendable {
         case crimson, yellow, white, cyan
         var rgba: RGBA {
             switch self {
@@ -66,7 +66,7 @@ public struct Drawing: Codable, Identifiable, Hashable {
         }
     }
 
-    public enum Size: String, Codable, CaseIterable {
+    public enum Size: String, Codable, CaseIterable, Sendable {
         case thin, medium, thick
         var scale: CGFloat {
             switch self {

@@ -15,6 +15,7 @@ public struct ComparisonView: View {
     @State private var pickSide = 0
     /// The file chooser is open for a project, not a video (iPhone and iPad).
     @State private var pickingProject = false
+    @State private var reporting = false
     /// The segments' sidebar (kept between launches; an iPhone starts with it hidden).
     @AppStorage("showsSegments") private var showsSidebar = false
     /// The clip (0 or 1) open in the editor.
@@ -289,6 +290,9 @@ public struct ComparisonView: View {
         #else
         .sheet(item: $editing) { target in editor(target).frame(minWidth: 860, minHeight: 620) }
         #endif
+        .sheet(isPresented: $reporting) {
+            ReportView(comparison: comparison, title: store.currentName ?? defaultName)
+        }
         .sheet(isPresented: $exporting) {
             ExportView(comparison: comparison)
         }
@@ -502,6 +506,8 @@ public struct ComparisonView: View {
                 Button("Export video…", systemImage: "film") { exporting = true }
                     .disabled(!comparison.canLink)
                     .shortcut("e", [.command])
+                Button("Report (PDF)…", systemImage: "doc.richtext") { reporting = true }
+                    .disabled(!anyLoaded)
                 #if DEBUG
                 Divider()
                 Button("Masking test…", systemImage: "person.crop.rectangle") { maskTest = true }
