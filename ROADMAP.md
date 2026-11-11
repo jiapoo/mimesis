@@ -1,6 +1,6 @@
 # Mimesis roadmap
 
-Compare two sports videos (tennis, soccer, swimming…) side by side or overlaid, on macOS, iPadOS and iOS.
+Compare two videos of a movement (sport, dance, music, rehab, craft…) side by side or overlaid, on macOS, iPadOS and iOS.
 Kinovea's analysis tools plus Dartfish's SimulCam, made natively for Apple devices.
 
 Each step starts as ⬜. When it's done, it becomes ✅ with the date: `- ✅ Step (2026-11-06)`.
@@ -206,6 +206,37 @@ The five steps below build it.
       (2026-11-06; merge rules unit-tested. Not switched on yet: the iCloud capability needs the Apple Developer
       Program License Agreement accepted in your developer account; then uncomment CODE_SIGN_ENTITLEMENTS in
       project.yml and add the same key to the Mac entitlements. Untested across real devices)
+
+## Phase 7.5 — A workspace built on segments
+
+- ✅ Projects: every edit and the project's own copies of both videos (2026-11-10)
+- ✅ Project files, `Name.mimesis`, saved wherever the user chooses: the Mac's Save and Open panels, File ›
+      Open Recent, double-click to open; the Mimesis folder in Files on iPhone and iPad; recent projects on the
+      welcome screen (2026-11-11; saving and reopening are tested, the panels are not yet tried by hand)
+- ✅ Export on the Mac asks where to save and under what name (2026-11-11)
+- ✅ Segments: named stretches with an In and Out on each clip, the shorter slowed to match the longer, sync
+      points as phases inside, a speed per clip (automatic or set by hand) (2026-11-10)
+- ✅ Segments sidebar: the list, each clip's In/Out, sync points and speed, notes, the frames with drawings
+      (thumbnails, previous / next); a slide-in panel on iPhone (2026-11-11)
+- ✅ Drawing tools laid out as in Photoshop: tool strip, options bar with a thickness slider and opacity, a
+      select tool to move, reshape, recolour and delete; finer lines and solid arrow heads (2026-11-11)
+- ✅ Drawings in the overlay, locked to where the top clip sits (moving it warns, then removes them) (2026-11-10)
+- ✅ Pencil marks over the timeline on frames that have drawings (2026-11-11)
+- ✅ Swap A and B, each video keeping its edits (2026-11-11)
+- ✅ Edit a clip with AreteMedia's editor (turn, flip, crop, trim): a button on the clip and ⌘T; revert to the
+      original (2026-11-11; builds, not yet tried by hand)
+- ✅ General wording, no sport-specific words; Court mode is now Live replay (2026-11-11)
+- ✅ Linked play kept smooth by tiny speed changes instead of jumping frames (2026-11-10)
+
+## Phase 7.6 — For people serious about improving
+
+- ⬜ Skeleton over the body with joint angles, followed through the movement (Vision body pose)
+- ⬜ Graphs across a segment, A against B: a joint's angle over time, and the time from the start to each
+      sync point
+- ⬜ Progress over time: the same movement filmed on different dates, each against one reference
+- ⬜ Notes pinned to a frame (text; voice later), shown at that frame and included in the export
+- ⬜ A report to share: key frames with their drawings, angles and notes, as a PDF
+- ⬜ Not now (set aside 2026-11-11): tracing the path of a ball or a racket across frames
 
 ## Phase 8 — Release
 
