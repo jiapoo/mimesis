@@ -133,19 +133,25 @@ struct OverlayPane: View {
         .background(Color.black)
         .clipped()
         .overlay(alignment: .top) {
-            // At the top, as on a clip: what's on top and its cutout's options on the left, and what moves
-            // the top clip on the right. How to touch, the size or zoom, see-through and the cutout itself
-            // are in the bar under the videos.
-            HStack(alignment: .top, spacing: 6) {
-                badge
-                cutoutOptions
-                Spacer(minLength: 0)
-                adjustments
-                if base.zoom > 1 {
-                    RoundButton(symbol: "arrow.down.right.and.arrow.up.left") {
-                        withAnimation(.easeOut(duration: 0.2)) { base.resetView() }
+            // Everything the overlay needs is here, over the picture, so the bar underneath is the same
+            // in every layout. First row: what's on top, and what moves the top clip. Second row: what
+            // touches do, the size or zoom, how see-through the top clip is, and the cutout.
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(alignment: .top, spacing: 6) {
+                    badge
+                    Spacer(minLength: 0)
+                    adjustments
+                    if base.zoom > 1 {
+                        RoundButton(symbol: "arrow.down.right.and.arrow.up.left") {
+                            withAnimation(.easeOut(duration: 0.2)) { base.resetView() }
+                        }
+                        .help("See the whole picture")
                     }
-                    .help("See the whole picture")
+                }
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 6) { controls(compact: false); cutoutOptions }
+                    HStack(spacing: 6) { controls(compact: true); cutoutOptions }
+                    ScrollView(.horizontal, showsIndicators: false) { HStack(spacing: 6) { controls(compact: true); cutoutOptions } }
                 }
             }
             .padding(10)
@@ -175,6 +181,20 @@ struct OverlayPane: View {
         } message: {
             Text("They were drawn over the two clips as they sit now. Moving, resizing, turning, mirroring or swapping \(topLetter) would leave them in the wrong place, so they're removed first. (Undo brings them back.)")
         }
+        .confirmationDialog(
+            "Put \(baseLetter) on top?",
+            isPresented: Binding(get: { ui.askingToSwap }, set: { if !$0 { ui.askingToSwap = false } }),
+            titleVisibility: .visible
+        ) {
+            Button("Swap and remove \(topLetter)'s cutout", role: .destructive) {
+                top.dropCutout()
+                comparison.overlayTop = 1 - comparison.overlayTop
+                comparison.resetOverlay()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("\(topLetter) is cut out. With \(baseLetter) on top, \(topLetter) is shown whole underneath, so its cutout is removed. You can cut \(baseLetter) out afterwards.")
+        }
         .onChange(of: ui.problem) { _, problem in
             guard problem != nil else { return }
             Task {
@@ -184,21 +204,22 @@ struct OverlayPane: View {
         }
     }
 
+    private func controls(compact: Bool) -> some View {
+        OverlayControls(comparison: comparison, compact: compact)
+            .padding(4)
+            .background(Color.black.opacity(0.35), in: Capsule())
+    }
+
     /// Swap, mirror, line up (the bodies, or the backgrounds), turn, put back.
     private var adjustments: some View {
         HStack(spacing: 6) {
-            RoundButton(symbol: "arrow.up.arrow.down") {
-                ui.moving(comparison) {
-                    comparison.overlayTop = 1 - comparison.overlayTop
-                    comparison.resetOverlay()
-                }
-            }
-            .help("Swap: \(baseLetter) on top")
+            RoundButton(symbol: "arrow.up.arrow.down") { ui.swapTop(comparison) }
+                .help("Swap: \(baseLetter) on top")
             RoundButton(symbol: "arrow.left.and.right.righttriangle.left.righttriangle.right",
                         active: top.engine.mirroredHorizontally) { ui.moving(comparison) { top.toggleMirror() } }
                 .help("Mirror \(topLetter) side to side, e.g. a right-hander to match a left-hander")
             divider
-            RoundButton(symbol: ui.aligning ? "hourglass" : "figure.stand") { ui.align(comparison) }
+            RoundButton(symbol: ui.aligning ? "hourglass" : "person.2") { ui.align(comparison) }
                 .disabled(ui.aligning)
                 .help("Line up the bodies: put \(topLetter)'s hips and feet on \(baseLetter)'s, from the frames on screen")
             RoundButton(symbol: ui.aligning ? "hourglass" : "square.on.square.dashed") {

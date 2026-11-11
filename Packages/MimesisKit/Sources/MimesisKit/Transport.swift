@@ -75,14 +75,8 @@ struct Transport: View {
                 // Far left: the segments (the chosen one's name; shows or hides their sidebar).
                 segmentButton
                 focusPicker
-                if comparison.layout == .overlay {
-                    // The overlay's own controls, here rather than over the picture.
-                    OverlayControls(comparison: comparison, compact: compact)
-                    // A or B chosen: its own speed in this segment.
-                    if let clip = comparison.selected {
-                        ClipTools(clip: clip, comparison: comparison, speedOnly: true)
-                    }
-                } else if let clip = comparison.selected, !sidebarShown {
+                // (The overlay's own controls are over the picture: the bar is the same in every layout.)
+                if let clip = comparison.selected, !sidebarShown {
                     ClipTools(clip: clip, comparison: comparison)
                 }
             }
@@ -104,14 +98,8 @@ struct Transport: View {
                     }
                     .help("Draw on both clips")
                 }
-                RoundButton(symbol: "arrow.uturn.backward", size: 32) { comparison.history.undo(comparison) }
-                    .disabled(!comparison.history.canUndo)
-                    .opacity(comparison.history.canUndo ? 1 : 0.4)
-                    .help("Undo (⌘Z)")
-                if comparison.history.canRedo {
-                    RoundButton(symbol: "arrow.uturn.forward", size: 32) { comparison.history.redo(comparison) }
-                        .help("Redo (⇧⌘Z)")
-                }
+                // Undo and redo are in the top bar; an iPhone has none, so they're here.
+                if compact { UndoButtons(comparison: comparison, size: 30) }
                 speedSlider
                 if let extras { extras }
             }
@@ -129,7 +117,7 @@ struct Transport: View {
             HStack(spacing: 5) {
                 Image(systemName: "sidebar.left")
                     .font(.system(size: 11, weight: .semibold))
-                if !compact && comparison.layout != .overlay {
+                if !compact {
                     Text(comparison.segment.name)
                         .font(.system(size: 12, weight: .semibold))
                         .lineLimit(1)
@@ -527,6 +515,26 @@ struct SegmentMenu: View {
                 let name = name.trimmingCharacters(in: .whitespaces)
                 if !name.isEmpty { comparison.renameSegment(to: name) }
             }
+        }
+    }
+}
+
+
+/// Undo and redo (⌘Z, ⇧⌘Z): in the top bar; on an iPhone, in the bar under the clips.
+struct UndoButtons: View {
+    let comparison: Comparison
+    var size: CGFloat = 30
+
+    var body: some View {
+        HStack(spacing: 4) {
+            RoundButton(symbol: "arrow.uturn.backward", size: size) { comparison.history.undo(comparison) }
+                .disabled(!comparison.history.canUndo)
+                .opacity(comparison.history.canUndo ? 1 : 0.4)
+                .help("Undo (⌘Z)")
+            RoundButton(symbol: "arrow.uturn.forward", size: size) { comparison.history.redo(comparison) }
+                .disabled(!comparison.history.canRedo)
+                .opacity(comparison.history.canRedo ? 1 : 0.4)
+                .help("Redo (⇧⌘Z)")
         }
     }
 }

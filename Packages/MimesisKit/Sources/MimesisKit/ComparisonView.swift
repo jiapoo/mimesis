@@ -22,6 +22,7 @@ public struct ComparisonView: View {
     @State private var takeSide: Int?
     /// The segments' sidebar (kept between launches; an iPhone starts with it hidden).
     @AppStorage("showsSegments") private var showsSidebar = false
+    @AppStorage("segmentsWidth") private var sidebarWidth = 272.0
     /// The clip (0 or 1) open in the editor.
     @State private var editing: EditTarget?
     @State private var openProblem: String?
@@ -74,7 +75,10 @@ public struct ComparisonView: View {
                 if showsSidebar && !phone {
                     SegmentSidebar(comparison: comparison, onClose: { withAnimation(.easeOut(duration: 0.2)) { showsSidebar = false } },
                                    onAddTake: { side in takeSide = side; importing = side })
-                        .frame(width: 272)
+                        .frame(width: sidebarWidth)
+                        // Drag its right edge to make it wider or narrower.
+                        .overlay(alignment: .trailing) { SidebarEdge(width: $sidebarWidth) }
+                        .layoutPriority(1)
                         .transition(.move(edge: .leading))
                 }
                 VStack(spacing: 0) {
@@ -115,6 +119,10 @@ public struct ComparisonView: View {
                               sidebarShown: showsSidebar,
                               onSidebar: { withAnimation(.easeOut(duration: 0.2)) { showsSidebar.toggle() } })
                 }
+                // The clips take what the sidebar leaves, however little: the sidebar is never squeezed
+                // or pushed off the window.
+                .frame(minWidth: 0, maxWidth: .infinity)
+                .clipped()
                 }
                 // On an iPhone the segments slide in over the clips.
                 .overlay(alignment: .leading) {
@@ -166,11 +174,14 @@ public struct ComparisonView: View {
         .toolbar {
             // Our own capsules, without the glass the system would put around them.
             if #available(macOS 26, *) {
+                ToolbarItem(placement: .navigation) { if anyLoaded { UndoButtons(comparison: comparison) } }
+                    .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .principal) { if anyLoaded { layoutSwitch } }
                     .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .primaryAction) { menu }
                     .sharedBackgroundVisibility(.hidden)
             } else {
+                ToolbarItem(placement: .navigation) { if anyLoaded { UndoButtons(comparison: comparison) } }
                 ToolbarItem(placement: .principal) { if anyLoaded { layoutSwitch } }
                 ToolbarItem(placement: .primaryAction) { menu }
             }
@@ -400,6 +411,8 @@ public struct ComparisonView: View {
             }
             .frame(minWidth: 24, alignment: .leading)
             .layoutPriority(-1)
+
+            if anyLoaded { UndoButtons(comparison: comparison) }
 
             Spacer(minLength: 0)
 
@@ -1172,4 +1185,31 @@ struct EditTarget: Identifiable {
     let index: Int
     let url: URL
     var id: String { "\(index)-\(url.path)" }
+}
+
+/// The sidebar's right edge: drag it to change the sidebar's width (240 to 480 points).
+struct SidebarEdge: View {
+    @Binding var width: Double
+    @State private var from: Double?
+
+    var body: some View {
+        Rectangle()
+            .fill(Color.white.opacity(from == nil ? 0.001 : 0.25))
+            .frame(width: 7)
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 1, coordinateSpace: .global)
+                    .onChanged { drag in
+                        let start = from ?? width
+                        from = start
+                        width = min(480, max(240, start + drag.translation.width))
+                    }
+                    .onEnded { _ in from = nil })
+            #if os(macOS)
+            .onHover { inside in
+                if inside { NSCursor.resizeLeftRight.push() } else { NSCursor.pop() }
+            }
+            #endif
+            .help("Drag to make the sidebar wider or narrower")
+    }
 }

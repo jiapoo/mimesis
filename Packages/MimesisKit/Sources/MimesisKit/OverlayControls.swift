@@ -12,6 +12,21 @@ final class OverlayUI {
     var problem: String?
     /// Asking whether to remove the overlay's drawings so the top clip can move; then `pending` runs.
     var askingToUnlock = false
+    /// Asking whether to swap which clip is on top, which removes the top clip's cutout.
+    var askingToSwap = false
+
+    /// Swaps which clip is on top (and so which one is cut out). With a cutout made, asks first: it
+    /// belongs to the clip on top, and goes with the swap.
+    func swapTop(_ comparison: Comparison) {
+        moving(comparison) { [weak self] in
+            if comparison.clips[comparison.overlayTop].cutout != nil {
+                self?.askingToSwap = true
+            } else {
+                comparison.overlayTop = 1 - comparison.overlayTop
+                comparison.resetOverlay()
+            }
+        }
+    }
     var pending: (() -> Void)?
 
     /// Runs `change` (something that moves, resizes, turns, mirrors or swaps the top clip). Drawings made
@@ -116,45 +131,80 @@ struct OverlayControls: View {
         .help("How see-through \(topLetter) is over \(baseLetter)")
     }
 
-    /// Cut the top player out: a button to start, its progress (tap to stop), then on / off.
-    @ViewBuilder private var cutout: some View {
+    /// The cutout, in one chip: which clip is cut out (its letter: tap it for the other clip), then
+    /// Cut out to make it, its progress while it's made (tap to stop), and once made the switch between
+    /// cut out and whole, with an ✕ to remove the cutout altogether.
+    private var cutout: some View {
+        HStack(spacing: 0) {
+            Button { ui.swapTop(comparison) } label: {
+                Text(topLetter)
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(Theme.onAccent)
+                    .frame(width: 20, height: 20)
+                    .background(Theme.accent, in: Circle())
+                    .overlay(Circle().strokeBorder(Color.white.opacity(0.5), lineWidth: 1))
+                    .padding(.leading, 4)
+                    .frame(height: 28)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help("\(topLetter) is on top, and is the one cut out. Tap to put \(baseLetter) on top instead.")
+            cutoutAction
+        }
+        .font(.system(size: 12, weight: .semibold))
+        .lineLimit(1)
+        .background(Color.white.opacity(0.10), in: Capsule())
+        .fixedSize()
+    }
+
+    @ViewBuilder private var cutoutAction: some View {
         switch top.cutout?.state {
         case nil:
             Button { top.makeCutout() } label: {
                 Label(compact ? "" : "Cut out", systemImage: "person.crop.rectangle")
+                    .padding(.horizontal, 8).frame(height: 28).contentShape(Rectangle())
             }
-            .buttonStyle(ChipStyle(active: true))
-            .fixedSize()
+            .buttonStyle(.plain)
             .help("Find the person in every frame of \(topLetter)'s stretch, so only they show over \(baseLetter)")
         case .preparing(let done)?:
             Button { top.dropCutout() } label: {
                 HStack(spacing: 6) {
-                    ProgressView(value: done)
-                        .progressViewStyle(.circular)
-                        .controlSize(.mini)
+                    ProgressView(value: done).progressViewStyle(.circular).controlSize(.mini)
                     Text("\(Int(done * 100))%").monospacedDigit()
                     Image(systemName: "xmark").font(.system(size: 9, weight: .bold))
                 }
+                .padding(.horizontal, 8).frame(height: 28).contentShape(Rectangle())
             }
-            .buttonStyle(ChipStyle())
-            .fixedSize()
+            .buttonStyle(.plain)
             .help("Cutting out \(topLetter)… tap to stop")
         case .ready?:
             if let cutout = top.cutout {
                 Button { cutout.enabled.toggle() } label: {
-                    Label(compact ? "" : "Cutout", systemImage: "person.crop.rectangle")
+                    Label(compact ? "" : (cutout.enabled ? "Cut out" : "Whole"),
+                          systemImage: cutout.enabled ? "person.crop.rectangle.fill" : "rectangle")
+                        .foregroundStyle(cutout.enabled ? Theme.accent : .white)
+                        .padding(.leading, 8).padding(.trailing, 4).frame(height: 28).contentShape(Rectangle())
                 }
-                .buttonStyle(ChipStyle(active: cutout.enabled))
-                .fixedSize()
+                .buttonStyle(.plain)
                 .help(cutout.shortened ? "Only the first \(Cutout.frameLimit) frames are cut out: set \(topLetter)'s In and Out around the movement"
-                      : "Show \(topLetter) cut out, or whole")
+                      : "Show \(topLetter) cut out, or whole (the cutout is kept)")
+                Button { top.dropCutout() } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 9, weight: .bold))
+                        .frame(width: 18, height: 18)
+                        .background(Color.black.opacity(0.3), in: Circle())
+                        .frame(width: 26, height: 28)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .help("Remove the cutout: \(topLetter) goes back to how it was")
             }
         case .failed(let why)?:
             Button { top.makeCutout() } label: {
                 Label(compact ? "" : "Try again", systemImage: "exclamationmark.triangle")
+                    .padding(.horizontal, 8).frame(height: 28).contentShape(Rectangle())
             }
-            .buttonStyle(ChipStyle())
-            .fixedSize()
+            .buttonStyle(.plain)
             .help(why)
         }
     }
