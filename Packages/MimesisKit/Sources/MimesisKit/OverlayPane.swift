@@ -32,11 +32,14 @@ struct OverlayPane: View {
         GeometryReader { space in
             let picture = fitted(base.engine.videoSize, in: CGRect(origin: .zero, size: space.size))
             ZStack {
+                // (Each player view belongs to its video: made again when the two change places.)
                 VideoPlayerRepresentable(player: base.engine.player)
+                    .id(ObjectIdentifier(base))
                     .frame(width: space.size.width, height: space.size.height)
                 // The top clip, fitted into the picture underneath, then moved and resized: whole, or
                 // cut out once its cutout is ready (the player keeps decoding underneath, unseen).
                 VideoPlayerRepresentable(player: top.engine.player)
+                    .id(ObjectIdentifier(top))
                     .frame(width: picture.width, height: picture.height)
                     .scaleEffect(comparison.overlayScale)
                     .rotationEffect(.degrees(comparison.overlayRotation))

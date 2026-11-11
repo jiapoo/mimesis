@@ -117,7 +117,7 @@ struct ClipPane: View {
                 VideoPlayerRepresentable(player: clip.engine.player)
                 // In the same frame as the video, so drawings zoom and pan with it.
                 if clip.showsSkeleton {
-                    SkeletonLayer(clip: clip, angles: skeletonAngles)
+                    SkeletonLayer(clip: clip, angles: skeletonAngles, zoom: clip.zoom)
                 }
                 DrawingLayer(clip: clip, editing: drawing, pen: pen)
                 // On the Mac the video's own view takes the clicks; a clear layer over it gives them to

@@ -238,6 +238,37 @@ public final class ComparisonStore {
         return await open(url, into: comparison)
     }
 
+    /// Where a recent project is now (found through its bookmark, even after it's been moved).
+    public func location(of recent: RecentProject) -> URL? {
+        var stale = false
+        return try? URL(resolvingBookmarkData: recent.bookmark, options: projectResolve.union(.withoutUI), bookmarkDataIsStale: &stale)
+    }
+
+    /// Deletes a project's file (on the Mac: to the Trash, so it can be put back) and drops it from
+    /// the list. False (with `problem` set) when the file couldn't be removed.
+    @discardableResult
+    public func delete(_ recent: RecentProject) -> Bool {
+        guard let url = location(of: recent), FileManager.default.fileExists(atPath: url.path) else {
+            forget(recent)
+            return true
+        }
+        let accessing = url.startAccessingSecurityScopedResource()
+        defer { if accessing { url.stopAccessingSecurityScopedResource() } }
+        do {
+            #if os(macOS)
+            do { try FileManager.default.trashItem(at: url, resultingItemURL: nil) } catch { try FileManager.default.removeItem(at: url) }
+            #else
+            try FileManager.default.removeItem(at: url)
+            #endif
+            if currentURL?.standardizedFileURL == url.standardizedFileURL { currentURL = nil }
+            forget(recent)
+            return true
+        } catch {
+            problem = "Couldn't delete “\(recent.name)”: \(error.localizedDescription)"
+            return false
+        }
+    }
+
     public func forget(_ recent: RecentProject) {
         recents.removeAll { $0.id == recent.id }
         write(recents, to: recentsFile)

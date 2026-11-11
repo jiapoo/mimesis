@@ -16,6 +16,8 @@ public struct ComparisonView: View {
     /// The file chooser is open for a project, not a video (iPhone and iPad).
     @State private var pickingProject = false
     @State private var reporting = false
+    @State private var askingNew = false
+    @State private var newAfterSave = false
     /// The file chooser is open to add a take to this clip.
     @State private var takeSide: Int?
     /// The segments' sidebar (kept between launches; an iPhone starts with it hidden).
@@ -238,10 +240,22 @@ public struct ComparisonView: View {
             Button("Cancel", role: .cancel) {}
             Button("Save") {
                 let name = newName.trimmingCharacters(in: .whitespaces)
-                store.save(comparison, to: store.documentURL(named: name.isEmpty ? defaultName : name))
+                let saved = store.save(comparison, to: store.documentURL(named: name.isEmpty ? defaultName : name))
+                if saved && newAfterSave { store.closeProject(comparison) }
+                newAfterSave = false
             }
         } message: {
             Text("Saved as a file in the Mimesis folder (in the Files app): both videos and every edit. Move or share it from there.")
+        }
+        .confirmationDialog(
+            store.currentName.map { "Save “\($0)” before starting a new comparison?" } ?? "Save this comparison as a project first?",
+            isPresented: $askingNew, titleVisibility: .visible
+        ) {
+            Button("Save") { saveThenNew() }
+            Button("Don't Save", role: .destructive) { store.closeProject(comparison) }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("New closes both clips. Anything not saved in a project is lost.")
         }
         .alert("Project", isPresented: Binding(get: { store.problem != nil }, set: { if !$0 { store.problem = nil } })) {
             Button("OK", role: .cancel) {}
@@ -253,7 +267,7 @@ public struct ComparisonView: View {
             guard let request else { return }
             MenuRequests.shared.pending = nil
             switch request {
-            case .new: store.closeProject(comparison)
+            case .new: newComparison()
             case .open: openProject()
             case .openRecent(let id):
                 if let recent = store.recents.first(where: { $0.id == id }) {
@@ -475,6 +489,10 @@ public struct ComparisonView: View {
                         }
                     }
                 }
+                Button("New", systemImage: "plus") { newComparison() }
+                    .disabled(!anyLoaded)
+                    .shortcut("n", [.command])
+                Divider()
                 // A project is a file (Name.mimesis) with every edit and its own copies of the videos.
                 // (On the Mac these are in the File menu too, with their keys.)
                 Button(store.currentName.map { "Save “\($0)”" } ?? "Save project…", systemImage: "square.and.arrow.down") {
@@ -496,6 +514,13 @@ public struct ComparisonView: View {
                     Label("Open recent", systemImage: "clock.arrow.circlepath")
                 }
                 Button("Recent projects…", systemImage: "list.bullet.rectangle") { browsing = true }
+                #if os(macOS)
+                if let url = store.currentURL {
+                    Button("Show “\(store.currentName ?? "")” in Finder", systemImage: "magnifyingglass") {
+                        NSWorkspace.shared.activateFileViewerSelecting([url])
+                    }
+                }
+                #endif
                 Divider()
                 Button("Edit clip \(comparison.focus == 0 ? "A" : "B")…", systemImage: "crop.rotate") { editClip() }
                     .disabled(comparison.focused == nil)
@@ -503,9 +528,6 @@ public struct ComparisonView: View {
                 if phone && bothLoaded {
                     Button("Swap A and B", systemImage: "arrow.left.arrow.right") { comparison.swapClips() }
                 }
-                Button("New comparison", systemImage: "plus") { store.closeProject(comparison) }
-                    .disabled(!anyLoaded)
-                    .shortcut("n", [.command])
                 Divider()
                 Button("Library…", systemImage: "books.vertical") { showingLibrary = true }
                     .keyboardShortcut("l", modifiers: .command)
@@ -539,6 +561,9 @@ public struct ComparisonView: View {
     /// Videos dropped on the window: two fill A and B; one goes on the side it was dropped on, or, with
     /// no side, into an empty one (else Mimesis asks which).
     private func dropped(_ urls: [URL], on side: Int?) {
+        // Kept first: a file dragged from another app (Imago, Photos) can be a temporary copy that's
+        // gone a moment after the drop, which left the clip black.
+        let urls = urls.map(Self.keepDropped)
         if urls.count >= 2 {
             open(urls[0], in: 0)
             open(urls[1], in: 1)
@@ -587,6 +612,25 @@ public struct ComparisonView: View {
     /// On iPhone and iPad a sent video lives in a temporary inbox (or another app's folder, for a while):
     /// keep a copy with the clips Mimesis owns, so the library and saved comparisons can open it again.
     /// On the Mac the file stays where it is.
+    /// A dropped file, made safe to open a moment later: access to it is taken now, while the drop still
+    /// grants it; and one in a temporary place (a file another app promised and wrote for the drop) is
+    /// copied into Mimesis's own clips, because the original goes when the drop ends.
+    private static func keepDropped(_ url: URL) -> URL {
+        _ = url.startAccessingSecurityScopedResource()
+        let path = url.standardizedFileURL.path
+        let temporary = path.hasPrefix(NSTemporaryDirectory()) || path.contains("/TemporaryItems/")
+            || path.contains("/T/") || path.hasPrefix("/private/var/folders/") || path.hasPrefix("/var/folders/")
+            || path.contains("/Caches/")
+        guard temporary else { return url }
+        let folder = ComparisonStore.supportFolder.appendingPathComponent("Clips", isDirectory: true)
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        var copy = folder.appendingPathComponent(url.lastPathComponent)
+        if FileManager.default.fileExists(atPath: copy.path) {
+            copy = folder.appendingPathComponent("\(url.deletingPathExtension().lastPathComponent) \(UUID().uuidString.prefix(4)).\(url.pathExtension)")
+        }
+        return (try? FileManager.default.copyItem(at: url, to: copy)) == nil ? url : copy
+    }
+
     private static func keep(_ url: URL) -> URL {
         #if os(iOS)
         let accessing = url.startAccessingSecurityScopedResource()
@@ -629,6 +673,27 @@ public struct ComparisonView: View {
     /// ⌘S: over the project on screen; with none yet, asks for a name.
     private func saveProject() {
         if !store.saveCurrent(comparison) { saveProjectAs() }
+    }
+
+    /// New: with something open, asks first whether to save it.
+    private func newComparison() {
+        if anyLoaded { askingNew = true } else { store.closeProject(comparison) }
+    }
+
+    /// Saves, then starts afresh (New › Save). On iPhone and iPad a project without a name yet asks for
+    /// one first; the new comparison starts once it's saved.
+    private func saveThenNew() {
+        if store.saveCurrent(comparison) {
+            store.closeProject(comparison)
+            return
+        }
+        #if os(macOS)
+        saveProjectAs()
+        if store.currentURL != nil { store.closeProject(comparison) }
+        #else
+        newAfterSave = true
+        saveProjectAs()
+        #endif
     }
 
     /// Asks where to save the project and what to call it: the Mac's Save panel; on iPhone and iPad a
@@ -861,6 +926,9 @@ public struct ComparisonView: View {
                     onDraw: {
                         comparison.drawing = comparison.drawing == .clip(index) ? nil : .clip(index)
                     })
+                // A pane belongs to its video: after A and B are swapped it's made again, so its player
+                // view shows the right video (kept, it stayed on the old one and went black).
+                .id(ObjectIdentifier(comparison.clips[index]))
             }
         }
         .background(Color.white.opacity(0.08))
@@ -963,6 +1031,19 @@ struct SavedComparisonsView: View {
     /// Find a project that isn't in the list.
     let onBrowse: () -> Void
     @Environment(\.dismiss) private var dismiss
+    @State private var deleting: RecentProject?
+
+    /// Where a project is, as a path to read: "~/Documents/Compare.mimesis".
+    private func path(_ item: RecentProject) -> String {
+        guard let url = store.location(of: item) else { return "Moved or deleted" }
+        #if os(macOS)
+        return (url.path as NSString).abbreviatingWithTildeInPath
+        #else
+        // On iPhone and iPad: where it shows in the Files app.
+        if url.path.hasPrefix(ComparisonStore.documentsFolder.path) { return "Files › On My \(UIDevice.current.model) › Mimesis" }
+        return url.deletingLastPathComponent().lastPathComponent
+        #endif
+    }
 
     var body: some View {
         NavigationStack {
@@ -975,29 +1056,41 @@ struct SavedComparisonsView: View {
                     List {
                         // The most recently saved or opened first.
                         ForEach(store.recents) { item in
-                            Button { onOpen(item) } label: {
-                                HStack {
+                            HStack(spacing: 10) {
+                                Button { onOpen(item) } label: {
                                     VStack(alignment: .leading, spacing: 2) {
-                                        Text(item.name).font(.body.weight(.medium))
+                                        HStack(spacing: 6) {
+                                            Text(item.name).font(.body.weight(.medium))
+                                            if item.name == store.currentName {
+                                                Text("Open").font(.caption2.weight(.bold)).foregroundStyle(Theme.accent)
+                                            }
+                                        }
+                                        Text(path(item)).font(.caption).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
                                         Text(item.date.formatted(date: .abbreviated, time: .shortened))
-                                            .font(.caption).foregroundStyle(.secondary)
+                                            .font(.caption2).foregroundStyle(.tertiary)
                                     }
-                                    Spacer()
-                                    if item.name == store.currentName {
-                                        Text("Open").font(.caption.weight(.semibold)).foregroundStyle(Theme.accent)
-                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .contentShape(Rectangle())
                                 }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .contentShape(Rectangle())
+                                .buttonStyle(.plain)
+                                .help("Open this project")
+                                #if os(macOS)
+                                Button { reveal(item) } label: { Image(systemName: "magnifyingglass.circle") }
+                                    .buttonStyle(.borderless)
+                                    .help("Show in Finder")
+                                #endif
+                                Button { deleting = item } label: { Image(systemName: "trash") }
+                                    .buttonStyle(.borderless)
+                                    .help("Delete this project")
                             }
-                            .buttonStyle(.plain)
                             .contextMenu {
+                                #if os(macOS)
+                                Button("Show in Finder", systemImage: "magnifyingglass") { reveal(item) }
+                                #endif
                                 Button("Remove from this list", systemImage: "minus.circle") { store.forget(item) }
+                                Button("Delete the project…", systemImage: "trash", role: .destructive) { deleting = item }
                             }
                             .listRowBackground(Theme.card)
-                        }
-                        .onDelete { offsets in
-                            for item in offsets.map({ store.recents[$0] }) { store.forget(item) }
                         }
                     }
                 }
@@ -1007,9 +1100,34 @@ struct SavedComparisonsView: View {
                 ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } }
                 ToolbarItem(placement: .primaryAction) { Button("Open other…", action: onBrowse) }
             }
+            .confirmationDialog(
+                "Delete “\(deleting?.name ?? "")”?",
+                isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }), titleVisibility: .visible
+            ) {
+                Button(deleteLabel, role: .destructive) {
+                    if let deleting { store.delete(deleting) }
+                    deleting = nil
+                }
+                Button("Cancel", role: .cancel) { deleting = nil }
+            } message: {
+                Text(deleteMessage)
+            }
         }
-        .themedSheet(width: 440, height: 400)
+        .themedSheet(width: 520, height: 420)
     }
+
+    #if os(macOS)
+    private let deleteLabel = "Move to Trash"
+    private let deleteMessage = "The project file, with its copies of the videos, goes to the Trash. The original videos aren't touched."
+
+    private func reveal(_ item: RecentProject) {
+        guard let url = store.location(of: item) else { return }
+        NSWorkspace.shared.activateFileViewerSelecting([url])
+    }
+    #else
+    private let deleteLabel = "Delete"
+    private let deleteMessage = "The project file, with its copies of the videos, is deleted. The original videos aren't touched."
+    #endif
 }
 
 /// While a reel plays: which moment of how many, and Stop.

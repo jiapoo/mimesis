@@ -252,8 +252,12 @@ extension Clip {
 struct SkeletonLayer: View {
     let clip: Clip
     let angles: Set<JointAngle>
+    /// How far the video is zoomed in: the lines, dots and numbers are drawn that much smaller, so on
+    /// screen they keep their size while the picture grows.
+    var zoom: CGFloat = 1
 
     var body: some View {
+        let k = 1 / max(1, zoom)
         GeometryReader { space in
             let frame = pictureFrame(in: space.size)
             let aspect = frame.height > 0 ? frame.width / frame.height : 1
@@ -271,21 +275,21 @@ struct SkeletonLayer: View {
                         bones.move(to: a)
                         bones.addLine(to: b)
                     }
-                    context.stroke(bones, with: .color(.black.opacity(0.45)), style: StrokeStyle(lineWidth: 4, lineCap: .round))
-                    context.stroke(bones, with: .color(Color(red: 0.3, green: 0.85, blue: 1)), style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                    context.stroke(bones, with: .color(.black.opacity(0.45)), style: StrokeStyle(lineWidth: 4 * k, lineCap: .round))
+                    context.stroke(bones, with: .color(Color(red: 0.3, green: 0.85, blue: 1)), style: StrokeStyle(lineWidth: 2 * k, lineCap: .round))
                     for joint in BodyPose.Joint.allCases where joint != .nose {
                         guard let p = at(joint) else { continue }
-                        context.fill(Path(ellipseIn: CGRect(x: p.x - 3, y: p.y - 3, width: 6, height: 6)), with: .color(.white))
+                        context.fill(Path(ellipseIn: CGRect(x: p.x - 3 * k, y: p.y - 3 * k, width: 6 * k, height: 6 * k)), with: .color(.white))
                     }
                     for angle in JointAngle.allCases where angles.contains(angle) {
                         guard let degrees = pose.angle(angle, aspect: aspect), let p = at(angle.points.1) else { continue }
                         let text = Text("\(Int(degrees.rounded()))°")
-                            .font(.system(size: 12, weight: .bold).monospacedDigit())
+                            .font(.system(size: 12 * k, weight: .bold).monospacedDigit())
                             .foregroundStyle(.white)
                         let resolved = context.resolve(text)
                         let size = resolved.measure(in: CGSize(width: 80, height: 30))
-                        let box = CGRect(x: p.x + 8, y: p.y - size.height / 2 - 2, width: size.width + 8, height: size.height + 4)
-                        context.fill(Path(roundedRect: box, cornerRadius: 5), with: .color(.black.opacity(0.6)))
+                        let box = CGRect(x: p.x + 8 * k, y: p.y - size.height / 2 - 2 * k, width: size.width + 8 * k, height: size.height + 4 * k)
+                        context.fill(Path(roundedRect: box, cornerRadius: 5 * k), with: .color(.black.opacity(0.6)))
                         context.draw(resolved, at: CGPoint(x: box.midX, y: box.midY))
                     }
                 }
