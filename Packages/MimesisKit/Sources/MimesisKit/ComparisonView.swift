@@ -13,6 +13,10 @@ public struct ComparisonView: View {
     /// The clip a chooser was opened for. Kept apart from what shows the chooser: the Mac clears that
     /// before it hands over the chosen file, which lost the clip and opened nothing.
     @State private var pickSide = 0
+    /// The file chooser is open for a project, not a video (iPhone and iPad).
+    @State private var pickingProject = false
+    /// The clip (0 or 1) open in the editor.
+    @State private var editing: EditTarget?
     @State private var openProblem: String?
     @State private var maskTest = false
     @State private var store = ComparisonStore()
@@ -51,7 +55,7 @@ public struct ComparisonView: View {
                     onDropped: { urls, side in dropped(urls, on: side) },
                     onCourt: { court = true },
                     onLibrary: library.clips.isEmpty ? nil : { showingLibrary = true },
-                    recent: Array(store.saved.prefix(4)),
+                    recent: Array(store.recents.prefix(4)),
                     onOpenProject: { item in Task { await store.open(item, into: comparison) } },
                     onAllProjects: { browsing = true })
             } else {
@@ -201,10 +205,38 @@ public struct ComparisonView: View {
             Button("Cancel", role: .cancel) {}
             Button("Save") {
                 let name = newName.trimmingCharacters(in: .whitespaces)
-                store.save(comparison, as: name.isEmpty ? defaultName : name)
+                store.save(comparison, to: store.documentURL(named: name.isEmpty ? defaultName : name))
             }
         } message: {
-            Text("Both videos (the project keeps its own copies), with their trims, sync points, speeds, mirroring, drawings and the overlay.")
+            Text("Saved as a file in the Mimesis folder (in the Files app): both videos and every edit. Move or share it from there.")
+        }
+        .alert("Project", isPresented: Binding(get: { store.problem != nil }, set: { if !$0 { store.problem = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(store.problem ?? "")
+        }
+        // The Mac's File menu.
+        .onChange(of: MenuRequests.shared.pending) { _, request in
+            guard let request else { return }
+            MenuRequests.shared.pending = nil
+            switch request {
+            case .new: store.closeProject(comparison)
+            case .open: openProject()
+            case .openRecent(let id):
+                if let recent = store.recents.first(where: { $0.id == id }) {
+                    Task { await store.open(recent, into: comparison) }
+                }
+            case .save: saveProject()
+            case .saveAs: saveProjectAs()
+            case .export: if comparison.canLink { exporting = true }
+            case .edit: editClip()
+            case .swap: if bothLoaded { comparison.swapClips() }
+            }
+        }
+        .onChange(of: store.recents, initial: true) { _, recents in MenuRequests.shared.recents = recents }
+        .onChange(of: comparison.clips.map(\.isLoaded), initial: true) { _, loaded in
+            MenuRequests.shared.hasClips = loaded.contains(true)
+            MenuRequests.shared.hasBoth = loaded.allSatisfy { $0 }
         }
         #if os(iOS)
         .fullScreenCover(isPresented: $court) {
@@ -224,20 +256,31 @@ public struct ComparisonView: View {
                 playAll(label)
             })
         }
+        #if os(iOS)
+        .fullScreenCover(item: $editing) { target in editor(target) }
+        #else
+        .sheet(item: $editing) { target in editor(target).frame(minWidth: 860, minHeight: 620) }
+        #endif
         .sheet(isPresented: $exporting) {
             ExportView(comparison: comparison)
         }
         .sheet(isPresented: $browsing) {
-            SavedComparisonsView(store: store) { item in
+            SavedComparisonsView(store: store, onOpen: { item in
                 browsing = false
                 Task { await store.open(item, into: comparison) }
-            }
+            }, onBrowse: {
+                browsing = false
+                openProject()
+            })
         }
         .fileImporter(
             isPresented: Binding(get: { importing != nil }, set: { if !$0 { importing = nil } }),
-            allowedContentTypes: [.movie, .video, .mpeg4Movie, .quickTimeMovie]
+            allowedContentTypes: pickingProject ? [.mimesisProject, .package] : [.movie, .video, .mpeg4Movie, .quickTimeMovie]
         ) { result in
+            defer { pickingProject = false }
             switch result {
+            case .success(let url) where pickingProject || url.pathExtension.lowercased() == ComparisonStore.fileExtension:
+                Task { await store.open(url, into: comparison) }
             case .success(let url): open(url, in: pickSide)
             case .failure(let error): openProblem = error.localizedDescription
             }
@@ -391,34 +434,37 @@ public struct ComparisonView: View {
                         }
                     }
                 }
-                // A project keeps every edit and its own copies of the videos.
-                Button(store.current.map { "Save “\($0.name)”" } ?? "Save project…", systemImage: "square.and.arrow.down") {
+                // A project is a file (Name.mimesis) with every edit and its own copies of the videos.
+                // (On the Mac these are in the File menu too, with their keys.)
+                Button(store.currentName.map { "Save “\($0)”" } ?? "Save project…", systemImage: "square.and.arrow.down") {
                     saveProject()
                 }
-                .disabled(!comparison.clips.contains(where: \.isLoaded))
-                .keyboardShortcut("s", modifiers: .command)
-                Button("Save as new project…", systemImage: "plus.square.on.square") {
-                    newName = defaultName
-                    naming = true
-                }
-                .disabled(!comparison.clips.contains(where: \.isLoaded))
-                .keyboardShortcut("s", modifiers: [.command, .shift])
+                .disabled(!anyLoaded)
+                .shortcut("s", [.command])
+                Button("Save as…", systemImage: "plus.square.on.square") { saveProjectAs() }
+                    .disabled(!anyLoaded)
+                    .shortcut("s", [.command, .shift])
+                Button("Open project…", systemImage: "folder") { openProject() }
+                    .shortcut("o", [.command])
                 Menu {
-                    ForEach(store.saved.prefix(8)) { item in
+                    ForEach(store.recents.prefix(8)) { item in
                         Button(item.name) { Task { await store.open(item, into: comparison) } }
                     }
-                    if store.saved.isEmpty { Text("No projects yet") }
+                    if store.recents.isEmpty { Text("No projects yet") }
                 } label: {
                     Label("Open recent", systemImage: "clock.arrow.circlepath")
                 }
-                Button("All projects…", systemImage: "list.bullet.rectangle") { browsing = true }
-                    .keyboardShortcut("o", modifiers: [.command, .shift])
+                Button("Recent projects…", systemImage: "list.bullet.rectangle") { browsing = true }
+                Divider()
+                Button("Edit clip \(comparison.focus == 0 ? "A" : "B")…", systemImage: "crop.rotate") { editClip() }
+                    .disabled(comparison.focused == nil)
+                    .shortcut("t", [.command])
                 if phone && bothLoaded {
                     Button("Swap A and B", systemImage: "arrow.left.arrow.right") { comparison.swapClips() }
                 }
                 Button("New comparison", systemImage: "plus") { store.closeProject(comparison) }
                     .disabled(!anyLoaded)
-                    .keyboardShortcut("n", modifiers: .command)
+                    .shortcut("n", [.command])
                 Divider()
                 Button("Library…", systemImage: "books.vertical") { showingLibrary = true }
                     .keyboardShortcut("l", modifiers: .command)
@@ -427,7 +473,7 @@ public struct ComparisonView: View {
                     .keyboardShortcut("k", modifiers: .command)
                 Button("Export video…", systemImage: "film") { exporting = true }
                     .disabled(!comparison.canLink)
-                    .keyboardShortcut("e", modifiers: .command)
+                    .shortcut("e", [.command])
                 #if DEBUG
                 Divider()
                 Button("Masking test…", systemImage: "person.crop.rectangle") { maskTest = true }
@@ -460,6 +506,7 @@ public struct ComparisonView: View {
 
     /// Videos sent together: two go into A and B with no question; one goes to an empty side (else Mimesis asks).
     private func take(_ sent: [URL]) {
+        if openedProject(sent) { return }
         if sent.count >= 2 {
             incoming.removeAll()
             open(Self.keep(sent[0]), in: 0)
@@ -538,10 +585,104 @@ public struct ComparisonView: View {
     /// "serve vs serve2"
     /// ⌘S: over the project on screen; with none yet, asks for a name.
     private func saveProject() {
-        if !store.saveCurrent(comparison) {
-            newName = defaultName
-            naming = true
+        if !store.saveCurrent(comparison) { saveProjectAs() }
+    }
+
+    /// Asks where to save the project and what to call it: the Mac's Save panel; on iPhone and iPad a
+    /// name, and it goes in the Mimesis folder in Files.
+    private func saveProjectAs() {
+        guard anyLoaded else { return }
+        #if os(macOS)
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.mimesisProject]
+        panel.nameFieldStringValue = (store.currentName ?? defaultName) + "." + ComparisonStore.fileExtension
+        panel.canCreateDirectories = true
+        panel.title = "Save Project"
+        panel.message = "The project keeps every edit and its own copies of both videos."
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        // Saved over another project: that one goes first.
+        if FileManager.default.fileExists(atPath: url.path), url != store.currentURL {
+            try? FileManager.default.removeItem(at: url)
         }
+        store.save(comparison, to: url)
+        #else
+        newName = store.currentName ?? defaultName
+        naming = true
+        #endif
+    }
+
+    /// Opens the selected clip in the editor (turn, flip, crop, trim): ⌘T, or the button on the clip.
+    private func editClip(_ index: Int? = nil) {
+        let index = index ?? comparison.clips.firstIndex { $0 === comparison.focused } ?? 0
+        guard let url = comparison.clips[index].url else { return }
+        if comparison.linked { comparison.pause() }
+        comparison.clips.forEach { $0.engine.pause() }
+        comparison.drawing = nil
+        editing = EditTarget(index: index, url: url)
+    }
+
+    /// The edited copy takes the clip's place. Its picture or length has changed, so the clip's In/Out,
+    /// sync points and drawings start afresh in every segment; the original stays where it was, and the
+    /// clip's ⋯ menu can go back to it.
+    private func edited(_ index: Int, copy: URL) async -> Bool {
+        let folder = ComparisonStore.supportFolder.appendingPathComponent("Clips", isDirectory: true)
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let clip = comparison.clips[index]
+        let original = clip.beforeEdit ?? clip.url
+        var kept = folder.appendingPathComponent(copy.lastPathComponent)
+        if FileManager.default.fileExists(atPath: kept.path) {
+            kept = folder.appendingPathComponent("\(copy.deletingPathExtension().lastPathComponent) \(UUID().uuidString.prefix(4)).\(copy.pathExtension)")
+        }
+        do { try FileManager.default.copyItem(at: copy, to: kept) } catch { return false }
+        comparison.linked = false
+        await clip.open(kept)
+        clip.beforeEdit = original
+        comparison.clipReplaced(index)
+        comparison.loadSegment(comparison.segmentIndex)
+        editing = nil
+        return true
+    }
+
+    private func openProject() {
+        #if os(macOS)
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.mimesisProject]
+        panel.canChooseDirectories = false
+        panel.treatsFilePackagesAsDirectories = false
+        panel.title = "Open Project"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        Task { await store.open(url, into: comparison) }
+        #else
+        pickingProject = true
+        importing = 0
+        #endif
+    }
+
+    /// Back to the video as it was before it was edited.
+    private func revert(_ index: Int) {
+        let clip = comparison.clips[index]
+        guard let original = clip.beforeEdit else { return }
+        comparison.linked = false
+        Task {
+            await clip.open(original)
+            comparison.clipReplaced(index)
+            comparison.loadSegment(comparison.segmentIndex)
+        }
+    }
+
+    /// A project file among what was sent to Mimesis (double-clicked, or opened from Files): opened.
+    private func openedProject(_ urls: [URL]) -> Bool {
+        guard let project = urls.first(where: { $0.pathExtension.lowercased() == ComparisonStore.fileExtension }) else { return false }
+        Task { await store.open(project, into: comparison) }
+        return true
+    }
+
+    private func editor(_ target: EditTarget) -> some View {
+        MediaEditView(url: target.url, accent: Theme.accent,
+                      onCancel: { editing = nil },
+                      onSave: { copy in await edited(target.index, copy: copy) })
+            .background(Theme.canvas.ignoresSafeArea())
+            .preferredColorScheme(.dark)
     }
 
     private var defaultName: String {
@@ -644,6 +785,8 @@ public struct ComparisonView: View {
                     drawing: comparison.isDrawing(on: comparison.clips[index]),
                     pen: comparison.pen,
                     drawsTogether: comparison.drawsTogether,
+                    onEdit: { editClip(index) },
+                    onRevert: { revert(index) },
                     onDraw: {
                         comparison.drawing = comparison.drawing == .clip(index) ? nil : .clip(index)
                     })
@@ -745,22 +888,22 @@ struct PickedMovie: Transferable {
 /// The saved comparisons: tap one to open it, swipe (or Delete) to remove it.
 struct SavedComparisonsView: View {
     let store: ComparisonStore
-    let onOpen: (SavedComparison) -> Void
+    let onOpen: (RecentProject) -> Void
+    /// Find a project that isn't in the list.
+    let onBrowse: () -> Void
     @Environment(\.dismiss) private var dismiss
-    @State private var renaming: SavedComparison?
-    @State private var newName = ""
 
     var body: some View {
         NavigationStack {
             Group {
-                if store.saved.isEmpty {
+                if store.recents.isEmpty {
                     ContentUnavailableView(
                         "No projects yet", systemImage: "list.bullet.rectangle",
-                        description: Text("Save one from the ⋯ menu (⌘S): it keeps both videos and every edit."))
+                        description: Text("Save one from the ⋯ menu (⌘S): a file with both videos and every edit."))
                 } else {
                     List {
                         // The most recently saved or opened first.
-                        ForEach(store.saved) { item in
+                        ForEach(store.recents) { item in
                             Button { onOpen(item) } label: {
                                 HStack {
                                     VStack(alignment: .leading, spacing: 2) {
@@ -769,7 +912,7 @@ struct SavedComparisonsView: View {
                                             .font(.caption).foregroundStyle(.secondary)
                                     }
                                     Spacer()
-                                    if item.id == store.currentID {
+                                    if item.name == store.currentName {
                                         Text("Open").font(.caption.weight(.semibold)).foregroundStyle(Theme.accent)
                                     }
                                 }
@@ -778,29 +921,20 @@ struct SavedComparisonsView: View {
                             }
                             .buttonStyle(.plain)
                             .contextMenu {
-                                Button("Rename…", systemImage: "pencil") {
-                                    newName = item.name
-                                    renaming = item
-                                }
-                                Button("Delete", systemImage: "trash", role: .destructive) { store.delete(item) }
+                                Button("Remove from this list", systemImage: "minus.circle") { store.forget(item) }
                             }
                             .listRowBackground(Theme.card)
                         }
                         .onDelete { offsets in
-                            for item in offsets.map({ store.saved[$0] }) { store.delete(item) }
+                            for item in offsets.map({ store.recents[$0] }) { store.forget(item) }
                         }
                     }
                 }
             }
-            .navigationTitle("Projects")
-            .toolbar { Button("Done") { dismiss() } }
-            .alert("Rename project", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
-                TextField("Name", text: $newName)
-                Button("Cancel", role: .cancel) {}
-                Button("Rename") {
-                    let name = newName.trimmingCharacters(in: .whitespaces)
-                    if let renaming, !name.isEmpty { store.rename(renaming, to: name) }
-                }
+            .navigationTitle("Recent projects")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } }
+                ToolbarItem(placement: .primaryAction) { Button("Open other…", action: onBrowse) }
             }
         }
         .themedSheet(width: 440, height: 400)
@@ -829,4 +963,24 @@ struct ReelBar: View {
         .overlay(Capsule().strokeBorder(Theme.line))
         .frame(maxWidth: 900)
     }
+}
+
+
+extension View {
+    /// A key for a ⋯ menu item, except on the Mac, where the File menu has the same command with that
+    /// key (two holders of one key make it do nothing).
+    @ViewBuilder func shortcut(_ key: KeyEquivalent, _ modifiers: EventModifiers) -> some View {
+        #if os(macOS)
+        self
+        #else
+        keyboardShortcut(key, modifiers: modifiers)
+        #endif
+    }
+}
+
+/// A clip open in the editor.
+struct EditTarget: Identifiable {
+    let index: Int
+    let url: URL
+    var id: String { "\(index)-\(url.path)" }
 }

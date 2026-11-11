@@ -1,6 +1,7 @@
 import AVFoundation
 import CoreImage
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// Turns the linked comparison into a video file: both clips side by side, or the overlay.
 /// Each output frame shows exactly the frames of A and B the linked timeline puts together.
@@ -14,7 +15,7 @@ final class Exporter {
 
     private(set) var progress: Double?
     private(set) var file: URL?
-    private(set) var problem: String?
+    var problem: String?
     private var task: Task<Void, Never>?
 
     nonisolated static let frameRate = 30.0
@@ -274,6 +275,26 @@ private struct Plan: @unchecked Sendable {
 
 /// Choose how to export, watch it render, then share or save the video.
 struct ExportView: View {
+    #if os(macOS)
+    /// The Mac's Save panel: where the video goes, and its name.
+    private func saveAs(_ file: URL) {
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.mpeg4Movie]
+        panel.nameFieldStringValue = file.lastPathComponent
+        panel.canCreateDirectories = true
+        panel.title = "Save Video"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            try? FileManager.default.removeItem(at: url)
+            try FileManager.default.copyItem(at: file, to: url)
+            NSWorkspace.shared.activateFileViewerSelecting([url])
+            dismiss()
+        } catch {
+            exporter.problem = "Couldn't save the video: \(error.localizedDescription)"
+        }
+    }
+    #endif
+
     let comparison: Comparison
     @State private var exporter = Exporter()
     @State private var style: Exporter.Style = .sideBySide
@@ -307,8 +328,15 @@ struct ExportView: View {
                 Button("Close") { exporter.cancel(); dismiss() }
                 Spacer()
                 if let file = exporter.file {
+                    #if os(macOS)
+                    ShareLink(item: file) { Label("Share", systemImage: "square.and.arrow.up") }
+                    Button { saveAs(file) } label: { Label("Save as…", systemImage: "square.and.arrow.down") }
+                        .buttonStyle(.borderedProminent)
+                        .help("Choose where to save the video, and its name")
+                    #else
                     ShareLink(item: file) { Label("Share or save", systemImage: "square.and.arrow.up") }
                         .buttonStyle(.borderedProminent)
+                    #endif
                 } else {
                     Button("Export") { exporter.start(comparison, style: style) }
                         .buttonStyle(.borderedProminent)

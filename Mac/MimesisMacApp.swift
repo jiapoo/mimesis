@@ -16,6 +16,8 @@ struct MimesisMacApp: App {
             ComparisonView(preload: Self.preload)
                 .frame(minWidth: 1000, minHeight: 640)
         }
+        // File › New, Open, Open Recent, Save, Save As, Export; Edit › Edit Clip, Swap.
+        .commands { MimesisCommands() }
     }
 
     /// Debug only: `Mimesis -Left <path> -Right <path>` opens those clips at launch.

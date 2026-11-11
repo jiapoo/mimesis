@@ -23,6 +23,9 @@ struct ClipPane: View {
     let pen: Pen
     /// One Draw for both clips, in the panel: no Draw button of its own.
     let drawsTogether: Bool
+    /// Open this clip in the editor (turn, flip, crop, trim); and back to how it was before.
+    var onEdit: () -> Void = {}
+    var onRevert: () -> Void = {}
     /// Its own Draw button: start or stop drawing on this clip.
     let onDraw: () -> Void
 
@@ -234,6 +237,8 @@ struct ClipPane: View {
             RoundButton(symbol: "arrow.left.and.right.righttriangle.left.righttriangle.right",
                         active: clip.engine.mirroredHorizontally, action: clip.toggleMirror)
                 .help("Mirror side to side (⇧⌘H)")
+            RoundButton(symbol: "crop.rotate", action: onEdit)
+                .help("Edit this clip: turn, flip, crop or trim it (⌘T). The clip becomes the edited copy; the original isn't changed.")
             Menu {
                 Button(clip.engine.isMuted ? "Sound on" : "Sound off",
                        systemImage: clip.engine.isMuted ? "speaker.wave.2" : "speaker.slash") {
@@ -249,6 +254,10 @@ struct ClipPane: View {
                     .disabled(clip.syncs.isEmpty || linked)
                 Divider()
                 Button("StroMotion…", systemImage: "figure.run") { stroMotion = true }
+                Button("Edit clip…", systemImage: "crop.rotate", action: onEdit)
+                if clip.beforeEdit != nil {
+                    Button("Revert to the original", systemImage: "arrow.uturn.backward", action: onRevert)
+                }
                 Divider()
                 Button("Close", systemImage: "xmark", role: .destructive, action: clip.close)
                     .disabled(linked)

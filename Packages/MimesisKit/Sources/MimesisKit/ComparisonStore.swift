@@ -49,38 +49,54 @@ struct OverlayState: Codable {
     var rotation: Double?
 }
 
-/// A project: a comparison saved by name, with every edit (trims, sync points, speeds, drawings, the
-/// overlay) and its own copies of the two videos, so it opens again whatever happens to the originals.
-public struct SavedComparison: Codable, Identifiable {
-    public var id = UUID()
-    public var name: String
-    /// When it was last saved or opened: the most recent first.
-    public var date: Date
+/// A comparison saved inside Mimesis before projects were files; moved into a project file on first launch.
+struct SavedComparison: Codable {
+    var id = UUID()
+    var name: String
+    var date: Date
     var state: ComparisonState
-    /// Has its own folder with copies of the videos (nil in comparisons saved before projects).
     var hasFolder: Bool?
 }
 
-/// Keeps the saved comparisons, and the one on screen so it comes back at the next launch.
-/// Stored as JSON in Application Support.
+/// A project file opened or saved lately: where it is (a bookmark, so it's found again after it moves
+/// and can be opened again after the app quits) and when.
+public struct RecentProject: Codable, Identifiable, Equatable {
+    public var id = UUID()
+    public var name: String
+    public var date: Date
+    var bookmark: Data
+}
+
+/// Projects, and the comparison on screen so it comes back at the next launch.
+///
+/// A project is a file, `Name.mimesis`, wherever the user saves it: a package (a folder that shows as
+/// one file) holding `project.json` (every segment and edit) and the project's own copies of the two
+/// videos, so it opens on any Mac, iPad or iPhone, whatever happens to the originals.
 @MainActor @Observable
 public final class ComparisonStore {
-    public private(set) var saved: [SavedComparison] = []
+    public static let fileExtension = "mimesis"
+
+    /// The projects opened or saved lately, the most recent first.
+    public private(set) var recents: [RecentProject] = []
     /// The project on screen, if it was opened from (or saved as) one: Save writes over it.
-    public private(set) var currentID: UUID?
-    public var current: SavedComparison? { saved.first { $0.id == currentID } }
+    public private(set) var currentURL: URL?
+    public var currentName: String? { currentURL?.deletingPathExtension().lastPathComponent }
+    /// Why the last save or open failed, to show.
+    public var problem: String?
 
     private let folder: URL
-    private var savedFile: URL { folder.appendingPathComponent("Saved comparisons.json") }
+    private var recentsFile: URL { folder.appendingPathComponent("Recent projects.json") }
     private var lastFile: URL { folder.appendingPathComponent("Last comparison.json") }
 
-    /// - Parameter folder: where to keep them (tests); Application Support/Mimesis otherwise.
+    /// - Parameter folder: where to keep the list of recent projects (tests); Application Support/Mimesis otherwise.
     public init(folder: URL? = nil) {
         self.folder = folder ?? ComparisonStore.supportFolder
-        saved = (try? JSONDecoder().decode([SavedComparison].self, from: Data(contentsOf: savedFile))) ?? []
+        try? FileManager.default.createDirectory(at: self.folder, withIntermediateDirectories: true)
+        recents = (try? JSONDecoder().decode([RecentProject].self, from: Data(contentsOf: recentsFile))) ?? []
+        moveOldProjects()
     }
 
-    /// Application Support/Mimesis: saved comparisons, and copies of clips picked from Photos.
+    /// Application Support/Mimesis: the recent projects, and copies of clips picked from Photos.
     nonisolated static var supportFolder: URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         let folder = base.appendingPathComponent("Mimesis", isDirectory: true)
@@ -88,50 +104,59 @@ public final class ComparisonStore {
         return folder
     }
 
-    /// Application Support/Mimesis/Projects/<id>: a project's own copies of its videos.
-    private func folder(of id: UUID) -> URL {
-        folder.appendingPathComponent("Projects", isDirectory: true).appendingPathComponent(id.uuidString, isDirectory: true)
+    /// Where projects go when the user isn't asked (iPhone and iPad): the app's Documents folder, which
+    /// shows in the Files app as "Mimesis".
+    public nonisolated static var documentsFolder: URL {
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
     }
 
-    /// Saves what's on screen as a new project.
-    public func save(_ comparison: Comparison, as name: String) {
-        guard let state = comparison.state() else { return }
-        var project = SavedComparison(name: name, date: .now, state: state, hasFolder: true)
-        project.state = keepVideos(of: comparison, state: state, in: project.id)
-        saved.insert(project, at: 0)
-        currentID = project.id
-        write(saved, to: savedFile)
+    // MARK: Saving
+
+    /// Saves what's on screen as the project file at `url` (made, or written over), and makes it the
+    /// project on screen.
+    @discardableResult
+    public func save(_ comparison: Comparison, to url: URL) -> Bool {
+        guard let state = comparison.state() else { return false }
+        let accessing = url.startAccessingSecurityScopedResource()
+        defer { if accessing { url.stopAccessingSecurityScopedResource() } }
+        do {
+            let files = FileManager.default
+            try files.createDirectory(at: url, withIntermediateDirectories: true)
+            let kept = keepVideos(of: comparison, state: state, in: url)
+            let data = try JSONEncoder().encode(kept)
+            try data.write(to: url.appendingPathComponent("project.json"), options: .atomic)
+            currentURL = url
+            note(url)
+            return true
+        } catch {
+            problem = "Couldn't save the project: \(error.localizedDescription)"
+            return false
+        }
     }
 
-    /// Saves what's on screen over the project it came from. False when there's none (ask for a name).
+    /// Saves over the project on screen. False when there's none (ask where to save).
     @discardableResult
     public func saveCurrent(_ comparison: Comparison) -> Bool {
-        guard let id = currentID, let at = saved.firstIndex(where: { $0.id == id }),
-              let state = comparison.state() else { return false }
-        var project = saved.remove(at: at)
-        project.state = keepVideos(of: comparison, state: state, in: id)
-        project.hasFolder = true
-        project.date = .now
-        saved.insert(project, at: 0)
-        write(saved, to: savedFile)
-        return true
+        guard let url = currentURL else { return false }
+        return save(comparison, to: url)
     }
 
-    /// Copies each clip's video into the project's folder (unless it's the copy already there), and notes
-    /// its name in the state. On the same disk the copy takes no extra room until one of them changes.
-    private func keepVideos(of comparison: Comparison, state: ComparisonState, in id: UUID) -> ComparisonState {
+    /// Copies each clip's video into the project (unless it's the copy already there), and notes its
+    /// name in the state. On the same disk the copy takes no extra room until one of them changes.
+    private func keepVideos(of comparison: Comparison, state: ComparisonState, in target: URL) -> ComparisonState {
         var state = state
         let files = FileManager.default
-        let target = folder(of: id)
-        try? files.createDirectory(at: target, withIntermediateDirectories: true)
-        var kept: Set<String> = []
+        var kept: Set<String> = ["project.json"]
         for (index, clip) in comparison.clips.enumerated() {
             guard let url = clip.url, state.clips[index] != nil else { continue }
             let ext = url.pathExtension.isEmpty ? "mov" : url.pathExtension
-            // Named after the original, so the project's folder reads well: "A serve.mp4".
-            let name = "\(index == 0 ? "A" : "B") \(url.deletingPathExtension().lastPathComponent).\(ext)"
-            let copy = target.appendingPathComponent(name)
-            if url.standardizedFileURL != copy.standardizedFileURL {
+            // A video already in this project keeps its name (even after A and B are swapped).
+            var name = url.lastPathComponent
+            if url.deletingLastPathComponent().standardizedFileURL != target.standardizedFileURL {
+                name = "\(url.deletingPathExtension().lastPathComponent).\(ext)"
+                // Two different videos with one name: the second gets a number.
+                if kept.contains(name) { name = "\(url.deletingPathExtension().lastPathComponent) 2.\(ext)" }
+                let copy = target.appendingPathComponent(name)
                 let same = files.fileExists(atPath: copy.path)
                     && (try? copy.resourceValues(forKeys: [.fileSizeKey]).fileSize) == (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize)
                 if !same {
@@ -149,29 +174,60 @@ public final class ComparisonStore {
         return state
     }
 
-    public func rename(_ item: SavedComparison, to name: String) {
-        guard let at = saved.firstIndex(where: { $0.id == item.id }) else { return }
-        saved[at].name = name
-        write(saved, to: savedFile)
-    }
+    // MARK: Opening
 
-    public func delete(_ item: SavedComparison) {
-        saved.removeAll { $0.id == item.id }
-        if currentID == item.id { currentID = nil }
-        try? FileManager.default.removeItem(at: folder(of: item.id))
-        write(saved, to: savedFile)
-    }
-
-    /// Opens a project, and moves it to the top of the recent ones.
-    public func open(_ item: SavedComparison, into comparison: Comparison) async {
-        await comparison.restore(item.state, videos: item.hasFolder == true ? folder(of: item.id) : nil)
-        currentID = item.id
-        if let at = saved.firstIndex(where: { $0.id == item.id }) {
-            var project = saved.remove(at: at)
-            project.date = .now
-            saved.insert(project, at: 0)
-            write(saved, to: savedFile)
+    /// Opens the project file at `url`. False (with `problem` set) when it can't be read.
+    @discardableResult
+    public func open(_ url: URL, into comparison: Comparison) async -> Bool {
+        let accessing = url.startAccessingSecurityScopedResource()
+        guard let data = try? Data(contentsOf: url.appendingPathComponent("project.json")),
+              let state = try? JSONDecoder().decode(ComparisonState.self, from: data) else {
+            if accessing { url.stopAccessingSecurityScopedResource() }
+            problem = "“\(url.lastPathComponent)” isn't a Mimesis project, or can't be read."
+            return false
         }
+        // Access is kept while the project is open: its videos play from inside it.
+        await comparison.restore(state, videos: url)
+        currentURL = url
+        note(url)
+        return true
+    }
+
+    /// Opens a recent project. False when its file is gone (it's then dropped from the list).
+    @discardableResult
+    public func open(_ recent: RecentProject, into comparison: Comparison) async -> Bool {
+        var stale = false
+        guard let url = try? URL(resolvingBookmarkData: recent.bookmark, options: projectResolve, bookmarkDataIsStale: &stale),
+              (url.startAccessingSecurityScopedResource() || true),
+              FileManager.default.fileExists(atPath: url.appendingPathComponent("project.json").path) else {
+            problem = "“\(recent.name)” has been moved or deleted."
+            forget(recent)
+            return false
+        }
+        return await open(url, into: comparison)
+    }
+
+    public func forget(_ recent: RecentProject) {
+        recents.removeAll { $0.id == recent.id }
+        write(recents, to: recentsFile)
+    }
+
+    /// Puts a project at the top of the recent ones.
+    private func note(_ url: URL) {
+        guard let bookmark = try? url.bookmarkData(options: projectBookmark) else { return }
+        let name = url.deletingPathExtension().lastPathComponent
+        // The same file again keeps its place in the list's identity (it only moves to the top).
+        var id = UUID()
+        recents.removeAll { recent in
+            var stale = false
+            let other = try? URL(resolvingBookmarkData: recent.bookmark, options: projectResolve.union(.withoutUI), bookmarkDataIsStale: &stale)
+            guard other?.standardizedFileURL == url.standardizedFileURL else { return false }
+            id = recent.id
+            return true
+        }
+        recents.insert(RecentProject(id: id, name: name, date: .now, bookmark: bookmark), at: 0)
+        if recents.count > 20 { recents.removeLast(recents.count - 20) }
+        write(recents, to: recentsFile)
     }
 
     /// Starts afresh: both clips closed, no project.
@@ -179,14 +235,51 @@ public final class ComparisonStore {
         comparison.linked = false
         for clip in comparison.clips { clip.close() }
         comparison.resetSegments()
-        currentID = nil
+        currentURL?.stopAccessingSecurityScopedResource()
+        currentURL = nil
     }
+
+    /// A free name for a new project in the Documents folder: "Name.mimesis", "Name 2.mimesis"…
+    public func documentURL(named name: String) -> URL {
+        let clean = name.replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: ":", with: "-")
+        var url = Self.documentsFolder.appendingPathComponent(clean).appendingPathExtension(Self.fileExtension)
+        var number = 2
+        while FileManager.default.fileExists(atPath: url.path) {
+            url = Self.documentsFolder.appendingPathComponent("\(clean) \(number)").appendingPathExtension(Self.fileExtension)
+            number += 1
+        }
+        return url
+    }
+
+    /// Projects saved inside Mimesis before they were files: each becomes a project file in Documents.
+    private func moveOldProjects() {
+        let files = FileManager.default
+        let oldList = folder.appendingPathComponent("Saved comparisons.json")
+        guard let old = try? JSONDecoder().decode([SavedComparison].self, from: Data(contentsOf: oldList)) else { return }
+        for item in old.reversed() {
+            let videos = folder.appendingPathComponent("Projects", isDirectory: true).appendingPathComponent(item.id.uuidString, isDirectory: true)
+            let target = documentURL(named: item.name)
+            do {
+                if files.fileExists(atPath: videos.path) {
+                    try files.moveItem(at: videos, to: target)
+                } else {
+                    try files.createDirectory(at: target, withIntermediateDirectories: true)
+                }
+                try JSONEncoder().encode(item.state).write(to: target.appendingPathComponent("project.json"))
+                note(target)
+            } catch {}
+        }
+        try? files.removeItem(at: oldList)
+    }
+
+    // MARK: The comparison on screen
 
     /// The comparison on screen, remembered for the next launch.
     public func remember(_ comparison: Comparison) {
         if let state = comparison.state() {
             write(state, to: lastFile)
-            UserDefaults.standard.set(currentID?.uuidString, forKey: "currentProject")
+            let bookmark = currentURL.flatMap { try? $0.bookmarkData(options: projectBookmark) }
+            UserDefaults.standard.set(bookmark, forKey: "currentProjectFile")
         } else {
             try? FileManager.default.removeItem(at: lastFile)
         }
@@ -196,13 +289,18 @@ public final class ComparisonStore {
     public func restoreLast(into comparison: Comparison) async {
         guard let data = try? Data(contentsOf: lastFile),
               let state = try? JSONDecoder().decode(ComparisonState.self, from: data) else { return }
-        await comparison.restore(state)
-        // Still the project it was, if its videos are the project's own copies.
-        if let id = UserDefaults.standard.string(forKey: "currentProject").flatMap(UUID.init(uuidString:)),
-           saved.contains(where: { $0.id == id }),
-           comparison.clips.compactMap(\.url).allSatisfy({ $0.path.contains(id.uuidString) }) {
-            currentID = id
+        // Still the project it was: its videos are opened from inside it.
+        var project: URL?
+        if let bookmark = UserDefaults.standard.data(forKey: "currentProjectFile") {
+            var stale = false
+            if let url = try? URL(resolvingBookmarkData: bookmark, options: projectResolve, bookmarkDataIsStale: &stale),
+               (url.startAccessingSecurityScopedResource() || true),
+               FileManager.default.fileExists(atPath: url.appendingPathComponent("project.json").path) {
+                project = url
+            }
         }
+        await comparison.restore(state, videos: project)
+        currentURL = project
     }
 
     private func write(_ value: some Encodable, to file: URL) {
@@ -210,6 +308,15 @@ public final class ComparisonStore {
         try? data.write(to: file, options: .atomic)
     }
 }
+
+#if os(macOS)
+/// A project file is written to, so its bookmark allows writing (unlike a clip's).
+let projectBookmark: URL.BookmarkCreationOptions = [.withSecurityScope]
+let projectResolve: URL.BookmarkResolutionOptions = [.withSecurityScope]
+#else
+let projectBookmark: URL.BookmarkCreationOptions = []
+let projectResolve: URL.BookmarkResolutionOptions = []
+#endif
 
 // MARK: - Turning a comparison into a state and back
 

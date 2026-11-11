@@ -7,6 +7,8 @@ import Observation
 public final class Clip {
     public let engine = VideoEngine()
     public private(set) var url: URL?
+    /// The video this clip showed before it was edited (turned, cropped, trimmed), to go back to.
+    public var beforeEdit: URL?
 
     /// The trim, in the clip's own seconds. `trimEnd` nil is the clip's end.
     public var trimStart: Double = 0 { didSet { applyBounds() } }
@@ -45,6 +47,7 @@ public final class Clip {
         _ = newURL.startAccessingSecurityScopedResource()
         engine.cleanup()
         url = newURL
+        beforeEdit = nil
         trimStart = 0
         trimEnd = nil
         syncs = []

@@ -12,8 +12,8 @@ struct WelcomeView: View {
     /// Nil until the library has clips.
     let onLibrary: (() -> Void)?
     /// The most recent projects, to open with one tap.
-    var recent: [SavedComparison] = []
-    var onOpenProject: (SavedComparison) -> Void = { _ in }
+    var recent: [RecentProject] = []
+    var onOpenProject: (RecentProject) -> Void = { _ in }
     var onAllProjects: () -> Void = {}
 
     #if os(iOS)

@@ -42,6 +42,18 @@ targets:
             CFBundleTypeRole: Viewer
             LSHandlerRank: Alternate
             LSItemContentTypes: [public.movie, public.mpeg-4, com.apple.quicktime-movie, com.apple.m4v-video]
+          - CFBundleTypeName: Mimesis Project
+            CFBundleTypeRole: Editor
+            LSHandlerRank: Owner
+            LSTypeIsPackage: true
+            LSItemContentTypes: [com.ljworkshop.mimesis.project]
+        # A project file: a package (a folder shown as one file) with the edits and the two videos.
+        UTExportedTypeDeclarations:
+          - UTTypeIdentifier: com.ljworkshop.mimesis.project
+            UTTypeDescription: Mimesis Project
+            UTTypeConformsTo: [com.apple.package, public.composite-content]
+            UTTypeTagSpecification:
+              public.filename-extension: [mimesis]
     settings:
       base:
         # One bundle ID on every platform, so one purchase covers Mac, iPad and iPhone.
@@ -81,6 +93,18 @@ targets:
             CFBundleTypeRole: Viewer
             LSHandlerRank: Alternate
             LSItemContentTypes: [public.movie, public.mpeg-4, com.apple.quicktime-movie, com.apple.m4v-video]
+          - CFBundleTypeName: Mimesis Project
+            CFBundleTypeRole: Editor
+            LSHandlerRank: Owner
+            LSTypeIsPackage: true
+            LSItemContentTypes: [com.ljworkshop.mimesis.project]
+        # A project file: a package (a folder shown as one file) with the edits and the two videos.
+        UTExportedTypeDeclarations:
+          - UTTypeIdentifier: com.ljworkshop.mimesis.project
+            UTTypeDescription: Mimesis Project
+            UTTypeConformsTo: [com.apple.package, public.composite-content]
+            UTTypeTagSpecification:
+              public.filename-extension: [mimesis]
         LSSupportsOpeningDocumentsInPlace: true
         # mimesis://inbox: Share › Mimesis opens the app with the videos it just put in the shared folder.
         CFBundleURLTypes:

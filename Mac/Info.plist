@@ -23,6 +23,20 @@
 				<string>com.apple.m4v-video</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Mimesis Project</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>com.ljworkshop.mimesis.project</string>
+			</array>
+			<key>LSTypeIsPackage</key>
+			<true/>
+		</dict>
 	</array>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
@@ -41,6 +55,27 @@
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.sports</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Court mode shows the camera a few seconds late, so you can watch the stroke you just hit.</string>
+	<string>Live replay shows the camera a few seconds late, so you can watch what you just did.</string>
+	<key>UTExportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>com.apple.package</string>
+				<string>public.composite-content</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Mimesis Project</string>
+			<key>UTTypeIdentifier</key>
+			<string>com.ljworkshop.mimesis.project</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>mimesis</string>
+				</array>
+			</dict>
+		</dict>
+	</array>
 </dict>
 </plist>
