@@ -7,6 +7,10 @@ import Observation
 public final class Clip {
     public let engine = VideoEngine()
     public private(set) var url: URL?
+    /// The body followed through the clip's stretch, once asked for (not saved: it's found again), and
+    /// whether its skeleton shows over the video.
+    var poseTrack: PoseTrack?
+    public var showsSkeleton = false
     /// The video this clip showed before it was edited (turned, cropped, trimmed), to go back to.
     public var beforeEdit: URL?
 
@@ -47,6 +51,9 @@ public final class Clip {
         _ = newURL.startAccessingSecurityScopedResource()
         engine.cleanup()
         url = newURL
+        poseTrack?.cancel()
+        poseTrack = nil
+        showsSkeleton = false
         beforeEdit = nil
         trimStart = 0
         trimEnd = nil
@@ -212,6 +219,10 @@ public final class Comparison {
     /// What's being drawn on, if anything.
     public var drawing: DrawTarget?
     let pen = Pen()
+    /// The joint angles written on the skeletons.
+    var skeletonAngles = JointAngle.usual
+    /// The angle graphed in the sidebar.
+    var graphAngle = JointAngle.rightElbow
     let history = EditHistory()
     let overlayUI = OverlayUI()
 

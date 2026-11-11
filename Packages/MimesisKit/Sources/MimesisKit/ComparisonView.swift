@@ -839,6 +839,7 @@ public struct ComparisonView: View {
                     drawing: comparison.isDrawing(on: comparison.clips[index]),
                     pen: comparison.pen,
                     drawsTogether: comparison.drawsTogether,
+                    skeletonAngles: comparison.skeletonAngles,
                     onEdit: { editClip(index) },
                     onRevert: { revert(index) },
                     onDraw: {

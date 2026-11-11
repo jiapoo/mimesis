@@ -23,6 +23,8 @@ struct ClipPane: View {
     let pen: Pen
     /// One Draw for both clips, in the panel: no Draw button of its own.
     let drawsTogether: Bool
+    /// The joint angles to write on the skeleton.
+    var skeletonAngles: Set<JointAngle> = JointAngle.usual
     /// Open this clip in the editor (turn, flip, crop, trim); and back to how it was before.
     var onEdit: () -> Void = {}
     var onRevert: () -> Void = {}
@@ -114,6 +116,9 @@ struct ClipPane: View {
             ZStack {
                 VideoPlayerRepresentable(player: clip.engine.player)
                 // In the same frame as the video, so drawings zoom and pan with it.
+                if clip.showsSkeleton {
+                    SkeletonLayer(clip: clip, angles: skeletonAngles)
+                }
                 DrawingLayer(clip: clip, editing: drawing, pen: pen)
                 // On the Mac the video's own view takes the clicks; a clear layer over it gives them to
                 // the gestures below (focus on click, double-click to fit, drag to step or pan).
@@ -237,6 +242,11 @@ struct ClipPane: View {
             RoundButton(symbol: "arrow.left.and.right.righttriangle.left.righttriangle.right",
                         active: clip.engine.mirroredHorizontally, action: clip.toggleMirror)
                 .help("Mirror side to side (⇧⌘H)")
+            RoundButton(symbol: skeletonSymbol, active: clip.showsSkeleton) {
+                onFocus()
+                clip.toggleSkeleton()
+            }
+            .help(skeletonHelp)
             RoundButton(symbol: "crop.rotate", action: onEdit)
                 .help("Edit this clip: turn, flip, crop or trim it (⌘T). The clip becomes the edited copy; the original isn't changed.")
             Menu {
@@ -276,6 +286,20 @@ struct ClipPane: View {
             .help("More for clip \(letter): sound, open another video, clear the trim or sync points, StroMotion, close")
         }
         .fixedSize()
+    }
+
+    /// A figure; an hourglass while the body is being found.
+    private var skeletonSymbol: String {
+        if clip.showsSkeleton, case .preparing? = clip.poseTrack?.state { return "hourglass" }
+        return "figure.arms.open"
+    }
+
+    private var skeletonHelp: String {
+        switch clip.poseTrack?.state {
+        case .preparing(let done)? where clip.showsSkeleton: "Finding the body… \(Int(done * 100)) %"
+        case .failed(let why)? where clip.showsSkeleton: why
+        default: "Skeleton: follow the body through this clip's stretch and show its joints and their angles"
+        }
     }
 
     private func resetView() {
