@@ -15,14 +15,22 @@ struct OverlayPane: View {
     @State private var rotationBase: Double?
     @State private var zoomBase: CGFloat?
     @State private var panBase: CGSize?
+    @State private var showingMore = false
 
     private var ui: OverlayUI { comparison.overlayUI }
     private var picking: Bool { ui.picking }
+    /// Drawing with the hand tool (or Space held): drags move the picture.
+    private var panning: Bool { comparison.drawing != nil && comparison.pen.pans }
 
     private var top: Clip { comparison.clips[comparison.overlayTop] }
     private var base: Clip { comparison.clips[1 - comparison.overlayTop] }
     private var topLetter: String { comparison.overlayTop == 0 ? "A" : "B" }
-    private var readyCutout: Cutout? { top.cutout?.state == .ready ? top.cutout : nil }
+    /// The cutout to draw in place of the top clip's player: made, and switched on. Switched off
+    /// ("Whole"), the player itself shows, exactly as before the cutout.
+    private var readyCutout: Cutout? {
+        guard let cutout = top.cutout, cutout.state == .ready, cutout.enabled else { return nil }
+        return cutout
+    }
     private var baseLetter: String { comparison.overlayTop == 0 ? "B" : "A" }
 
     var body: some View {
@@ -65,7 +73,7 @@ struct OverlayPane: View {
                         .id(ObjectIdentifier(top))
                 }
                 // Drawings over the two together, on the picture underneath (so they zoom with it).
-                DrawingLayer(clip: base, editing: comparison.drawing != nil && !comparison.pen.panning, pen: comparison.pen, overlay: true)
+                DrawingLayer(clip: base, editing: comparison.drawing != nil && !comparison.pen.pans, pen: comparison.pen, overlay: true)
                     .frame(width: space.size.width, height: space.size.height)
             }
             .frame(width: space.size.width, height: space.size.height)
@@ -73,6 +81,8 @@ struct OverlayPane: View {
             .scaleEffect(base.zoom)
             .offset(base.pan)
             .frame(width: space.size.width, height: space.size.height)
+            // The degrees of angles drawn here: over the zoomed picture, at their own size.
+            .overlay { DrawingLabels(clip: base, overlay: true, zoom: base.zoom, pan: base.pan) }
             .clipped()
             .contentShape(Rectangle())
             .gesture(
@@ -80,8 +90,8 @@ struct OverlayPane: View {
                     .onChanged { drag in
                         guard !picking else { return }
                         // (Space held while drawing pans, whatever touches usually do.)
-                        if !ui.movesTop || comparison.pen.panning {
-                            if comparison.pen.panning { comparison.pen.grabbing = true }
+                        if !ui.movesTop || panning {
+                            if panning { comparison.pen.grabbing = true }
                             let start = panBase ?? base.pan
                             panBase = start
                             base.pan = CGSize(width: start.width + drag.translation.width,
@@ -150,7 +160,8 @@ struct OverlayPane: View {
                 ViewThatFits(in: .horizontal) {
                     row(compact: false)
                     row(compact: true)
-                    ScrollView(.horizontal, showsIndicators: false) { row(compact: true) }
+                    // Too narrow for those (an iPhone): the essentials, and one button for the rest.
+                    shortRow
                 }
                 .padding(10)
             }
@@ -216,6 +227,41 @@ struct OverlayPane: View {
                 }
                 .help("See the whole picture")
             }
+        }
+    }
+
+    /// The row where there's little width: "A over B", what touches do, how see-through the top clip
+    /// is, the cutout; and one button that opens everything else, so nothing is off the screen.
+    private var shortRow: some View {
+        HStack(spacing: 6) {
+            if showsBadge { OverlayBadge(comparison: comparison, onVideo: true) }
+            OverlayControls(comparison: comparison, compact: true, part: .essential)
+                .padding(4)
+                .background(Color.black.opacity(0.35), in: Capsule())
+            Spacer(minLength: 0)
+            if base.zoom > 1 || base.pan != .zero {
+                RoundButton(symbol: "arrow.down.right.and.arrow.up.left") {
+                    withAnimation(.easeOut(duration: 0.2)) { base.resetView() }
+                }
+                .help("See the whole picture")
+            }
+            RoundButton(symbol: "slider.horizontal.3", active: showingMore) { showingMore.toggle() }
+                .help("Size, mirror, line up, turn, put back, and the cutout's options")
+                .popover(isPresented: $showingMore, arrowEdge: .top) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack(spacing: 8) {
+                            Text(ui.movesTop ? "Size of \(topLetter)" : "Zoom")
+                                .font(.system(size: 12, weight: .semibold)).foregroundStyle(.white)
+                            OverlayControls(comparison: comparison, compact: true, part: .size)
+                        }
+                        adjustments
+                        cutoutOptions
+                    }
+                    .padding(12)
+                    .background(Theme.card)
+                    .preferredColorScheme(.dark)
+                    .presentationCompactAdaptation(.popover)
+                }
         }
     }
 

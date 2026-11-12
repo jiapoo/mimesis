@@ -236,6 +236,15 @@ The five steps below build it.
 - ✅ Drawing: ⌘Z / ⇧⌘Z while drawing, a movable options bar, tools in two columns when the window is short,
       Space-drag at any zoom, pointer shapes on the Mac (2026-11-12; not yet tried by hand)
 - ✅ A tip on every button (2026-11-12)
+- ✅ A video dragged from Imago opens (Imago now drags files with the permission a sandboxed app needs);
+      a file that failed to open is tried again when dropped again (2026-11-12)
+- ✅ An HDR (iPhone) clip no longer turns too bright after its cutout is removed or switched off (2026-11-12)
+- ✅ Skeleton drawn for the frame the player really shows (2026-11-12; not yet seen on the clip that showed it)
+- ✅ Drawing: a hand tool, tools always in one column, keys for the tools, angle degrees sharp when zoomed
+      (2026-11-12)
+- ✅ iPhone: the bar, the overlay's row and the drawing bar always fit; the rest is behind one button each
+      (2026-11-12)
+- ✅ Recent projects show their full path (2026-11-12)
 
 ## Phase 7.6 — For people serious about improving
 

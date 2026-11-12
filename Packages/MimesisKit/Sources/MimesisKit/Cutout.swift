@@ -406,6 +406,7 @@ public final class Cutout {
 final class CutoutRenderer {
     private var output: AVPlayerItemVideoOutput?
     private weak var item: AVPlayerItem?
+    private weak var player: AVPlayer?
     private var orientation: CGImagePropertyOrientation = .up
     private var last: CGImage?
     private var lastKey = ""
@@ -417,12 +418,20 @@ final class CutoutRenderer {
     /// The longest side the cutout is drawn at; the view scales it to fit.
     private let maxSide: CGFloat = 1100
 
-    func attach(to item: AVPlayerItem?) {
+    func attach(to item: AVPlayerItem?, player: AVPlayer?) {
         guard item !== self.item else { return }
         detach()
         guard let item else { return }
-        let output = AVPlayerItemVideoOutput(pixelBufferAttributes: [
+        self.player = player
+        // In ordinary (Rec. 709) colours: an HDR video (an iPhone's) is converted on the way, as the
+        // player converts it for the screen. Left as filmed, its frames came out far too bright here.
+        let output = AVPlayerItemVideoOutput(outputSettings: [
             kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA,
+            AVVideoColorPropertiesKey: [
+                AVVideoColorPrimariesKey: AVVideoColorPrimaries_ITU_R_709_2,
+                AVVideoTransferFunctionKey: AVVideoTransferFunction_ITU_R_709_2,
+                AVVideoYCbCrMatrixKey: AVVideoYCbCrMatrix_ITU_R_709_2,
+            ],
         ])
         item.add(output)
         self.output = output
@@ -438,7 +447,20 @@ final class CutoutRenderer {
     }
 
     func detach() {
-        if let output, let item { item.remove(output) }
+        if let output, let item {
+            item.remove(output)
+            // The player decodes differently while an output reads its frames, and for an HDR video
+            // (an iPhone's) it kept doing so afterwards: the picture stayed far too bright. Taking the
+            // video out of the player and putting it back makes it start again as it was.
+            if let player, player.currentItem === item {
+                let time = item.currentTime(), rate = player.rate
+                player.replaceCurrentItem(with: nil)
+                player.replaceCurrentItem(with: item)
+                item.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero, completionHandler: nil)
+                if rate > 0 { player.rate = rate }
+            }
+        }
+        player = nil
         output = nil
         item = nil
         last = nil
@@ -510,8 +532,8 @@ struct CutoutLayer: View {
                     .scaledToFit()
             }
         }
-        .onAppear { renderer.attach(to: clip.engine.playerItem) }
-        .onChange(of: clip.engine.playerItem) { _, item in renderer.attach(to: item) }
+        .onAppear { renderer.attach(to: clip.engine.playerItem, player: clip.engine.player) }
+        .onChange(of: clip.engine.playerItem) { _, item in renderer.attach(to: item, player: clip.engine.player) }
         .onDisappear { renderer.detach() }
     }
 }

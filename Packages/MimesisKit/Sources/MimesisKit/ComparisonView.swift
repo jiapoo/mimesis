@@ -64,6 +64,7 @@ public struct ComparisonView: View {
                     onCourt: { court = true },
                     onLibrary: library.clips.isEmpty ? nil : { showingLibrary = true },
                     recent: Array(store.recents.prefix(4)),
+                    recentPath: { store.path(of: $0) },
                     onOpenProject: { item in Task { await store.open(item, into: comparison) } },
                     onAllProjects: { browsing = true },
                     onBrowseProject: { openProject() })
@@ -88,51 +89,56 @@ public struct ComparisonView: View {
                         GeometryReader { space in
                             panes(wide: space.size.width >= space.size.height)
                         }
-                        // The drawing tools, as in Photoshop: the tools down the left, the chosen tool's
-                        // options across the top.
-                        // (On the right: the segments are on the left.)
-                        .overlay(alignment: .topTrailing) {
-                            if comparison.drawing != nil {
-                                // One column where it's tall enough; two where it isn't, so the last tools
-                                // (the shapes, the angle) are never under the timeline.
-                                ViewThatFits(in: .vertical) {
-                                    markup(.strip, compact: false)
-                                    markup(.strip, compact: true)
-                                }
-                                .padding(.trailing, 8)
-                                .padding(.top, phone ? 50 : 96)
-                                .padding(.bottom, phone ? 64 : 136)
-                                .transition(.move(edge: .trailing).combined(with: .opacity))
-                            }
-                        }
-                        .overlay {
-                            if comparison.drawing != nil {
-                                // The whole bar where it fits; a shorter one where it doesn't (an iPhone, or
-                                // the sidebar open in a small window). It starts at the top, and can be
-                                // dragged by its handle to anywhere over the clips.
-                                GeometryReader { area in
-                                    let top: CGFloat = phone ? 6 : 48
-                                    let moved = comparison.pen.barOffset
-                                    ViewThatFits(in: .horizontal) {
-                                        markup(.options, compact: false)
-                                        markup(.options, compact: true)
-                                        ScrollView(.horizontal, showsIndicators: false) { markup(.options, compact: true) }
-                                    }
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.horizontal, 8)
-                                    .padding(.top, top)
-                                    .offset(x: min(max(moved.width, -area.size.width / 2 + 40), area.size.width / 2 - 40),
-                                            y: min(max(moved.height, 4 - top), max(4 - top, area.size.height - top - 150)))
-                                }
-                                .transition(.move(edge: .top).combined(with: .opacity))
-                            }
-                        }
                         VStack(spacing: 6) {
                             if let reel, reel.running { ReelBar(reel: reel).padding(.horizontal, 12) }
                             // The timeline stays while drawing, to step to another frame.
                             Transport(comparison: comparison, part: .timeline)
                         }
                         .animation(.easeOut(duration: 0.2), value: comparison.drawing)
+                    }
+                    // The drawing tools, as in Photoshop: the tools down the left, the chosen tool's
+                    // options across the top.
+                    // (On the right: the segments are on the left.)
+                    .overlay(alignment: .topTrailing) {
+                        if comparison.drawing != nil {
+                            // One column down the right edge, from the top to the timeline: smaller
+                            // buttons where it's short (and scrolling if even those don't fit), so
+                            // no tool is ever under the timeline.
+                            ViewThatFits(in: .vertical) {
+                                markup(.strip, compact: false, dense: 0)
+                                markup(.strip, compact: false, dense: 1)
+                                markup(.strip, compact: false, dense: 2)
+                                ScrollView(.vertical, showsIndicators: false) { markup(.strip, compact: false, dense: 2) }
+                            }
+                            .padding(.trailing, 8)
+                            .padding(.top, 8)
+                            .padding(.bottom, phone ? 70 : 132)
+                            .transition(.move(edge: .trailing).combined(with: .opacity))
+                        }
+                    }
+                    .overlay {
+                        if comparison.drawing != nil {
+                            // The whole bar where it fits; a shorter one where it doesn't (an iPhone, or
+                            // the sidebar open in a small window). It starts at the top, clear of the
+                            // tools on the right, and can be dragged by its handle to anywhere.
+                            GeometryReader { area in
+                                let top: CGFloat = phone ? 6 : 48
+                                let moved = comparison.pen.barOffset
+                                ViewThatFits(in: .horizontal) {
+                                    markup(.options, compact: false)
+                                    markup(.options, compact: true)
+                                    // An iPhone: the colour and thickness behind one swatch.
+                                    markup(.options, compact: true, mini: true)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.leading, 8)
+                                .padding(.trailing, 52)
+                                .padding(.top, top)
+                                .offset(x: min(max(moved.width, -area.size.width / 2 + 40), area.size.width / 2 - 40),
+                                        y: min(max(moved.height, 4 - top), max(4 - top, area.size.height - top - 150)))
+                            }
+                            .transition(.move(edge: .top).combined(with: .opacity))
+                        }
                     }
                     Transport(comparison: comparison, part: .bar, extras: phone ? AnyView(dockExtras) : nil,
                               sidebarShown: showsSidebar,
@@ -258,6 +264,15 @@ public struct ComparisonView: View {
                     }
                 }
                 guard event.type == .keyDown else { return event }
+                // While drawing, a letter picks a tool (V select, H hand, P pen, M marker, N pencil,
+                // E eraser, L line, A arrow, R rectangle, O circle, G angle).
+                if comparison.drawing != nil, text == nil, event.window?.attachedSheet == nil,
+                   event.modifierFlags.intersection([.command, .option, .control]).isEmpty,
+                   let typed = event.charactersIgnoringModifiers?.lowercased().first,
+                   let tool = Pen.Tool.allCases.first(where: { $0.key == typed }) {
+                    comparison.pen.tool = tool
+                    return nil
+                }
                 // ⌘Z and ⇧⌘Z: the Edit menu's own Undo would take them and do nothing (it knows only
                 // about typing), so they're caught here; in a text field they're left to the typing.
                 if event.keyCode == 6, text == nil, event.window?.attachedSheet == nil, anyLoaded,
@@ -363,7 +378,10 @@ public struct ComparisonView: View {
             case .redo: comparison.history.redo(comparison)
             }
         }
-        .onChange(of: store.recents, initial: true) { _, recents in MenuRequests.shared.recents = recents }
+        .onChange(of: store.recents, initial: true) { _, recents in
+            MenuRequests.shared.recentPaths = Dictionary(uniqueKeysWithValues: recents.map { ($0.id, store.path(of: $0)) })
+            MenuRequests.shared.recents = recents
+        }
         .onChange(of: comparison.clips.map(\.isLoaded), initial: true) { _, loaded in
             MenuRequests.shared.hasClips = loaded.contains(true)
             MenuRequests.shared.hasBoth = loaded.allSatisfy { $0 }
@@ -604,7 +622,8 @@ public struct ComparisonView: View {
                     .shortcut("o", [.command])
                 Menu {
                     ForEach(store.recents.prefix(8)) { item in
-                        Button(item.name) { Task { await store.open(item, into: comparison) } }
+                        // Its full path: two projects can share a name.
+                        Button(store.path(of: item)) { Task { await store.open(item, into: comparison) } }
                     }
                     if store.recents.isEmpty { Text("No projects yet") }
                 } label: {
@@ -888,7 +907,7 @@ public struct ComparisonView: View {
         return true
     }
 
-    private func markup(_ part: MarkupTools.Part, compact: Bool) -> some View {
+    private func markup(_ part: MarkupTools.Part, compact: Bool, dense: Int = 0, mini: Bool = false) -> some View {
         let target = comparison.drawing
         return MarkupTools(
             part: part,
@@ -903,7 +922,9 @@ public struct ComparisonView: View {
                 comparison.pen.selected = nil
                 comparison.drawing = nil
             },
-            compact: compact)
+            compact: compact,
+            mini: mini,
+            dense: dense)
     }
 
     private func editor(_ target: EditTarget) -> some View {
@@ -934,7 +955,8 @@ public struct ComparisonView: View {
         comparison.focus = index
         Task {
             let clip = comparison.clips[index]
-            if clip.url?.standardizedFileURL != url.standardizedFileURL {
+            // (The same file again is opened again when it didn't open the first time.)
+            if clip.url?.standardizedFileURL != url.standardizedFileURL || clip.engine.duration <= 0 {
                 await clip.open(url)
                 // Another video: its share of every segment starts afresh.
                 comparison.clipReplaced(index)
@@ -1142,16 +1164,7 @@ struct SavedComparisonsView: View {
     @State private var deleting: RecentProject?
 
     /// Where a project is, as a path to read: "~/Documents/Compare.mimesis".
-    private func path(_ item: RecentProject) -> String {
-        guard let url = store.location(of: item) else { return "Moved or deleted" }
-        #if os(macOS)
-        return (url.path as NSString).abbreviatingWithTildeInPath
-        #else
-        // On iPhone and iPad: where it shows in the Files app.
-        if url.path.hasPrefix(ComparisonStore.documentsFolder.path) { return "Files › On My \(UIDevice.current.model) › Mimesis" }
-        return url.deletingLastPathComponent().lastPathComponent
-        #endif
-    }
+    private func path(_ item: RecentProject) -> String { store.path(of: item) }
 
     var body: some View {
         NavigationStack {

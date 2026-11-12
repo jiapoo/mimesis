@@ -204,7 +204,9 @@ extension Drawing {
     }
 
     /// Draws it into a SwiftUI canvas, its points already in view coordinates.
-    func render(_ points: [CGPoint], in context: inout GraphicsContext) {
+    /// - Parameter labels: write an angle's degrees. Off where they're written apart, over the zoomed
+    ///   picture at their own size (`DrawingLabels`).
+    func render(_ points: [CGPoint], in context: inout GraphicsContext, labels: Bool = true) {
         let g = geometry(points, unit: 1)
         let path = Path(g.path)
         let width = CGFloat(resolvedWidth)
@@ -229,7 +231,7 @@ extension Drawing {
         if let arc = g.arc {
             context.stroke(Path(arc), with: .color(color.opacity(0.9)), style: StrokeStyle(lineWidth: max(1.5, width * 0.66)))
         }
-        if let label = g.label {
+        if labels, let label = g.label {
             context.draw(
                 Text(label.text).font(.system(size: 15, weight: .bold).monospacedDigit()).foregroundStyle(.white),
                 at: label.at)
@@ -314,8 +316,9 @@ struct DrawingLayer: View {
             let frame = pictureFrame(in: space.size)
             ZStack {
                 Canvas { context, _ in
+                    // (An angle's degrees are written by `DrawingLabels`, over the zoomed picture.)
                     for drawing in shown {
-                        drawing.render(drawing.points.map { toView($0, frame) }, in: &context)
+                        drawing.render(drawing.points.map { toView($0, frame) }, in: &context, labels: false)
                     }
                     if let draft {
                         let points = draft.kind == .freehand ? stroke : draft.points.map { toView($0, frame) }
@@ -565,5 +568,49 @@ struct DrawingLayer: View {
 
     private func distance(_ a: CGPoint, _ b: CGPoint) -> CGFloat {
         hypot(a.x - b.x, a.y - b.y)
+    }
+}
+
+/// The degrees of the angles drawn on a clip, written over the zoomed video rather than zoomed with
+/// it (like the skeleton's): they follow the picture, keep their size, and stay sharp.
+struct DrawingLabels: View {
+    let clip: Clip
+    var overlay = false
+    var zoom: CGFloat = 1
+    var pan: CGSize = .zero
+
+    var body: some View {
+        GeometryReader { space in
+            let frame = pictureFrame(in: space.size)
+            let centre = CGPoint(x: space.size.width / 2, y: space.size.height / 2)
+            let mirrored = clip.engine.mirroredHorizontally
+            let angles = clip.visibleDrawings(overlay: overlay).filter { $0.kind == .angle }
+            Canvas { context, _ in
+                for drawing in angles {
+                    let points = drawing.points.map { p in
+                        CGPoint(x: frame.minX + (mirrored ? 1 - p.x : p.x) * frame.width, y: frame.minY + p.y * frame.height)
+                    }
+                    guard let label = drawing.geometry(points, unit: 1).label else { continue }
+                    let at = CGPoint(x: centre.x + (label.at.x - centre.x) * zoom + pan.width,
+                                     y: centre.y + (label.at.y - centre.y) * zoom + pan.height)
+                    let text = context.resolve(
+                        Text(label.text).font(.system(size: 13, weight: .bold).monospacedDigit()).foregroundStyle(.white))
+                    let size = text.measure(in: CGSize(width: 90, height: 30))
+                    let box = CGRect(x: at.x - size.width / 2 - 4, y: at.y - size.height / 2 - 2,
+                                     width: size.width + 8, height: size.height + 4)
+                    context.fill(Path(roundedRect: box, cornerRadius: 5), with: .color(.black.opacity(0.6)))
+                    context.draw(text, at: at)
+                }
+            }
+        }
+        .allowsHitTesting(false)
+    }
+
+    private func pictureFrame(in size: CGSize) -> CGRect {
+        let video = clip.engine.videoSize
+        guard video.width > 0, video.height > 0, size.width > 0, size.height > 0 else { return CGRect(origin: .zero, size: size) }
+        let scale = min(size.width / video.width, size.height / video.height)
+        let fitted = CGSize(width: video.width * scale, height: video.height * scale)
+        return CGRect(x: (size.width - fitted.width) / 2, y: (size.height - fitted.height) / 2, width: fitted.width, height: fitted.height)
     }
 }

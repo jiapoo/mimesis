@@ -13,6 +13,8 @@ struct WelcomeView: View {
     let onLibrary: (() -> Void)?
     /// The most recent projects, to open with one tap.
     var recent: [RecentProject] = []
+    /// Where a recent project is, to show under its name.
+    var recentPath: (RecentProject) -> String = { _ in "" }
     var onOpenProject: (RecentProject) -> Void = { _ in }
     var onAllProjects: () -> Void = {}
     /// Find a project file to open.
@@ -142,13 +144,18 @@ struct WelcomeView: View {
                         Button { onOpenProject(project) } label: {
                             HStack(spacing: 10) {
                                 Image(systemName: "rectangle.split.2x1").foregroundStyle(Theme.accent)
-                                Text(project.name).font(.system(size: 14, weight: .medium)).lineLimit(1)
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(project.name).font(.system(size: 14, weight: .medium)).lineLimit(1)
+                                    Text(recentPath(project))
+                                        .font(.system(size: 11)).foregroundStyle(Theme.secondary)
+                                        .lineLimit(1).truncationMode(.middle)
+                                }
                                 Spacer(minLength: 8)
                                 Text(project.date.formatted(.relative(presentation: .named)))
                                     .font(.system(size: 12)).foregroundStyle(Theme.secondary)
                             }
                             .padding(.horizontal, 12)
-                            .frame(height: 38)
+                            .frame(height: 46)
                             .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                             .contentShape(Rectangle())
                         }

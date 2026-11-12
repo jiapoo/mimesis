@@ -110,6 +110,10 @@ struct OverlayControls: View {
     let comparison: Comparison
     /// Narrow (an iPhone): a shorter slider, and icons for words.
     var compact = false
+    /// Which of the controls: all of them; the essentials (what touches do, how see-through, the
+    /// cutout), for a row with little room; or only the size buttons, for the popover with the rest.
+    enum Part { case all, essential, size }
+    var part: Part = .all
 
     private var ui: OverlayUI { comparison.overlayUI }
     private var top: Clip { comparison.clips[comparison.overlayTop] }
@@ -119,10 +123,12 @@ struct OverlayControls: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            modeSwitch
-            sizeButtons
-            opacity
-            cutout
+            if part != .size { modeSwitch }
+            if part != .essential { sizeButtons }
+            if part != .size {
+                opacity
+                cutout
+            }
         }
         .foregroundStyle(.white)
     }

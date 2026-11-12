@@ -83,7 +83,8 @@ below 50 frames a second and slow motion will look jumpy. See [Filming tips](#fi
 - **The bar** under the videos, left to right:
   - **▤ Segments**: shows or hides the sidebar (below); it reads the chosen segment's name;
   - **A | A🔗B | B**: which clip the controls drive, or both linked;
-  - the selected clip's **In / Out**, **◆ sync** and **speed** (while the sidebar is hidden; it has them too);
+  - the selected clip's **In / Out**, **◆ sync** and **speed** (while the sidebar is hidden; it has them too).
+    On an **iPhone** these are behind one **✂ button** (crimson once any is set), so the bar always fits;
   - **frame back / play / frame forward**;
   - **✏ Draw on both** (when linked), the playback **speed** (tap it for a slider).
 - **The Segments sidebar** (left side; a panel that slides in on iPhone) is the workspace:
@@ -196,6 +197,7 @@ appear, laid out as in Photoshop. The timeline stays, so you can step to another
 | Tool | What it does |
 |---|---|
 | **Select** (arrow) | Click a drawing to choose it: its box and handles appear. Drag it to move it; drag a handle to reshape a shape, or a corner of the box to resize a hand-drawn stroke. Click anywhere else to let go. **With any tool, a click on a drawing chooses it too.** |
+| **Hand** | Drag to move the picture (pinch to zoom). The same as holding Space with any other tool. |
 | **Pen** | A solid line by hand. |
 | **Marker** | Wide and see-through, for highlighting. |
 | **Pencil** | Fine, with a grain. |
@@ -220,7 +222,14 @@ appear, laid out as in Photoshop. The timeline stays, so you can step to another
 - **The pointer** (Mac) shows what a press will do: a **crosshair** to draw, a **hand** to move (Space held,
   or over a drawing with the select tool), a **pointing hand** over a drawing a click would choose,
   **resize arrows** on a corner of the chosen drawing's box, an **eraser**.
-- Where the window is short the tools stand in **two columns**, so none is hidden under the timeline.
+- The tools are always in **one column**; where the window is short (or on an iPhone) the buttons get
+  smaller, so none is hidden under the timeline.
+- **Keys for the tools** (Mac): V select, H hand, P pen, M marker, N pencil, E eraser, L line, A arrow,
+  R rectangle, O circle, G angle.
+- An angle's **degrees** are written in a dark box, like the skeleton's: zoomed in, they follow the picture
+  but keep their size and stay sharp.
+- On an **iPhone** the bar shows the colour in hand as one swatch when there's no room for all of them: tap
+  it for the colours, thickness and opacity.
 - Undo and redo are in the top bar (⌘Z, ⇧⌘Z), and work while drawing.
 - **Done** (or Esc).
 
@@ -241,7 +250,9 @@ to swap them (on iPhone it's at the start of the row over the picture).
 
 Everything else for the overlay sits **over the picture**, in **one row** at the top, so the bar underneath is
 the same as in the other layouts (with A or B chosen it shows that clip's In, Out, Sync and Speed). Where the
-window is narrow the row gets shorter, and scrolls sideways if it still doesn't fit. It hides while you draw.
+window is narrow the row gets shorter; on an **iPhone** it keeps the essentials (what touches do, how
+see-through, the cutout) and one **sliders button** opens the rest (size, mirror, line up, turn, put back,
+the cutout's options), so nothing is off the screen. It hides while you draw.
 
 On the right, what moves the top clip:
 
@@ -362,7 +373,8 @@ yellow marks over the timeline (tap to jump), and in the library.
     **Save As…** (⇧⌘S); **Open…** (⌘O); **Open Recent**; or double-click a project in Finder.
   - **iPhone and iPad**: **⋯ › Save project…** asks for a name and saves it in the **Mimesis** folder in the
     Files app; move or share it from there. **⋯ › Open project…** finds one anywhere in Files.
-  - **Recent projects** are on the welcome screen and under **⋯ › Open recent**. A project deleted in Finder
+  - **Recent projects** are on the welcome screen and under **⋯ › Open recent**, each with its **full path**
+    (two projects can share a name). A project deleted in Finder
     or the Files app (or sitting in the Trash) leaves the list by itself.
   - **Open project** on the welcome screen finds a project file; on the Mac you can also **drop a `.mimesis`
     file on the window** (or on the Dock icon) to open it.

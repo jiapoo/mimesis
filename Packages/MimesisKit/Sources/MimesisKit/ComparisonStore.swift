@@ -1,5 +1,8 @@
 import Foundation
 import Observation
+#if os(iOS)
+import UIKit
+#endif
 
 /// What a saved comparison remembers about one clip: the file (as a bookmark, so it can be found and
 /// opened again after the app quits) and everything that lines it up with the other clip.
@@ -243,6 +246,18 @@ public final class ComparisonStore {
     public func location(of recent: RecentProject) -> URL? {
         var stale = false
         return try? URL(resolvingBookmarkData: recent.bookmark, options: projectResolve.union(.withoutUI), bookmarkDataIsStale: &stale)
+    }
+
+    /// Where a recent project is, to read: on the Mac its full path ("~/Documents/Serve.mimesis"); on
+    /// iPhone and iPad where it shows in the Files app.
+    public func path(of recent: RecentProject) -> String {
+        guard let url = location(of: recent) else { return "Moved or deleted" }
+        #if os(macOS)
+        return (url.path as NSString).abbreviatingWithTildeInPath
+        #else
+        if url.path.hasPrefix(Self.documentsFolder.path) { return "Files › On My \(UIDevice.current.model) › Mimesis › \(url.lastPathComponent)" }
+        return url.deletingLastPathComponent().lastPathComponent + " › " + url.lastPathComponent
+        #endif
     }
 
     /// Deletes a project's file (on the Mac: to the Trash, so it can be put back) and drops it from

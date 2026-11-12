@@ -19,6 +19,7 @@ struct Transport: View {
     var onSidebar: () -> Void = {}
     @Environment(Library.self) private var library
     @State private var showingSpeed = false
+    @State private var showingClipTools = false
 
     /// An iPhone: everything a little smaller, so the videos keep the height.
     private var compact: Bool {
@@ -77,7 +78,10 @@ struct Transport: View {
                 focusPicker
                 // (The overlay's own controls are over the picture: the bar is the same in every layout.)
                 if let clip = comparison.selected, !sidebarShown {
-                    ClipTools(clip: clip, comparison: comparison)
+                    // An iPhone hasn't the width for In, Out, Sync and Speed in the bar (set, they grow:
+                    // "In 1.27 ✕"), and they pushed the other buttons off the screen: one button
+                    // opens them.
+                    if compact { clipToolsButton(clip) } else { ClipTools(clip: clip, comparison: comparison) }
                 }
             }
             Spacer(minLength: 6)
@@ -110,6 +114,28 @@ struct Transport: View {
         .background(Theme.card)
         .overlay(alignment: .top) { Rectangle().fill(Theme.line).frame(height: 1) }
         .disabled(comparison.focused == nil)
+    }
+
+    /// In, Out, Sync and Speed for the chosen clip, behind one button (crimson once any is set).
+    private func clipToolsButton(_ clip: Clip) -> some View {
+        let set = clip.trimStart > 0 || clip.trimEnd != nil || !clip.syncs.isEmpty || clip.speed != nil
+        return Button { showingClipTools.toggle() } label: {
+            Image(systemName: "scissors")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(set ? Theme.onAccent : .white)
+                .frame(width: 36, height: 28)
+                .background(set ? Theme.accent : Theme.raised, in: Capsule())
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .help("In, Out, sync points and speed for the chosen clip")
+        .popover(isPresented: $showingClipTools, arrowEdge: .bottom) {
+            ClipTools(clip: clip, comparison: comparison)
+                .padding(10)
+                .background(Theme.card)
+                .preferredColorScheme(.dark)
+                .presentationCompactAdaptation(.popover)
+        }
     }
 
     private var segmentButton: some View {

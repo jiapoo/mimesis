@@ -6,7 +6,7 @@ import SwiftUI
 @MainActor @Observable
 final class Pen {
     enum Tool: String, CaseIterable, Identifiable {
-        case select
+        case select, hand
         case pen, marker, pencil, eraser
         case line, arrow, rectangle, circle, angle
         var id: Self { self }
@@ -16,11 +16,28 @@ final class Pen {
 
         var isShape: Bool { Self.shapes.contains(self) }
         /// Draws something (so it has a colour and a width).
-        var draws: Bool { self != .select && self != .eraser }
+        var draws: Bool { self != .select && self != .eraser && self != .hand }
+
+        /// The key that picks the tool (Mac).
+        var key: Character {
+            switch self {
+            case .select: "v"
+            case .hand: "h"
+            case .pen: "p"
+            case .marker: "m"
+            case .pencil: "n"
+            case .eraser: "e"
+            case .line: "l"
+            case .arrow: "a"
+            case .rectangle: "r"
+            case .circle: "o"
+            case .angle: "g"
+            }
+        }
 
         var kind: Drawing.Kind {
             switch self {
-            case .select, .pen, .marker, .pencil, .eraser: .freehand
+            case .select, .hand, .pen, .marker, .pencil, .eraser: .freehand
             case .line: .line
             case .arrow: .arrow
             case .rectangle: .rectangle
@@ -40,6 +57,7 @@ final class Pen {
         var title: String {
             switch self {
             case .select: "Select and move (V)"
+            case .hand: "Hand: drag to move the picture (H, or hold Space with any tool)"
             case .pen: "Pen (P)"
             case .marker: "Marker: wide and see-through (M)"
             case .pencil: "Pencil: fine, with a grain (N)"
@@ -48,13 +66,14 @@ final class Pen {
             case .arrow: "Arrow (A)"
             case .rectangle: "Rectangle (R)"
             case .circle: "Circle (O)"
-            case .angle: "Angle, in degrees: drag the first arm from the joint, then drag again for the second arm"
+            case .angle: "Angle, in degrees (G): drag the first arm from the joint, then drag again for the second arm"
             }
         }
 
         var symbol: String {
             switch self {
             case .select: "cursorarrow"
+            case .hand: "hand.raised"
             case .pen: "pencil.tip"
             case .marker: "highlighter"
             case .pencil: "pencil"
@@ -99,6 +118,8 @@ final class Pen {
     var always = false
     /// Space is held (Mac): drags move the video instead of drawing.
     var panning = false
+    /// Drags move the video: the hand tool is in hand, or Space is held.
+    var pans: Bool { panning || tool == .hand }
     /// The button is down while Space is held: the hand closes.
     var grabbing = false
     /// What the pointer is over, for its shape (Mac): nothing, a drawing, one of the chosen drawing's
@@ -170,9 +191,14 @@ struct MarkupTools: View {
     let onDone: () -> Void
     /// Little room (an iPhone on its side): the strip in two columns, a shorter options bar.
     var compact = false
+    /// Very little width (an iPhone): the colour, thickness and opacity behind one swatch.
+    var mini = false
+    /// The strip's size: 0 full, 1 smaller, 2 smallest.
+    var dense = 0
 
     @Environment(\.self) private var environment
     @State private var gripFrom: CGSize?
+    @State private var showingLook = false
 
     var body: some View {
         switch part {
@@ -183,27 +209,19 @@ struct MarkupTools: View {
 
     // MARK: - The tool strip
 
+    /// One column, always: select and the hand, the brushes, the shapes. `dense` makes the buttons
+    /// smaller (1) or smaller still (2), for a short window or an iPhone on its side.
     private var strip: some View {
-        let groups: [[Pen.Tool]] = [[.select], Pen.Tool.brushes, Pen.Tool.shapes]
-        return Group {
-            if compact {
-                // Two columns: select and the brushes, then the shapes.
-                HStack(alignment: .top, spacing: 4) {
-                    VStack(spacing: 4) { ForEach([Pen.Tool.select] + Pen.Tool.brushes) { toolButton($0) } }
-                    VStack(spacing: 4) { ForEach(Pen.Tool.shapes) { toolButton($0) } }
+        let groups: [[Pen.Tool]] = [[.select, .hand], Pen.Tool.brushes, Pen.Tool.shapes]
+        return VStack(spacing: dense == 0 ? 4 : 2) {
+            ForEach(Array(groups.enumerated()), id: \.offset) { index, tools in
+                if index > 0 {
+                    Rectangle().fill(Color.white.opacity(0.15)).frame(width: 20, height: 1).padding(.vertical, dense == 0 ? 2 : 1)
                 }
-            } else {
-                VStack(spacing: 4) {
-                    ForEach(Array(groups.enumerated()), id: \.offset) { index, tools in
-                        if index > 0 {
-                            Rectangle().fill(Color.white.opacity(0.15)).frame(width: 22, height: 1).padding(.vertical, 2)
-                        }
-                        ForEach(tools) { toolButton($0) }
-                    }
-                }
+                ForEach(tools) { toolButton($0) }
             }
         }
-        .padding(5)
+        .padding(dense == 0 ? 5 : 3)
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .background(Color.black.opacity(0.4), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Color.white.opacity(0.1)))
@@ -213,11 +231,12 @@ struct MarkupTools: View {
 
     private func toolButton(_ tool: Pen.Tool) -> some View {
         let on = pen.tool == tool
+        let size: CGSize = [CGSize(width: 34, height: 32), CGSize(width: 32, height: 26), CGSize(width: 30, height: 21)][min(2, dense)]
         return Button { pen.tool = tool } label: {
             Image(systemName: tool.symbol)
-                .font(.system(size: 14, weight: .semibold))
+                .font(.system(size: dense == 2 ? 12 : 14, weight: .semibold))
                 .foregroundStyle(on ? Theme.onAccent : Color.white)
-                .frame(width: compact ? 30 : 34, height: compact ? 28 : 32)
+                .frame(width: size.width, height: size.height)
                 .background(on ? Theme.accent : Color.clear, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                 .contentShape(Rectangle())
         }
@@ -247,7 +266,9 @@ struct MarkupTools: View {
         HStack(spacing: 10) {
             grip
             // (Undo and redo are in the top bar; on an iPhone, in the bar under the clips.)
-            if hasLook {
+            if hasLook, mini {
+                lookButton
+            } else if hasLook {
                 colours
                 divider
                 thickness
@@ -255,13 +276,16 @@ struct MarkupTools: View {
                     divider
                     opacity
                 }
-                if pen.tool == .angle {
+                if pen.tool == .angle, !compact {
                     divider
                     Text("Drag one arm from the joint, then drag again for the other")
                         .font(.system(size: 11)).foregroundStyle(Theme.secondary)
                 }
             } else {
-                Text(pen.tool == .eraser ? "Drag over a drawing to erase it" : "Click a drawing to choose it; drag to move or resize it")
+                Text(mini ? (pen.tool == .eraser ? "Drag over a drawing" : pen.tool == .hand ? "Drag to move" : "Click a drawing")
+                     : pen.tool == .eraser ? "Drag over a drawing to erase it"
+                     : pen.tool == .hand ? "Drag to move the picture; pinch to zoom"
+                     : "Click a drawing to choose it; drag to move or resize it")
                     .font(.system(size: 12)).foregroundStyle(Theme.secondary)
             }
             divider
@@ -324,6 +348,38 @@ struct MarkupTools: View {
                     .onEnded { _ in gripFrom = nil })
             .onTapGesture(count: 2) { withAnimation(.easeOut(duration: 0.2)) { pen.barOffset = .zero } }
             .help("Drag to move this bar; double-click to put it back")
+    }
+
+    /// The colour in hand, as a swatch with the thickness written beside it: opens the colours,
+    /// thickness and opacity.
+    private var lookButton: some View {
+        Button { showingLook.toggle() } label: {
+            HStack(spacing: 6) {
+                Circle().fill(pen.color.color)
+                    .frame(width: 20, height: 20)
+                    .overlay(Circle().strokeBorder(.white, lineWidth: 1.5))
+                Text(pen.width.formatted(.number.precision(.fractionLength(0...1))) + " pt")
+                    .font(.system(size: 11, weight: .semibold).monospacedDigit())
+                    .lineLimit(1).fixedSize()
+                Image(systemName: "chevron.down").font(.system(size: 8, weight: .bold)).foregroundStyle(Theme.secondary)
+            }
+            .frame(height: 28)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help("Colour, thickness and opacity")
+        .popover(isPresented: $showingLook, arrowEdge: .top) {
+            VStack(alignment: .leading, spacing: 12) {
+                colours
+                thickness
+                opacity
+            }
+            .padding(12)
+            .foregroundStyle(.white)
+            .background(Theme.card)
+            .preferredColorScheme(.dark)
+            .presentationCompactAdaptation(.popover)
+        }
     }
 
     /// A copy of the chosen drawing, a little down and to the right, chosen in its place.
@@ -467,7 +523,7 @@ extension View {
 #if os(macOS)
 extension Pen {
     var pointer: PointerStyle {
-        if panning { return grabbing ? .grabActive : .grabIdle }
+        if pans { return grabbing ? .grabActive : .grabIdle }
         switch over {
         case .point:
             return .rectSelection

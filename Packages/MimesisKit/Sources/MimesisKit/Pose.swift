@@ -265,7 +265,11 @@ struct SkeletonLayer: View {
             let frame = pictureFrame(in: space.size)
             let aspect = frame.height > 0 ? frame.width / frame.height : 1
             let mirrored = clip.engine.mirroredHorizontally
-            if let pose = clip.poseTrack?.pose(at: clip.engine.currentTime) {
+            // The frame the player really shows: after a quick seek (linked clips, scrubbing) that can be
+            // a few frames from the time asked for, and the skeleton then sat beside the body.
+            let asked = clip.engine.currentTime
+            let shown = clip.engine.player?.currentTime().seconds ?? asked
+            if let pose = clip.poseTrack?.pose(at: shown.isFinite ? shown : asked) {
                 Canvas { context, _ in
                     func at(_ joint: BodyPose.Joint) -> CGPoint? {
                         guard let p = pose.joints[joint] else { return nil }

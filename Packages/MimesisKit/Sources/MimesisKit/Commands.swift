@@ -18,6 +18,8 @@ public final class MenuRequests {
 
     public var pending: Request?
     public var recents: [RecentProject] = []
+    /// Where each recent project is (its full path), for the Open Recent menu.
+    public var recentPaths: [RecentProject.ID: String] = [:]
     public var hasClips = false
     public var hasBoth = false
 }
@@ -35,7 +37,7 @@ public struct MimesisCommands: Commands {
                 .keyboardShortcut("o", modifiers: .command)
             Menu("Open Recent") {
                 ForEach(menu.recents) { recent in
-                    Button(recent.name) { menu.pending = .openRecent(recent.id) }
+                    Button(menu.recentPaths[recent.id] ?? recent.name) { menu.pending = .openRecent(recent.id) }
                 }
                 if menu.recents.isEmpty { Text("No Recent Projects") }
             }

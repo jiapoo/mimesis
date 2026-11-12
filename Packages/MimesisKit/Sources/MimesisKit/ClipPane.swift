@@ -117,10 +117,10 @@ struct ClipPane: View {
                 VideoPlayerRepresentable(player: clip.engine.player)
                 // In the same frame as the video, so drawings zoom and pan with it.
                 // (Space held while drawing: the drags go to the video, to pan it, as in Photoshop.)
-                DrawingLayer(clip: clip, editing: drawing && !pen.panning, pen: pen)
+                DrawingLayer(clip: clip, editing: drawing && !pen.pans, pen: pen)
                 // On the Mac the video's own view takes the clicks; a clear layer over it gives them to
                 // the gestures below (focus on click, double-click to fit, drag to step or pan).
-                if !drawing || pen.panning {
+                if !drawing || pen.pans {
                     Color.clear.contentShape(Rectangle())
                 }
             }
@@ -133,6 +133,8 @@ struct ClipPane: View {
                         SkeletonLayer(clip: clip, angles: skeletonAngles, zoom: clip.zoom, pan: clip.pan)
                     }
                 }
+                // The degrees of drawn angles, likewise.
+                .overlay { DrawingLabels(clip: clip, zoom: clip.zoom, pan: clip.pan) }
                 .clipped()
                 .contentShape(Rectangle())
                 .drawingPointer(pen, on: drawing)
@@ -148,7 +150,7 @@ struct ClipPane: View {
                     DragGesture(minimumDistance: 4)
                         .onChanged { drag in
                             // While drawing, the drag belongs to the drawing.
-                            guard !drawing || pen.panning else { return }
+                            guard !drawing || pen.pans else { return }
                             if drawing { pen.grabbing = true }
                             // Space held while drawing moves the picture, zoomed or not; it never steps frames.
                             if clip.zoom > 1 || drawing {
