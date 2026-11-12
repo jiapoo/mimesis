@@ -1,3 +1,4 @@
+import AreteMedia
 import SwiftUI
 
 /// The first screen, before any clip is open: what Mimesis does, and the ways to start.

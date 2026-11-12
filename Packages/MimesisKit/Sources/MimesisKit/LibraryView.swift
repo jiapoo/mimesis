@@ -1,3 +1,4 @@
+import AreteMedia
 import SwiftUI
 
 /// Every clip opened, with its notes and tagged moments. Filter by a tag to see that moment across all

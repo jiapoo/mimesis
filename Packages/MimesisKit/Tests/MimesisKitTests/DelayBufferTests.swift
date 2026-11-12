@@ -1,4 +1,5 @@
 @testable import MimesisKit
+import AreteMedia
 import Testing
 
 /// Watching a few seconds late, and saving what was just watched.

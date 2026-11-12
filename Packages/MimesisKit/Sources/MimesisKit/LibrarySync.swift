@@ -1,3 +1,4 @@
+import AreteMedia
 import Foundation
 
 /// iCloud's key-value store for the library's notes and tags (each clip a key, its notes and tags JSON).

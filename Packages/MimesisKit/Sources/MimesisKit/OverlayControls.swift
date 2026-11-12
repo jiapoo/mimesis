@@ -1,3 +1,4 @@
+import AreteMedia
 import SwiftUI
 
 /// What the overlay's controls in the bar and the overlay itself share.

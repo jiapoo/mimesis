@@ -1,3 +1,4 @@
+import AreteMedia
 import Foundation
 
 /// A named stretch of the comparison, like a layer: for each clip its start and end (In / Out), the

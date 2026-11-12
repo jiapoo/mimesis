@@ -245,6 +245,7 @@ The five steps below build it.
 - ✅ iPhone: the bar, the overlay's row and the drawing bar always fit; the rest is behind one button each
       (2026-11-12)
 - ✅ Recent projects show their full path (2026-11-12)
+- ✅ Drawing and skeleton moved into apple-media (AreteMedia 1.13.0); Mimesis uses that copy (2026-11-12)
 
 ## Phase 7.6 — For people serious about improving
 

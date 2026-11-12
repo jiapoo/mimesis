@@ -1,4 +1,5 @@
 @testable import MimesisKit
+import AreteMedia
 import AVFoundation
 import CoreImage
 import Testing

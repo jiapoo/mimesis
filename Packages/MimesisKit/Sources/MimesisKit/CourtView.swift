@@ -1,3 +1,4 @@
+import AreteMedia
 import CoreImage
 import SwiftUI
 

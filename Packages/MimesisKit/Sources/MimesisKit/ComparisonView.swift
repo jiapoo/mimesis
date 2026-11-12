@@ -48,6 +48,8 @@ public struct ComparisonView: View {
     /// - Parameter preload: clips to open as A and B at launch (for testing).
     public init(preload: [URL?] = []) {
         self.preload = preload
+        // The shared drawing tools (AreteMedia) in Mimesis's crimson.
+        DrawingStyle.accent = Theme.accent
     }
 
     public var body: some View {
@@ -907,17 +909,13 @@ public struct ComparisonView: View {
         return true
     }
 
-    private func markup(_ part: MarkupTools.Part, compact: Bool, dense: Int = 0, mini: Bool = false) -> some View {
+    private func markup(_ part: MarkupTools<Clip>.Part, compact: Bool, dense: Int = 0, mini: Bool = false) -> some View {
         let target = comparison.drawing
         return MarkupTools(
             part: part,
-            clips: target == .both ? comparison.clips.filter(\.isLoaded)
+            surfaces: target == .both ? comparison.clips.filter(\.isLoaded)
                 : [comparison.clips[target == .clip(1) ? 1 : 0]],
             pen: comparison.pen,
-            canUndo: comparison.history.canUndo,
-            canRedo: comparison.history.canRedo,
-            onUndo: { comparison.history.undo(comparison) },
-            onRedo: { comparison.history.redo(comparison) },
             onDone: {
                 comparison.pen.selected = nil
                 comparison.drawing = nil

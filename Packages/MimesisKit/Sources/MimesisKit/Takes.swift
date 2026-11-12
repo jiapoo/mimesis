@@ -1,3 +1,4 @@
+import AreteMedia
 import Foundation
 
 /// One of several videos that take turns in a clip (A or B): the same movement filmed on another day.

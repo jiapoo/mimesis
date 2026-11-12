@@ -1,4 +1,5 @@
 @testable import MimesisKit
+import AreteMedia
 import Testing
 
 /// Clip B's time against linked time, through paired sync points.

@@ -1,4 +1,5 @@
 @testable import MimesisKit
+import AreteMedia
 import Testing
 
 /// The window shown around each tagged moment in a reel.

@@ -1,3 +1,4 @@
+import AreteMedia
 import SwiftUI
 
 /// Mimesis's look: a dark studio canvas so the video stands out, and one accent,

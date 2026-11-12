@@ -1,3 +1,4 @@
+import AreteMedia
 import AVFoundation
 import CoreImage
 import CryptoKit

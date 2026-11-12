@@ -1,4 +1,5 @@
 @testable import MimesisKit
+import AreteMedia
 import Foundation
 import PDFKit
 import Testing

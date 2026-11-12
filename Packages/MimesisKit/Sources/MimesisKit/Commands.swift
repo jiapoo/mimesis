@@ -1,3 +1,4 @@
+import AreteMedia
 import SwiftUI
 import UniformTypeIdentifiers
 

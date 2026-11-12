@@ -73,7 +73,7 @@ struct OverlayPane: View {
                         .id(ObjectIdentifier(top))
                 }
                 // Drawings over the two together, on the picture underneath (so they zoom with it).
-                DrawingLayer(clip: base, editing: comparison.drawing != nil && !comparison.pen.pans, pen: comparison.pen, overlay: true)
+                DrawingLayer(surface: base, editing: comparison.drawing != nil && !comparison.pen.pans, pen: comparison.pen, overlay: true)
                     .frame(width: space.size.width, height: space.size.height)
             }
             .frame(width: space.size.width, height: space.size.height)
@@ -82,7 +82,7 @@ struct OverlayPane: View {
             .offset(base.pan)
             .frame(width: space.size.width, height: space.size.height)
             // The degrees of angles drawn here: over the zoomed picture, at their own size.
-            .overlay { DrawingLabels(clip: base, overlay: true, zoom: base.zoom, pan: base.pan) }
+            .overlay { DrawingLabels(surface: base, overlay: true, zoom: base.zoom, pan: base.pan) }
             .clipped()
             .contentShape(Rectangle())
             .gesture(

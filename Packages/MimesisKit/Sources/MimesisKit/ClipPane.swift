@@ -117,7 +117,7 @@ struct ClipPane: View {
                 VideoPlayerRepresentable(player: clip.engine.player)
                 // In the same frame as the video, so drawings zoom and pan with it.
                 // (Space held while drawing: the drags go to the video, to pan it, as in Photoshop.)
-                DrawingLayer(clip: clip, editing: drawing && !pen.pans, pen: pen)
+                DrawingLayer(surface: clip, editing: drawing && !pen.pans, pen: pen)
                 // On the Mac the video's own view takes the clicks; a clear layer over it gives them to
                 // the gestures below (focus on click, double-click to fit, drag to step or pan).
                 if !drawing || pen.pans {
@@ -130,11 +130,12 @@ struct ClipPane: View {
                 // The skeleton follows the zoomed picture, but is drawn at its own size, so it stays sharp.
                 .overlay {
                     if clip.showsSkeleton {
-                        SkeletonLayer(clip: clip, angles: skeletonAngles, zoom: clip.zoom, pan: clip.pan)
+                        SkeletonLayer(pose: clip.shownPose, videoSize: clip.engine.videoSize, mirrored: clip.engine.mirroredHorizontally,
+                                      angles: skeletonAngles, zoom: clip.zoom, pan: clip.pan)
                     }
                 }
                 // The degrees of drawn angles, likewise.
-                .overlay { DrawingLabels(clip: clip, zoom: clip.zoom, pan: clip.pan) }
+                .overlay { DrawingLabels(surface: clip, zoom: clip.zoom, pan: clip.pan) }
                 .clipped()
                 .contentShape(Rectangle())
                 .drawingPointer(pen, on: drawing)

@@ -10,7 +10,7 @@ let package = Package(
     ],
     dependencies: [
         // Shared with Arete and Imago; the same version as project.yml pins.
-        .package(url: "https://github.com/jiapoo/apple-media", exact: "1.12.0"),
+        .package(url: "https://github.com/jiapoo/apple-media", exact: "1.13.0"),
     ],
     targets: [
         .target(name: "MimesisKit", dependencies: [.product(name: "AreteMedia", package: "apple-media")]),

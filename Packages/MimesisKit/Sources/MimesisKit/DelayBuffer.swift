@@ -1,3 +1,4 @@
+import AreteMedia
 import Foundation
 
 /// The last few seconds of frames, oldest first, for watching yourself a few seconds late and for
