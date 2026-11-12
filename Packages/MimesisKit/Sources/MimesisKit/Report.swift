@@ -1,6 +1,7 @@
 import AreteMedia
 import AVFoundation
 import CoreText
+import ImageIO
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -57,7 +58,7 @@ enum Report {
 
         let jobs = comparison.segments.flatMap { segment in
             segment.parts.enumerated().flatMap { index, part in keyFrames(part, clip: index) }
-        }.count
+        }.count + comparison.segments.reduce(0) { $0 + ($1.snapshots?.count ?? 0) }
         var done = 0
 
         newPage()
@@ -138,8 +139,28 @@ enum Report {
                 }
             }
             if column != 0 { y = rowTop + rowHeight }
-            if frames.isEmpty {
-                text("No key frames yet: add a sync point, a drawing or a note on a frame.", size: 10, gray: 0.5)
+            // The snapshots: each the clips side by side as they were kept, across the page.
+            let snapshots = segment.snapshots ?? []
+            for (number, snapshot) in snapshots.enumerated() {
+                let image = await picture(of: snapshot, in: segment, comparison: comparison)
+                done += 1
+                progress(Double(done) / Double(max(1, jobs)))
+                guard let image else { continue }
+                let full = page.width - margin * 2
+                let height = min(360, full * CGFloat(image.height) / CGFloat(max(1, image.width)))
+                let shown = CGSize(width: height * CGFloat(image.width) / CGFloat(max(1, image.height)), height: height)
+                room(shown.height + 30)
+                context.saveGState()
+                context.translateBy(x: margin, y: y + shown.height)
+                context.scaleBy(x: 1, y: -1)
+                context.draw(image, in: CGRect(origin: .zero, size: shown))
+                context.restoreGState()
+                y += shown.height + 4
+                text("Snapshot \(number + 1) · \(snapshot.label)", size: 9.5, gray: 0.2)
+                y += 12
+            }
+            if frames.isEmpty && snapshots.isEmpty {
+                text("No key frames yet: add a sync point, a drawing or a note on a frame, or take a snapshot.", size: 10, gray: 0.5)
             }
             y += 16
         }
@@ -148,12 +169,53 @@ enum Report {
         return file
     }
 
+    /// A snapshot's picture: the frame of each clip it kept, with that frame's drawings, side by side
+    /// at one height (a single clip: that clip alone). No buttons, rings or timeline: only the pictures.
+    static func picture(of snapshot: Snapshot, in segment: Segment, comparison: Comparison) async -> CGImage? {
+        var frames: [CGImage] = []
+        for (index, time) in snapshot.times.enumerated() {
+            let clip = comparison.clips[index]
+            guard let time, let url = clip.url else { continue }
+            if let frame = await picture(url: url, time: time, mirrored: clip.engine.mirroredHorizontally,
+                                         drawings: segment.parts[index].drawings, frameLength: clip.frameLength) {
+                frames.append(frame)
+            }
+        }
+        guard let first = frames.first else { return nil }
+        guard frames.count > 1 else { return first }
+        let height = frames.map(\.height).max() ?? first.height
+        let gap = 4
+        let widths = frames.map { Int((Double($0.width) * Double(height) / Double(max(1, $0.height))).rounded()) }
+        let width = widths.reduce(0, +) + gap * (frames.count - 1)
+        guard let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
+                                      space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return first }
+        context.setFillColor(CGColor(gray: 0, alpha: 1))
+        context.fill(CGRect(x: 0, y: 0, width: width, height: height))
+        var x = 0
+        for (frame, frameWidth) in zip(frames, widths) {
+            context.draw(frame, in: CGRect(x: x, y: 0, width: frameWidth, height: height))
+            x += frameWidth + gap
+        }
+        return context.makeImage()
+    }
+
+    /// A snapshot's picture as a PNG file's data.
+    static func png(of snapshot: Snapshot, comparison: Comparison) async -> Data? {
+        comparison.storeSegment()
+        guard let image = await picture(of: snapshot, in: comparison.segment, comparison: comparison) else { return nil }
+        let data = NSMutableData()
+        guard let destination = CGImageDestinationCreateWithData(data, UTType.png.identifier as CFString, 1, nil) else { return nil }
+        CGImageDestinationAddImage(destination, image, nil)
+        return CGImageDestinationFinalize(destination) ? data as Data : nil
+    }
+
     private static func short(_ value: Double) -> String {
         value.formatted(.number.precision(.fractionLength(2)))
     }
 
     /// A clip's frame at `time`, mirrored as shown, with the drawings of that frame on it.
-    nonisolated private static func picture(url: URL, time: Double, mirrored: Bool, drawings: [Drawing], frameLength: Double) async -> CGImage? {
+    nonisolated static func picture(url: URL, time: Double, mirrored: Bool, drawings: [Drawing], frameLength: Double) async -> CGImage? {
         let generator = AVAssetImageGenerator(asset: AVURLAsset(url: url))
         generator.appliesPreferredTrackTransform = true
         generator.requestedTimeToleranceBefore = .zero
@@ -214,7 +276,7 @@ struct ReportView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Report").font(.title2.weight(.semibold))
-            Text("A PDF to share: each segment with its notes and timing, and its key frames (those with a sync point, a drawing or a pinned note) from both clips, with the drawings on them.")
+            Text("A PDF to share: each segment with its notes and timing, its key frames (those with a sync point, a drawing or a pinned note) from both clips, with the drawings on them, and its snapshots.")
                 .font(.callout).foregroundStyle(.secondary)
             if let progress {
                 ProgressView(value: progress) { Text("Putting it together… \(Int(progress * 100)) %") }
@@ -283,4 +345,20 @@ struct ReportView: View {
         }
     }
     #endif
+}
+
+/// A picture to save as a file (a snapshot).
+struct PictureFile: FileDocument {
+    static let readableContentTypes: [UTType] = [.png]
+    var data: Data
+
+    init(data: Data) { self.data = data }
+
+    init(configuration: ReadConfiguration) throws {
+        data = configuration.file.regularFileContents ?? Data()
+    }
+
+    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
+        FileWrapper(regularFileWithContents: data)
+    }
 }

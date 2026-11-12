@@ -21,6 +21,9 @@ struct SegmentSidebar: View {
     @State private var editing: Field?
     @State private var text = ""
     @State private var speedFor: Int?
+    /// A snapshot's picture, ready to save as a file.
+    @State private var saving: PictureFile?
+    @State private var savingName = "Snapshot"
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -32,6 +35,7 @@ struct SegmentSidebar: View {
                         clips
                         AngleGraph(comparison: comparison)
                         drawings
+                        snapshots
                         pinned
                         about
                         takes
@@ -51,6 +55,8 @@ struct SegmentSidebar: View {
             if now == nil, editing != nil { commit() }
         }
         .onDisappear { comparison.typing = false }
+        .fileExporter(isPresented: Binding(get: { saving != nil }, set: { if !$0 { saving = nil } }),
+                      document: saving, contentType: .png, defaultFilename: savingName) { _ in saving = nil }
     }
 
     private var header: some View {
@@ -348,6 +354,73 @@ struct SegmentSidebar: View {
                     }
                 }
             }
+        }
+    }
+
+    // MARK: Snapshots
+
+    /// The moments kept with 📷: tap one to see its frames again (and draw some more); save it as a
+    /// picture; they're the report's key frames.
+    @ViewBuilder private var snapshots: some View {
+        let kept = comparison.segment.snapshots ?? []
+        if !kept.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                title("Snapshots")
+                ForEach(Array(kept.enumerated()), id: \.element.id) { number, snapshot in
+                    HStack(spacing: 8) {
+                        HStack(spacing: 1) {
+                            ForEach(Array(snapshot.times.enumerated()), id: \.offset) { index, time in
+                                if let time {
+                                    FrameThumb(url: comparison.clips[index].url, time: time)
+                                        .frame(width: snapshot.times.compactMap { $0 }.count > 1 ? 40 : 64, height: 40)
+                                        .clipped()
+                                }
+                            }
+                        }
+                        .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Snapshot \(number + 1)").font(.system(size: 12, weight: .medium))
+                            Text(snapshot.label).font(.system(size: 10).monospacedDigit()).foregroundStyle(Theme.secondary)
+                        }
+                        Spacer(minLength: 0)
+                        Button { save(snapshot, number: number + 1) } label: {
+                            Image(systemName: "square.and.arrow.down")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(.white.opacity(0.85))
+                                .frame(width: 24, height: 24)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .help("Save this snapshot as a picture: the frames and their drawings, nothing else")
+                        Button { comparison.deleteSnapshot(snapshot.id) } label: {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 8, weight: .heavy))
+                                .foregroundStyle(.white.opacity(0.8))
+                                .frame(width: 18, height: 18)
+                                .background(Color.white.opacity(0.12), in: Circle())
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .help("Remove this snapshot (the drawings on its frames stay)")
+                    }
+                    .padding(4)
+                    .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        leaveField()
+                        comparison.go(to: snapshot)
+                    }
+                    .help("Go back to these frames, to look or to draw some more")
+                }
+            }
+        }
+    }
+
+    private func save(_ snapshot: Snapshot, number: Int) {
+        Task {
+            guard let data = await Report.png(of: snapshot, comparison: comparison) else { return }
+            savingName = "\(comparison.segment.name) snapshot \(number)"
+            saving = PictureFile(data: data)
         }
     }
 

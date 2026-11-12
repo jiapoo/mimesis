@@ -22,6 +22,10 @@ final class EditHistory {
     /// Set while an undo or redo puts a state back, so recording it isn't a new edit.
     private var restoring: State?
 
+    /// Goes up with every change to what a project saves (an edit, an undo or redo, another video):
+    /// compared with its value at the last save, it says whether there's anything to save.
+    private(set) var revision = 0
+
     var canUndo: Bool { !undos.isEmpty }
     var canRedo: Bool { !redos.isEmpty }
 
@@ -43,6 +47,7 @@ final class EditHistory {
         if before.urls != now.urls {
             undos.removeAll()
             redos.removeAll()
+            revision += 1
             return
         }
         // Only another segment chosen: nothing to undo.
@@ -50,6 +55,7 @@ final class EditHistory {
         undos.append(before)
         if undos.count > 200 { undos.removeFirst() }
         redos.removeAll()
+        revision += 1
     }
 
     func undo(_ comparison: Comparison) {
@@ -71,7 +77,10 @@ final class EditHistory {
         guard state.urls == comparison.clips.map(\.url) else { return }
         restoring = state
         current = state
+        revision += 1
         comparison.segments = state.segments
+        // (Which clip is on top is the comparison's, kept in every segment alike.)
+        if let top = state.segments.first?.placement.top { comparison.overlayTop = top }
         comparison.loadSegment(min(state.index, state.segments.count - 1))
     }
 }

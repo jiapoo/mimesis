@@ -246,6 +246,16 @@ The five steps below build it.
       (2026-11-12)
 - ✅ Recent projects show their full path (2026-11-12)
 - ✅ Drawing and skeleton moved into apple-media (AreteMedia 1.13.0); Mimesis uses that copy (2026-11-12)
+- ✅ Linked play runs as long as the longer clip; the shorter waits on its Out; a loop button; linked, the
+      timeline is only In to Out (2026-11-12; seen on the iPhone simulator)
+- ✅ One Draw button for every clip on screen; snapshots (kept frames with drawings: in the sidebar, saved
+      as a picture, key frames in the report) (2026-11-12; not yet tried by hand)
+- ✅ Mac: everything from ⋯ in the File menu, Close Project, "Saved" notice, quit asks only with changes, the
+      Save sheet, Space always plays (2026-11-12; not yet tried by hand)
+- ✅ Which clip is on top in the overlay is the same in every segment; no bright flash leaving the overlay
+      with an HDR cutout (2026-11-12; the flash not yet checked)
+- ⬜ Arete and Imago on AreteMedia's drawing and skeleton (Arete: started on its branch
+      `shared-drawing-wip`, never built; Imago: not started). Set aside 2026-11-12.
 
 ## Phase 7.6 — For people serious about improving
 

@@ -97,6 +97,8 @@ public final class ComparisonStore {
     /// The project on screen, if it was opened from (or saved as) one: Save writes over it.
     public private(set) var currentURL: URL?
     public var currentName: String? { currentURL?.deletingPathExtension().lastPathComponent }
+    /// Goes up each time a project is opened.
+    public private(set) var opens = 0
     /// Why the last save or open failed, to show.
     public var problem: String?
 
@@ -226,6 +228,7 @@ public final class ComparisonStore {
         await comparison.restore(state, videos: url)
         currentURL = url
         note(url)
+        opens += 1
         return true
     }
 

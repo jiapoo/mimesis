@@ -36,9 +36,27 @@ public struct Segment: Codable, Identifiable, Equatable {
     public var placement = Placement()
     /// What to look at in it, in the user's words.
     public var notes: String?
+    /// Moments kept to come back to and to show in the report. Nil in older saves.
+    public var snapshots: [Snapshot]?
 
     public init(name: String) {
         self.name = name
+    }
+}
+
+/// A moment kept: the frame each clip on screen was showing, and how they were laid out. Its picture
+/// is those frames with what's drawn on them; going back to it shows them again, to draw some more.
+public struct Snapshot: Codable, Equatable, Identifiable, Sendable {
+    public var id = UUID()
+    public var date = Date()
+    /// Clip A's and clip B's time; nil for a clip that wasn't on screen.
+    public var times: [Double?]
+    /// The layout then (`Comparison.Layout`'s raw value).
+    public var layout: String
+
+    /// "A 1.23 s · B 2.10 s"
+    var label: String {
+        zip(["A", "B"], times).compactMap { letter, time in time.map { "\(letter) \(clock($0))" } }.joined(separator: " · ")
     }
 }
 
@@ -112,6 +130,8 @@ extension Comparison {
         }
         segments[segmentIndex].placement = Segment.Placement(
             top: overlayTop, offset: overlayOffset, scale: overlayScale, rotation: overlayRotation)
+        // Which clip is on top is one choice for the whole comparison, not each segment's.
+        for at in segments.indices { segments[at].placement.top = overlayTop }
     }
 
     /// Shows a segment on the clips.
@@ -127,7 +147,6 @@ extension Comparison {
             clip.drawings = part.drawings
             clip.notes = part.notes ?? []
         }
-        overlayTop = segment.placement.top
         overlayOffset = segment.placement.offset
         overlayScale = segment.placement.scale
         overlayRotation = segment.placement.rotation
@@ -214,6 +233,36 @@ extension Comparison {
         segmentIndex = 0
         takes = [[], []]
         takeIndex = [0, 0]
+    }
+
+    // MARK: Snapshots
+
+    /// Keeps this moment: the frames on screen now, with their drawings.
+    public func addSnapshot() {
+        if linked { pause() } else { clips.forEach { $0.engine.pause() } }
+        let times: [Double?] = clips.enumerated().map { index, clip in
+            guard clip.isLoaded else { return nil }
+            if layout == .left && index == 1 { return nil }
+            if layout == .right && index == 0 { return nil }
+            return clip.engine.currentTime
+        }
+        guard times.contains(where: { $0 != nil }) else { return }
+        segments[segmentIndex].snapshots = (segments[segmentIndex].snapshots ?? []) + [Snapshot(times: times, layout: layout.rawValue)]
+    }
+
+    /// Shows a snapshot's frames again, laid out as they were (each clip on its own frame, so not linked).
+    public func go(to snapshot: Snapshot) {
+        linked = false
+        clips.forEach { $0.engine.pause() }
+        if let layout = Layout(rawValue: snapshot.layout), layout != .overlay || canLink { self.layout = layout }
+        for (clip, time) in zip(clips, snapshot.times) {
+            guard let time, clip.isLoaded else { continue }
+            Task { await clip.engine.seekToTime(time) }
+        }
+    }
+
+    public func deleteSnapshot(_ id: Snapshot.ID) {
+        segments[segmentIndex].snapshots?.removeAll { $0.id == id }
     }
 
     // MARK: Speed

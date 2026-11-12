@@ -17,9 +17,12 @@ struct Transport: View {
     /// button that shows or hides it.
     var sidebarShown = false
     var onSidebar: () -> Void = {}
+    /// A snapshot was just taken (to say so).
+    var onSnapshot: () -> Void = {}
     @Environment(Library.self) private var library
     @State private var showingSpeed = false
     @State private var showingClipTools = false
+    @State private var barWidth: CGFloat = 0
 
     /// An iPhone: everything a little smaller, so the videos keep the height.
     private var compact: Bool {
@@ -77,11 +80,16 @@ struct Transport: View {
                 segmentButton
                 focusPicker
                 // (The overlay's own controls are over the picture: the bar is the same in every layout.)
-                if let clip = comparison.selected, !sidebarShown {
-                    // An iPhone hasn't the width for In, Out, Sync and Speed in the bar (set, they grow:
-                    // "In 1.27 ✕"), and they pushed the other buttons off the screen: one button
-                    // opens them.
-                    if compact { clipToolsButton(clip) } else { ClipTools(clip: clip, comparison: comparison) }
+                if let clip = comparison.selected {
+                    // In, Out, Sync and Speed, where the bar is wide enough for them (with the sidebar
+                    // open too: it has them, but they're nearer the hand here). Where it isn't (an
+                    // iPhone; set, they grow: "In 1.27 ✕"), one button opens them, unless the sidebar
+                    // is there to do it.
+                    if !compact && barWidth >= 880 {
+                        ClipTools(clip: clip, comparison: comparison)
+                    } else if !sidebarShown {
+                        clipToolsButton(clip)
+                    }
                 }
             }
             Spacer(minLength: 6)
@@ -94,14 +102,23 @@ struct Transport: View {
                     .help("One frame forward (.)")
             }
             Spacer(minLength: 6)
-            // Right: draw on both, undo, speed.
+            // Right: loop, snapshot, draw, undo, speed.
             HStack(spacing: 8) {
-                if comparison.drawsTogether {
-                    RoundButton(symbol: "pencil.tip.crop.circle", active: comparison.drawing == .both, size: 32) {
-                        comparison.toggleDrawingBoth()
-                    }
-                    .help("Draw on both clips")
+                RoundButton(symbol: comparison.loops ? "repeat" : "arrow.right.to.line", active: comparison.loops, size: compact ? 30 : 32) {
+                    comparison.loops.toggle()
                 }
+                .help(comparison.loops ? "Looping: at the end, play goes back to the start and on. Click to stop at the end instead."
+                      : "Play stops at the end. Click to loop: back to the start and on.")
+                RoundButton(symbol: "camera", size: compact ? 30 : 32) {
+                    comparison.addSnapshot()
+                    onSnapshot()
+                }
+                .help("Snapshot: keep these frames with their drawings. It's listed in the sidebar, goes into the report as a key frame, and can be saved as a picture.")
+                // The one Draw button: draws on every clip on screen.
+                RoundButton(symbol: "pencil.tip.crop.circle", active: comparison.drawing != nil, size: compact ? 30 : 32) {
+                    comparison.toggleDrawingBoth()
+                }
+                .help("Draw on the clips: lines, arrows, circles and angles on the frames on screen")
                 // Undo and redo are in the top bar; an iPhone has none, so they're here.
                 if compact { UndoButtons(comparison: comparison, size: 30) }
                 speedSlider
@@ -111,6 +128,7 @@ struct Transport: View {
         .padding(.horizontal, 14)
         .padding(.vertical, compact ? 3 : 7)
         .frame(maxWidth: .infinity)
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { barWidth = $0 }
         .background(Theme.card)
         .overlay(alignment: .top) { Rectangle().fill(Theme.line).frame(height: 1) }
         .disabled(comparison.focused == nil)
@@ -236,19 +254,31 @@ struct Transport: View {
         .help("Play / pause (Space)")
     }
 
-    /// The clip on the ruler and its marks: always the focused one, linked or not.
-    private var rulerClip: Clip? { comparison.focused }
+    /// The clip on the ruler and its marks: the focused one; linked, the one that runs to the end of the
+    /// span (the longer one), so the ruler never stops short.
+    private var rulerClip: Clip? { comparison.linked ? comparison.lead : comparison.focused }
+
+    /// The stretch of the ruler's clip that the ruler shows: all of it, or, linked, only its share of
+    /// the segment (In to Out). Nothing outside can be reached then, so there's nothing there to drag to.
+    private var rulerSpan: ClosedRange<Double>? {
+        guard let clip = rulerClip, clip.engine.duration > 0 else { return nil }
+        guard comparison.linked else { return 0...clip.engine.duration }
+        let range = comparison.range
+        let start = comparison.clipTime(clip, at: range.lowerBound), end = comparison.clipTime(clip, at: range.upperBound)
+        return start...max(start + 0.01, end)
+    }
 
     /// A strip over the ruler's progress bar: diamonds for sync points, dots for drawings. Tap one to go there.
     @ViewBuilder private var marks: some View {
-        if let clip = rulerClip, clip.engine.duration > 0 {
-            let duration = clip.engine.duration
+        if let clip = rulerClip, let span = rulerSpan {
+            let origin = span.lowerBound, duration = span.upperBound - span.lowerBound
+            let inside = { (t: Double) in t >= span.lowerBound - 0.001 && t <= span.upperBound + 0.001 }
             let drawingTimes = Array(Set(clip.drawings.filter { !$0.always }.map { ($0.time * 100).rounded() / 100 })).sorted()
             GeometryReader { space in
-                let x = { (t: Double) in CGFloat(t / duration) * space.size.width }
+                let x = { (t: Double) in CGFloat((t - origin) / duration) * space.size.width }
                 ZStack(alignment: .topLeading) {
                     // Tagged moments: small yellow tags.
-                    ForEach(clip.url.flatMap { library.entry(for: $0)?.tags } ?? []) { tag in
+                    ForEach((clip.url.flatMap { library.entry(for: $0)?.tags } ?? []).filter { inside($0.time) }) { tag in
                         markButton(at: tag.time, clip: clip) {
                             Image(systemName: "tag.fill").font(.system(size: 8))
                                 .foregroundStyle(Color(red: 1, green: 0.84, blue: 0.2))
@@ -257,7 +287,7 @@ struct Transport: View {
                         .help(tag.label)
                     }
                     // Notes pinned to frames.
-                    ForEach(clip.notes) { note in
+                    ForEach(clip.notes.filter { inside($0.time) }) { note in
                         markButton(at: note.time, clip: clip) {
                             Image(systemName: "text.bubble.fill")
                                 .font(.system(size: 10))
@@ -268,7 +298,7 @@ struct Transport: View {
                         .help(note.text)
                     }
                     // Frames with drawings: a pencil mark in the drawing's colour.
-                    ForEach(drawingTimes, id: \.self) { t in
+                    ForEach(drawingTimes.filter(inside), id: \.self) { t in
                         markButton(at: t, clip: clip) {
                             Image(systemName: "pencil.tip")
                                 .font(.system(size: 11, weight: .bold))
@@ -278,7 +308,7 @@ struct Transport: View {
                         .position(x: x(t), y: 7)
                         .help("This frame has drawings: tap to go there")
                     }
-                    ForEach(Array(clip.syncs.enumerated()), id: \.offset) { index, t in
+                    ForEach(Array(clip.syncs.enumerated()).filter { inside($0.element) }, id: \.offset) { index, t in
                         SyncDiamond(
                             clip: clip, index: index, width: space.size.width, movable: !comparison.linked,
                             onJump: { jump(to: t, clip: clip) })
@@ -317,17 +347,16 @@ struct Transport: View {
 
     /// AreteMedia's FrameRulerTimeline, styled as in Arete's player.
     @ViewBuilder private func ruler(compact: Bool) -> some View {
-        if comparison.linked, let lead = comparison.focused {
-            // The focused clip's own frames; a seek on it moves the shared timeline, so the other follows.
-            let range = comparison.range
+        if comparison.linked, let lead = rulerClip, let span = rulerSpan {
+            // The longer clip's own frames, from its In to its Out only: the ruler is the segment, and
+            // there's nothing outside it to drag to. A seek on it moves the shared timeline, so the other
+            // clip follows.
             areteRuler(
                 compact: compact,
-                currentTime: lead.engine.currentTime,
-                duration: lead.engine.duration,
+                currentTime: min(max(lead.engine.currentTime - span.lowerBound, 0), span.upperBound - span.lowerBound),
+                duration: span.upperBound - span.lowerBound,
                 fps: lead.engine.fps,
-                onSeek: { t in comparison.scrub(to: comparison.linkedTime(of: lead, at: t)) },
-                trimStart: comparison.clipTime(lead, at: range.lowerBound),
-                trimEnd: comparison.clipTime(lead, at: range.upperBound),
+                onSeek: { t in comparison.scrub(to: comparison.linkedTime(of: lead, at: t + span.lowerBound)) },
                 onDraggingChanged: { dragging in
                     if dragging {
                         comparison.pause()

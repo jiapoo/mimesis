@@ -75,7 +75,7 @@ below 50 frames a second and slow motion will look jumpy. See [Filming tips](#fi
 - **The videos fill the screen, touching**: side by side when the window is wide, one above the other when it's
   tall (an iPad held upright). On iPhone, Mimesis runs sideways only.
 - **Each clip** shows its letter and time (top left). The **selected** clip has a thin crimson edge and its
-  buttons top right: **✏ Draw**, **⇋ Mirror**, **🧍 Skeleton**, **⟳ Edit** (turn, flip, crop, trim), **⋯** (Sound,
+  buttons top right: **⇋ Mirror**, **🧍 Skeleton**, **⟳ Edit** (turn, flip, crop, trim), **⋯** (Sound,
   Open video, From Photos, Clear trim, Clear sync points, StroMotion, Edit clip, Revert to the original, Close).
 - **The timeline** runs across the bottom of the videos, see-through: the time, the progress bar, the frame
   ruler (drag it sideways to move frame by frame), and over it the **marks**: crimson ◆ sync points, a pencil
@@ -86,7 +86,12 @@ below 50 frames a second and slow motion will look jumpy. See [Filming tips](#fi
   - the selected clip's **In / Out**, **◆ sync** and **speed** (while the sidebar is hidden; it has them too).
     On an **iPhone** these are behind one **✂ button** (crimson once any is set), so the bar always fits;
   - **frame back / play / frame forward**;
-  - **✏ Draw on both** (when linked), the playback **speed** (tap it for a slider).
+  - **🔁 Loop**: on, play goes back to the start at the end and carries on; off, it stops at the end;
+  - **📷 Snapshot**: keeps the frames on screen with their drawings (see [Snapshots](#snapshots));
+  - **✏ Draw**: the one Draw button, for every clip on screen;
+  - the playback **speed** (tap it for a slider).
+  - On a Mac or iPad the bar also shows the selected clip's In, Out, Sync and Speed whenever it's wide enough,
+    with the sidebar open too.
 - **The Segments sidebar** (left side; a panel that slides in on iPhone) is the workspace:
   - the **segments**, with each one's length and number of drawings; **+** adds one; **double-click a name to
     rename it**: it turns into a field with a crimson edge, and **Return or a click anywhere else** keeps the
@@ -101,13 +106,16 @@ below 50 frames a second and slow motion will look jumpy. See [Filming tips](#fi
   - **About this segment**: double-click to write; **Done** or a click anywhere else finishes;
   - **Takes over time**: other videos of the same movement in a clip (see [Takes](#takes-progress-over-time)).
   - Drag the sidebar's **right edge** to make it wider or narrower.
-- **Top bar**: **↶ ↷** undo and redo, **A | B / A / B / Overlay**, **⇄** (swap A and B), and **⋯** (projects, library, Live replay,
-  export, report). On the Mac it's the window's title bar, and the **File** menu has New, Open, Open Recent,
-  Save, Save As and Export.
+- **Top bar**: **↶ ↷** undo and redo, **A | B / A / B / Overlay**, **⇄** (swap A and B). On iPhone and iPad
+  there is also **⋯** (projects, library, Live replay, export, report). On the **Mac** the top bar is the
+  window's title bar and there is no ⋯: all of that is in the **File** menu (New, Open, Open Recent, Recent
+  Projects, Close Project, Save, Save As, Show in Finder, Export Video, Report, Library, Live Replay). Where
+  this guide says "⋯ ›", use **File ›** on the Mac.
 
 **Which clip do the controls and the play button move?** Linked (**A🔗B**, or Esc / L on the Mac): both,
 matched over the chosen segment. Otherwise the **selected** clip: tap a clip, tap **A** or **B** in the bar,
-or press **Tab**. The play button shows the selected clip's state; each clip loops.
+or press **Tab**. The play button shows the selected clip's state. **Space** always plays and pauses on the
+Mac, whatever you clicked last.
 
 **Swap A and B** (⇄): the two videos change places, each keeping its In/Out, sync points, speed, drawings and
 notes in every segment.
@@ -150,6 +158,9 @@ starts with one, *Segment 1*, covering the whole clips. Make one per thing you w
 - **With an Out on both clips, the ends line up too.** The longer stretch plays at **1×**; the shorter one is
   **slowed** so it lasts as long. 1.0 s against 1.2 s plays at 0.83×. Nobody is ever sped up.
 - **Without an Out on both**, the clips just start together and each plays at its own pace.
+- **When one clip's stretch is shorter** (no Out on both, or a speed set by hand), play runs as long as the
+  **longer** one: the shorter clip stops on its last frame (its Out) and waits there.
+- **Linked, the timeline is the segment**: it runs from In to Out only, so nothing outside can be dragged to.
 - **Sync points** (optional): a moment inside the stretch that should also line up, such as **contact**. Move to
   it in each clip and tap **Add sync** (S). They pair up in order, A's first with B's first, and split the
   stretch into **phases**, each matched the same way: wind-up with wind-up, follow-through with follow-through. On a sync
@@ -189,7 +200,8 @@ starts that clip afresh in every segment.
 
 ## Drawing and measuring angles
 
-Tap **✏** on a clip (linked: the one **✏** in the bar draws on both). The clip pauses and the drawing tools
+Tap **✏** in the bar: there is one Draw button, and it draws on **every clip on screen** (A and B side by
+side: draw on either, with no clip singled out). The clips pause and the drawing tools
 appear, laid out as in Photoshop. The timeline stays, so you can step to another frame and keep drawing.
 
 **Down the right: the tools**
@@ -246,7 +258,8 @@ The **top** clip (B, unless you swap) is drawn over the other, see-through. Choo
 up at their sync points.
 
 **Which clip is on top** is written beside the layout in the top bar: **B over A ⇅**. Click anywhere on it
-to swap them (on iPhone it's at the start of the row over the picture).
+to swap them (on iPhone it's at the start of the row over the picture). It's one choice for the whole
+comparison: every segment uses it.
 
 Everything else for the overlay sits **over the picture**, in **one row** at the top, so the bar underneath is
 the same as in the other layouts (with A or B chosen it shows that clip's In, Out, Sync and Speed). Where the
@@ -369,7 +382,9 @@ yellow marks over the timeline (tap to jump), and in the library.
 - Mimesis **remembers what's on screen** and brings it back the next time you open it.
 - A **project** is a file, **Name.mimesis**, with every segment and edit **and its own copies of the videos**
   (every take too). Copy it, AirDrop it or keep it in iCloud Drive: it opens on any Mac, iPad or iPhone.
-  - **Mac**: **File › Save** (⌘S) asks where to save and under what name the first time, then saves in place;
+  - **Mac**: **File › Save** (⌘S) asks where to save and under what name the first time (the usual Save
+    sheet), then saves in place and says **"Saved …"** for a moment at the top; **Close Project** (⇧⌘W);
+    quitting asks to save **only when something has changed**;
     **Save As…** (⇧⌘S); **Open…** (⌘O); **Open Recent**; or double-click a project in Finder.
   - **iPhone and iPad**: **⋯ › Save project…** asks for a name and saves it in the **Mimesis** folder in the
     Files app; move or share it from there. **⋯ › Open project…** finds one anywhere in Files.
@@ -378,8 +393,8 @@ yellow marks over the timeline (tap to jump), and in the library.
     or the Files app (or sitting in the Trash) leaves the list by itself.
   - **Open project** on the welcome screen finds a project file; on the Mac you can also **drop a `.mimesis`
     file on the window** (or on the Dock icon) to open it.
-  - **⋯ › New** (⌘N), at the top of the menu, closes both clips and starts afresh; with something open it asks
-    first: **Save**, **Don't Save** or Cancel.
+  - **⋯ › New** (⌘N), at the top of the menu, closes both clips and starts afresh; with changes not saved it
+    asks first: **Save**, **Don't Save** or Cancel.
   - **To delete a project**: **⋯ › Recent projects…** lists each with **where it is** (its full path on the Mac),
     a **Show in Finder** button and a **trash** button (on the Mac it goes to the Trash; on iPhone and iPad the
     file is deleted). The original videos are never touched. On the Mac you can also just delete the
@@ -435,7 +450,19 @@ A clip can hold several **takes**: the same movement filmed on different days.
   start afresh.
 - **⋯ › Report (PDF)…** makes a document to share with a coach or a student: each segment with its note, each
   clip's stretch and sync times, and its **key frames** (those with a sync point, a drawing or a pinned note)
-  from both clips with the drawings on them, the note, and the joint angle when the body has been measured.
+  from both clips with the drawings on them, the note, and the joint angle when the body has been measured;
+  then the segment's **snapshots**, each across the page.
+
+### Snapshots
+
+**📷** in the bar keeps the moment on screen: the frame each clip is showing, with what's drawn on those
+frames. No buttons, rings or timeline are in it: only the pictures and the drawings.
+
+- Snapshots are listed in the sidebar (**Snapshots**). **Tap one** to go back to exactly those frames, laid
+  out as they were, and **draw some more**: the snapshot shows what's on its frames, so new drawings are in it.
+- **⤓** on a snapshot saves it as a **picture** (PNG): the clips side by side at one height.
+- **✕** removes the snapshot (the drawings stay on their frames).
+- Each snapshot is a key frame in the **report**.
 
 ---
 

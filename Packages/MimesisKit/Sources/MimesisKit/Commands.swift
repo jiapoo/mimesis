@@ -15,6 +15,7 @@ public final class MenuRequests {
 
     public enum Request: Equatable {
         case new, open, openRecent(RecentProject.ID), save, saveAs, export, edit, swap, undo, redo
+        case close, recentProjects, showInFinder, library, liveReplay, report, maskTest, saveThenQuit
     }
 
     public var pending: Request?
@@ -23,6 +24,10 @@ public final class MenuRequests {
     public var recentPaths: [RecentProject.ID: String] = [:]
     public var hasClips = false
     public var hasBoth = false
+    /// There are changes not saved yet (quitting asks about them).
+    public var hasUnsaved = false
+    /// The project on screen's name, if it's one.
+    public var projectName: String?
 }
 
 /// The Mac's File menu: New, Open, Open Recent, Save, Save As, Export.
@@ -31,6 +36,7 @@ public struct MimesisCommands: Commands {
 
     public var body: some Commands {
         let menu = MenuRequests.shared
+        // File: everything about projects, and the ways in and out (the Mac has no ⋯ button for them).
         CommandGroup(replacing: .newItem) {
             Button("New Comparison") { menu.pending = .new }
                 .keyboardShortcut("n", modifiers: .command)
@@ -42,6 +48,11 @@ public struct MimesisCommands: Commands {
                 }
                 if menu.recents.isEmpty { Text("No Recent Projects") }
             }
+            Button("Recent Projects…") { menu.pending = .recentProjects }
+            Divider()
+            Button("Close Project") { menu.pending = .close }
+                .keyboardShortcut("w", modifiers: [.command, .shift])
+                .disabled(!menu.hasClips)
         }
         CommandGroup(replacing: .saveItem) {
             Button("Save Project") { menu.pending = .save }
@@ -50,10 +61,23 @@ public struct MimesisCommands: Commands {
             Button("Save Project As…") { menu.pending = .saveAs }
                 .keyboardShortcut("s", modifiers: [.command, .shift])
                 .disabled(!menu.hasClips)
+            Button(menu.projectName.map { "Show “\($0)” in Finder" } ?? "Show in Finder") { menu.pending = .showInFinder }
+                .disabled(menu.projectName == nil)
             Divider()
             Button("Export Video…") { menu.pending = .export }
                 .keyboardShortcut("e", modifiers: .command)
                 .disabled(!menu.hasBoth)
+            Button("Report (PDF)…") { menu.pending = .report }
+                .disabled(!menu.hasClips)
+            Divider()
+            Button("Library…") { menu.pending = .library }
+                .keyboardShortcut("l", modifiers: .command)
+            Button("Live Replay…") { menu.pending = .liveReplay }
+                .keyboardShortcut("k", modifiers: .command)
+            #if DEBUG
+            Divider()
+            Button("Masking Test…") { menu.pending = .maskTest }
+            #endif
         }
         // Edit › Undo and Redo: the comparison's edits; while typing, the typing's own.
         CommandGroup(replacing: .undoRedo) {

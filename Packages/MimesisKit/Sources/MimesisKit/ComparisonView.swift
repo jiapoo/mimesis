@@ -17,7 +17,12 @@ public struct ComparisonView: View {
     @State private var pickingProject = false
     @State private var reporting = false
     @State private var askingNew = false
-    @State private var newAfterSave = false
+    /// What to do once a project asked to be saved under a name is saved (iPhone and iPad).
+    @State private var afterSave: (() -> Void)?
+    /// The edits' count when the project was last saved or opened (see `unsaved`).
+    @State private var savedRevision = 0
+    /// Shown for a moment at the top ("Saved …").
+    @State private var notice: String?
     /// The file chooser is open to add a take to this clip.
     @State private var takeSide: Int?
     /// The segments' sidebar (kept between launches; an iPhone starts with it hidden).
@@ -144,7 +149,8 @@ public struct ComparisonView: View {
                     }
                     Transport(comparison: comparison, part: .bar, extras: phone ? AnyView(dockExtras) : nil,
                               sidebarShown: showsSidebar,
-                              onSidebar: { withAnimation(.easeOut(duration: 0.2)) { showsSidebar.toggle() } })
+                              onSidebar: { withAnimation(.easeOut(duration: 0.2)) { showsSidebar.toggle() } },
+                              onSnapshot: { say("Snapshot kept: it's in the sidebar, and in the report") })
                 }
                 // The clips take what the sidebar leaves, however little: the sidebar is never squeezed
                 // or pushed off the window.
@@ -206,8 +212,9 @@ public struct ComparisonView: View {
             Button("Cancel", role: .cancel) { incoming.removeAll() }
         }
         #if os(macOS)
-        // On the Mac the top bar is the window's own title bar: no title, the layout in the middle and
-        // the menu on the right, level with the close, minimise and zoom buttons.
+        // On the Mac the top bar is the window's own title bar: no title, undo and redo and the layout,
+        // level with the close, minimise and zoom buttons. (Projects, the library, Live replay, export
+        // and the report are in the File menu: no ⋯ button.)
         .toolbar {
             // Our own capsules, without the glass the system would put around them.
             if #available(macOS 26, *) {
@@ -215,12 +222,9 @@ public struct ComparisonView: View {
                     .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .principal) { if anyLoaded { layoutSwitch } }
                     .sharedBackgroundVisibility(.hidden)
-                ToolbarItem(placement: .primaryAction) { menu }
-                    .sharedBackgroundVisibility(.hidden)
             } else {
                 ToolbarItem(placement: .navigation) { if anyLoaded { UndoButtons(comparison: comparison) } }
                 ToolbarItem(placement: .principal) { if anyLoaded { layoutSwitch } }
-                ToolbarItem(placement: .primaryAction) { menu }
             }
         }
         .toolbar(removing: .title)
@@ -252,6 +256,14 @@ public struct ComparisonView: View {
                 }
                 // While drawing, holding Space moves the video with a drag (as in Photoshop), and
                 // doesn't play.
+                // Space plays and pauses, whatever was clicked last (a layout button kept the key for
+                // itself); while drawing it's held to move the picture instead.
+                if event.keyCode == 49, event.type == .keyDown, comparison.drawing == nil, text == nil,
+                   event.window?.attachedSheet == nil, anyLoaded,
+                   event.modifierFlags.intersection([.command, .option, .control, .shift]).isEmpty {
+                    if !event.isARepeat { comparison.togglePlay() }
+                    return nil
+                }
                 if event.keyCode == 49 {
                     if event.type == .keyUp {
                         let was = comparison.pen.panning
@@ -309,6 +321,7 @@ public struct ComparisonView: View {
             } else {
                 // Carry on where the last session left off.
                 await store.restoreLast(into: comparison)
+                markSaved()
             }
             if let sync = LibrarySync() { library.startSync(sync) }
         }
@@ -338,22 +351,24 @@ public struct ComparisonView: View {
             Button("Cancel", role: .cancel) {}
             Button("Save") {
                 let name = newName.trimmingCharacters(in: .whitespaces)
-                let saved = store.save(comparison, to: store.documentURL(named: name.isEmpty ? defaultName : name))
-                if saved && newAfterSave { store.closeProject(comparison) }
-                newAfterSave = false
+                if store.save(comparison, to: store.documentURL(named: name.isEmpty ? defaultName : name)) {
+                    saved()
+                    afterSave?()
+                }
+                afterSave = nil
             }
         } message: {
             Text("Saved as a file in the Mimesis folder (in the Files app): both videos and every edit. Move or share it from there.")
         }
         .confirmationDialog(
-            store.currentName.map { "Save “\($0)” before starting a new comparison?" } ?? "Save this comparison as a project first?",
+            store.currentName.map { "Save the changes to “\($0)” first?" } ?? "Save this comparison as a project first?",
             isPresented: $askingNew, titleVisibility: .visible
         ) {
-            Button("Save") { saveThenNew() }
-            Button("Don't Save", role: .destructive) { store.closeProject(comparison) }
+            Button("Save") { saveProject(then: closeEverything) }
+            Button("Don't Save", role: .destructive) { closeEverything() }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("New closes both clips. Anything not saved in a project is lost.")
+            Text("Both clips are closed. Changes not saved in a project are lost.")
         }
         .alert("Project", isPresented: Binding(get: { store.problem != nil }, set: { if !$0 { store.problem = nil } })) {
             Button("OK", role: .cancel) {}
@@ -364,26 +379,17 @@ public struct ComparisonView: View {
         .onChange(of: MenuRequests.shared.pending) { _, request in
             guard let request else { return }
             MenuRequests.shared.pending = nil
-            switch request {
-            case .new: newComparison()
-            case .open: openProject()
-            case .openRecent(let id):
-                if let recent = store.recents.first(where: { $0.id == id }) {
-                    Task { await store.open(recent, into: comparison) }
-                }
-            case .save: saveProject()
-            case .saveAs: saveProjectAs()
-            case .export: if comparison.canLink { exporting = true }
-            case .edit: editClip()
-            case .swap: if bothLoaded { comparison.swapClips() }
-            case .undo: comparison.history.undo(comparison)
-            case .redo: comparison.history.redo(comparison)
-            }
+            handle(request)
         }
         .onChange(of: store.recents, initial: true) { _, recents in
             MenuRequests.shared.recentPaths = Dictionary(uniqueKeysWithValues: recents.map { ($0.id, store.path(of: $0)) })
             MenuRequests.shared.recents = recents
         }
+        .onChange(of: unsaved, initial: true) { _, unsaved in MenuRequests.shared.hasUnsaved = unsaved }
+        .onChange(of: store.currentName, initial: true) { _, name in MenuRequests.shared.projectName = name }
+        // A project just opened: nothing to save yet.
+        .onChange(of: store.opens) { _, _ in markSaved() }
+        .overlay(alignment: .top) { noticeView }
         .onChange(of: comparison.clips.map(\.isLoaded), initial: true) { _, loaded in
             MenuRequests.shared.hasClips = loaded.contains(true)
             MenuRequests.shared.hasBoth = loaded.allSatisfy { $0 }
@@ -793,51 +799,131 @@ public struct ComparisonView: View {
         made.start(in: comparison.clips[0])
     }
 
-    /// "serve vs serve2"
-    /// ⌘S: over the project on screen; with none yet, asks for a name.
-    private func saveProject() {
-        if !store.saveCurrent(comparison) { saveProjectAs() }
-    }
-
-    /// New: with something open, asks first whether to save it.
-    private func newComparison() {
-        if anyLoaded { askingNew = true } else { store.closeProject(comparison) }
-    }
-
-    /// Saves, then starts afresh (New › Save). On iPhone and iPad a project without a name yet asks for
-    /// one first; the new comparison starts once it's saved.
-    private func saveThenNew() {
-        if store.saveCurrent(comparison) {
-            store.closeProject(comparison)
-            return
+    /// What the Mac's menu bar asked for.
+    private func handle(_ request: MenuRequests.Request) {
+        switch request {
+        case .new: newComparison()
+        case .open: openProject()
+        case .openRecent(let id):
+            if let recent = store.recents.first(where: { $0.id == id }) {
+                Task { await store.open(recent, into: comparison) }
+            }
+        case .save: saveProject()
+        case .saveAs: saveProjectAs()
+        case .close: newComparison()
+        case .recentProjects: browsing = true
+        case .showInFinder:
+            #if os(macOS)
+            if let url = store.currentURL { NSWorkspace.shared.activateFileViewerSelecting([url]) }
+            #endif
+        case .library: showingLibrary = true
+        case .liveReplay: court = true
+        case .report: if anyLoaded { reporting = true }
+        case .maskTest: maskTest = true
+        case .saveThenQuit:
+            #if os(macOS)
+            saveProject(then: {
+                MenuRequests.shared.hasUnsaved = false
+                NSApp.terminate(nil)
+            })
+            #endif
+        case .export: if comparison.canLink { exporting = true }
+        case .edit: editClip()
+        case .swap: if bothLoaded { comparison.swapClips() }
+        case .undo: comparison.history.undo(comparison)
+        case .redo: comparison.history.redo(comparison)
         }
-        #if os(macOS)
-        saveProjectAs()
-        if store.currentURL != nil { store.closeProject(comparison) }
-        #else
-        newAfterSave = true
-        saveProjectAs()
-        #endif
     }
 
-    /// Asks where to save the project and what to call it: the Mac's Save panel; on iPhone and iPad a
-    /// name, and it goes in the Mimesis folder in Files.
-    private func saveProjectAs() {
+    /// "Saved …", for a moment at the top.
+    @ViewBuilder private var noticeView: some View {
+        if let notice {
+            Label(notice, systemImage: "checkmark.circle.fill")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 14).padding(.vertical, 8)
+                .background(Color.black.opacity(0.75), in: Capsule())
+                .overlay(Capsule().strokeBorder(Color.white.opacity(0.15)))
+                .padding(.top, 10)
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .allowsHitTesting(false)
+        }
+    }
+
+    // MARK: Saving, closing, quitting
+
+    /// There's something to save: an edit, or another video, since the project was last saved or opened.
+    private var unsaved: Bool { anyLoaded && comparison.history.revision != savedRevision }
+
+    /// What's on screen is what's saved (or was just opened): nothing to save until the next edit.
+    private func markSaved() {
+        comparison.history.record(comparison)
+        savedRevision = comparison.history.revision
+    }
+
+    /// Says something for a moment at the top of the window ("Saved …").
+    private func say(_ text: String) {
+        withAnimation(.easeOut(duration: 0.2)) { notice = text }
+        Task {
+            try? await Task.sleep(for: .seconds(2.2))
+            if notice == text { withAnimation(.easeOut(duration: 0.3)) { notice = nil } }
+        }
+    }
+
+    /// ⌘S: over the project on screen; with none yet, asks where to save. `then` runs once it's saved.
+    private func saveProject(then: (() -> Void)? = nil) {
+        if store.saveCurrent(comparison) {
+            saved()
+            then?()
+        } else {
+            saveProjectAs(then: then)
+        }
+    }
+
+    private func saved() {
+        markSaved()
+        say("Saved “\(store.currentName ?? "")”")
+    }
+
+    /// New, or Close: both clips closed, no project. With something not saved, asks first.
+    private func newComparison() {
+        if unsaved { askingNew = true } else { closeEverything() }
+    }
+
+    private func closeEverything() {
+        store.closeProject(comparison)
+        markSaved()
+    }
+
+    /// Asks where to save the project and what to call it: the Mac's Save sheet, on the window; on
+    /// iPhone and iPad a name, and it goes in the Mimesis folder in Files. `then` runs once it's saved.
+    private func saveProjectAs(then: (() -> Void)? = nil) {
         guard anyLoaded else { return }
         #if os(macOS)
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.mimesisProject]
         panel.nameFieldStringValue = (store.currentName ?? defaultName) + "." + ComparisonStore.fileExtension
         panel.canCreateDirectories = true
-        panel.title = "Save Project"
-        panel.message = "The project keeps every edit and its own copies of both videos."
-        guard panel.runModal() == .OK, let url = panel.url else { return }
-        // Saved over another project: that one goes first.
-        if FileManager.default.fileExists(atPath: url.path), url != store.currentURL {
-            try? FileManager.default.removeItem(at: url)
+        panel.isExtensionHidden = false
+        let finish: (NSApplication.ModalResponse) -> Void = { response in
+            guard response == .OK, let url = panel.url else { return }
+            // Saved over another project: that one goes first.
+            if FileManager.default.fileExists(atPath: url.path), url != store.currentURL {
+                try? FileManager.default.removeItem(at: url)
+            }
+            if store.save(comparison, to: url) {
+                saved()
+                then?()
+            }
         }
-        store.save(comparison, to: url)
+        // The usual Save sheet, down from the window's title bar.
+        if let window = NSApp.keyWindow ?? NSApp.mainWindow {
+            panel.beginSheetModal(for: window, completionHandler: finish)
+        } else {
+            finish(panel.runModal())
+        }
         #else
+        afterSave = then
         newName = store.currentName ?? defaultName
         naming = true
         #endif
@@ -1036,7 +1122,8 @@ public struct ComparisonView: View {
                     letter: index == 0 ? "A" : "B",
                     linked: comparison.linked,
                     focused: comparison.selected === comparison.clips[index],
-                    showsFocus: paneIndices.count == 2 && !comparison.linked,
+                    // (No ring while drawing: the one Draw button draws on both.)
+                    showsFocus: paneIndices.count == 2 && !comparison.linked && comparison.drawing == nil,
                     onFocus: { comparison.focus = index },
                     onOpenFile: { importing = index },
                     onOpenPhotos: { photoTarget = index },

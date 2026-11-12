@@ -51,6 +51,9 @@ public final class Cutout {
     /// The picked player's masks, made when first shown.
     private var pickedMasks: [Int: CGImage] = [:]
     private let context = CIContext()
+    /// Reads the player's frames to cut them out (see `CutoutRenderer`). Kept here, not in the view, so
+    /// it can let go of the player the moment the overlay is left.
+    @ObservationIgnored let renderer = CutoutRenderer()
     private var frameRate: Double = 30
     private var task: Task<Void, Never>?
     let url: URL
@@ -523,7 +526,7 @@ final class CutoutRenderer {
 struct CutoutLayer: View {
     let clip: Clip
     let cutout: Cutout
-    @State private var renderer = CutoutRenderer()
+    private var renderer: CutoutRenderer { cutout.renderer }
 
     var body: some View {
         TimelineView(.animation) { _ in

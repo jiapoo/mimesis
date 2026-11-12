@@ -213,7 +213,15 @@ public final class Comparison {
     /// The segments (see `Segment`); the clips show `segments[segmentIndex]`.
     public internal(set) var segments = [Segment(name: "Segment 1")]
     public internal(set) var segmentIndex = 0
-    public var layout: Layout = .both
+    public var layout: Layout = .both {
+        didSet {
+            // Leaving the overlay: the cutouts let go of their players now, before the clips show side
+            // by side, so an HDR clip isn't seen too bright for a moment (see `CutoutRenderer.detach`).
+            if oldValue == .overlay, layout != .overlay {
+                for clip in clips { clip.cutout?.renderer.detach() }
+            }
+        }
+    }
     /// Which pane the keys and the shared controls act on while not linked.
     public var focus = 0
 
@@ -249,8 +257,16 @@ public final class Comparison {
         }
     }
 
-    /// One Draw for both clips, while linked.
-    public var drawsTogether: Bool { canLink && (linked || layout == .overlay) }
+    /// One Draw button, in the bar, for every clip on screen: no clip has a Draw button of its own.
+    public var drawsTogether: Bool { true }
+
+    /// Plays round and round: at the end, back to the start and on. Off, play stops at the end.
+    public var loops = UserDefaults.standard.object(forKey: "loops") as? Bool ?? true {
+        didSet {
+            UserDefaults.standard.set(loops, forKey: "loops")
+            for clip in clips { clip.engine.loopPlayback = loops && !linked }
+        }
+    }
 
     public func toggleDrawingBoth() {
         if drawing == .both {
@@ -287,7 +303,7 @@ public final class Comparison {
             for clip in clips {
                 clip.engine.pause()
                 // Linked play loops the shared span itself; on their own, each clip loops.
-                clip.engine.loopPlayback = !linked
+                clip.engine.loopPlayback = loops && !linked
             }
             stopTicker()
             isPlaying = false
@@ -336,8 +352,23 @@ public final class Comparison {
         return clip === a ? pair.a : pair.b
     }
 
+    /// The clip's own time at `u`, never past its Out (or its end): the linked span runs as long as
+    /// the longer clip, and the shorter one waits on its last frame.
     public func clipTime(_ clip: Clip, at u: Double) -> Double {
-        warp(clip).time(at: u)
+        min(max(warp(clip).time(at: u), clip.trimStart), clip.end)
+    }
+
+    /// The clip that runs to the end of the linked span (the longer one): the timeline is read from
+    /// it, and the other is kept in line with it.
+    var lead: Clip {
+        warp(b).u(at: b.end) > warp(a).u(at: a.end) + 0.0005 ? b : a
+    }
+
+    private var follower: Clip { lead === a ? b : a }
+
+    /// The clip has reached its Out (or its end) at `u`: it waits there while the other plays on.
+    private func waiting(_ clip: Clip, at u: Double) -> Bool {
+        warp(clip).time(at: u) >= clip.end - clip.frameLength / 2
     }
 
     /// Where on the linked timeline `clip` shows its own time `t`: the inverse of `clipTime`.
@@ -345,17 +376,18 @@ public final class Comparison {
         warp(clip).u(at: t)
     }
 
-    /// Where the linked timeline is, read from clip A.
+    /// Where the linked timeline is, read from the clip that runs to its end.
     public var position: Double {
-        warp(a).u(at: a.engine.currentTime)
+        let lead = lead
+        return warp(lead).u(at: lead.engine.currentTime)
     }
 
-    /// The span both clips cover, within their trims.
+    /// The linked span: from the two starts to the end of the longer clip's stretch.
     public var range: ClosedRange<Double> {
         guard a.isLoaded, b.isLoaded else { return 0...0 }
         let wa = warp(a), wb = warp(b)
         let low = max(wa.u(at: a.trimStart), wb.u(at: b.trimStart))
-        let high = min(wa.u(at: a.end), wb.u(at: b.end))
+        let high = max(wa.u(at: a.end), wb.u(at: b.end))
         return low...max(low, high)
     }
 
@@ -428,7 +460,7 @@ public final class Comparison {
             isPlaying ? pause() : play()
         } else if let clip = focused {
             // The focused clip only: the other keeps doing what it was doing.
-            clip.engine.loopPlayback = true
+            clip.engine.loopPlayback = loops
             clip.engine.togglePlayPause()
         }
     }
@@ -450,7 +482,7 @@ public final class Comparison {
             applyRates()
             for clip in clips {
                 clip.engine.loopPlayback = false
-                clip.engine.play()
+                if !waiting(clip, at: from) { clip.engine.play() }
             }
             startTicker()
         }
@@ -477,9 +509,10 @@ public final class Comparison {
     /// (`nudge`, a share of its speed) while it's catching up with A.
     private func applyRates(at u: Double? = nil, nudge: Double = 0) {
         let u = u ?? position
+        let follower = follower
         for clip in clips {
             var rate = warp(clip).slope(at: u) * linkedSpeed
-            if clip === b { rate *= 1 + nudge }
+            if clip === follower { rate *= 1 + nudge }
             let speed = Float(min(8, max(0.05, rate)))
             if abs(clip.engine.playbackSpeed - speed) > 0.002 { clip.engine.playbackSpeed = speed }
         }
@@ -498,16 +531,29 @@ public final class Comparison {
             while !Task.isCancelled {
                 try? await Task.sleep(for: .milliseconds(50))
                 guard let self, self.isPlaying else { return }
-                let u = self.warp(self.a).u(at: self.liveTime(self.a))
+                let lead = self.lead
+                let u = self.warp(lead).u(at: self.liveTime(lead))
                 if u >= self.range.upperBound - self.frameStep {
                     for clip in self.clips { clip.engine.pause() }
+                    // Not looping: stop on the last frames.
+                    guard self.loops else {
+                        self.isPlaying = false
+                        await self.seek(to: self.range.upperBound)
+                        return
+                    }
                     await self.seek(to: self.loopStart)
                     guard self.isPlaying else { return }
                     self.applyRates()
                     for clip in self.clips { clip.engine.play() }
                     continue
                 }
-                let follower = self.b
+                let follower = self.follower
+                // The shorter clip has reached its Out: it waits there, on that frame.
+                if self.waiting(follower, at: u) {
+                    if follower.engine.isPlaying { follower.engine.pause() }
+                    self.applyRates(at: u)
+                    continue
+                }
                 // How far B is ahead of where it should be, in its own seconds.
                 let drift = self.liveTime(follower) - self.clipTime(follower, at: u)
                 let frame = follower.frameLength
