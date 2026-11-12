@@ -58,7 +58,7 @@ You can bring a video in five ways:
 |---|---|
 | **Photos** | The **Photos** button on an empty clip, or on the welcome screen. |
 | **Files** (iCloud Drive, a folder on the Mac…) | The **Files** button. |
-| **Drag and drop** | Drop a video onto an empty clip card (Mac and iPad). |
+| **Drag and drop** | Drop a video onto an empty clip card (Mac and iPad). A dropped project file (`.mimesis`) opens. |
 | **Another app** | Share › **Mimesis** on iPhone/iPad; *Open With › Mimesis* or drop it on the Dock icon on the Mac. See [Opening videos from other apps](#opening-videos-from-arete-imago-and-other-apps). |
 | **Live replay** | Film yourself and keep the last seconds as clip A or B. See [Live replay](#live-replay-watch-yourself-a-few-seconds-late). |
 | **The library** | Every clip you've opened before. See [Tags and the library](#tags-and-the-library). |
@@ -88,13 +88,16 @@ below 50 frames a second and slow motion will look jumpy. See [Filming tips](#fi
   - **✏ Draw on both** (when linked), the playback **speed** (tap it for a slider).
 - **The Segments sidebar** (left side; a panel that slides in on iPhone) is the workspace:
   - the **segments**, with each one's length and number of drawings; **+** adds one; **double-click a name to
-    rename it**; right-click (press and hold) for Duplicate, Move up / down and Delete;
+    rename it**: it turns into a field with a crimson edge, and **Return or a click anywhere else** keeps the
+    name and goes back to reading (Esc leaves it as it was); right-click (press and hold) for Duplicate,
+    Move up / down and Delete;
   - a **card for clip A and one for clip B**: **In**, **Out**, **Sync** and **Speed**, each a name over its
     value. Tap one to set it at that clip's playhead; a small ✕ clears it;
   - **Angles**: a joint's angle through the segment, A against B, and the timing (see [Skeleton](#skeleton-angles-and-graphs));
   - **Drawings**: each frame that has drawings, with a small picture; tap to go there; ‹ › step between them;
   - **Notes on frames**: **+ A here** adds one and you type it right there; double-click a note to change it;
-  - **About this segment**: double-click to write, **Done** to finish;
+    a click anywhere else finishes it, as with a name;
+  - **About this segment**: double-click to write; **Done** or a click anywhere else finishes;
   - **Takes over time**: other videos of the same movement in a clip (see [Takes](#takes-progress-over-time)).
   - Drag the sidebar's **right edge** to make it wider or narrower.
 - **Top bar**: **↶ ↷** undo and redo, **A | B / A / B / Overlay**, **⇄** (swap A and B), and **⋯** (projects, library, Live replay,
@@ -210,8 +213,15 @@ appear, laid out as in Photoshop. The timeline stays, so you can step to another
   frame* shows it throughout (a reference line).
 - With a drawing chosen, the bar changes **that drawing**: colour, thickness, opacity, **duplicate**, and a
   **trash** button (or the Delete key).
-- **Hold Space and drag** (Mac) to move a zoomed-in picture while drawing, as in Photoshop.
-- Undo and redo are in the top bar (⌘Z, ⇧⌘Z).
+- **Hold Space and drag** (Mac) to move the picture while drawing, as in Photoshop (the pointer becomes a
+  hand). The ⤡ button at the top of the clip puts the whole frame back.
+- **Move the bar**: drag its **≡ handle** (at its left end) to anywhere over the clips; double-click the
+  handle to put it back at the top.
+- **The pointer** (Mac) shows what a press will do: a **crosshair** to draw, a **hand** to move (Space held,
+  or over a drawing with the select tool), a **pointing hand** over a drawing a click would choose,
+  **resize arrows** on a corner of the chosen drawing's box, an **eraser**.
+- Where the window is short the tools stand in **two columns**, so none is hidden under the timeline.
+- Undo and redo are in the top bar (⌘Z, ⇧⌘Z), and work while drawing.
 - **Done** (or Esc).
 
 Each tool keeps its own colour and thickness. Drawings stay on the picture through zoom, pan, resizing and
@@ -226,16 +236,20 @@ Choose **Overlay** in the top bar (on iPhone: the layout menu at the right of th
 The **top** clip (B, unless you swap) is drawn over the other, see-through. Choose **A🔗B** to play the two lined
 up at their sync points.
 
-Everything for the overlay sits **over the picture**, in two rows at the top, so the bar underneath is the
-same as in the other layouts (with A or B chosen it shows that clip's In, Out, Sync and Speed).
+**Which clip is on top** is written beside the layout in the top bar: **B over A ⇅**. Click anywhere on it
+to swap them (on iPhone it's at the start of the row over the picture).
 
-**First row**: the "B over A" label, and on the right what moves the top clip:
+Everything else for the overlay sits **over the picture**, in **one row** at the top, so the bar underneath is
+the same as in the other layouts (with A or B chosen it shows that clip's In, Out, Sync and Speed). Where the
+window is narrow the row gets shorter, and scrolls sideways if it still doesn't fit. It hides while you draw.
 
-- **⇅ Swap** which clip is on top · **⇋ Mirror** it (a right-hander to match a left-hander);
+On the right, what moves the top clip:
+
+- **⇋ Mirror** it (a right-hander to match a left-hander);
 - **👥 Line up the bodies** · **⧉ Line up the backgrounds** (see below);
 - **⟲ 0° ⟳** turn it a degree at a time (a tilted camera) · **↺ Put it back**.
 
-**Second row**:
+On the left:
 
 - **✋ / 🔍** — what touches do:
   - **✋ Move** the top clip: drag to move it, pinch to resize, twist with two fingers to turn it. Double-tap
@@ -348,7 +362,10 @@ yellow marks over the timeline (tap to jump), and in the library.
     **Save As…** (⇧⌘S); **Open…** (⌘O); **Open Recent**; or double-click a project in Finder.
   - **iPhone and iPad**: **⋯ › Save project…** asks for a name and saves it in the **Mimesis** folder in the
     Files app; move or share it from there. **⋯ › Open project…** finds one anywhere in Files.
-  - **Recent projects** are on the welcome screen and under **⋯ › Open recent**.
+  - **Recent projects** are on the welcome screen and under **⋯ › Open recent**. A project deleted in Finder
+    or the Files app (or sitting in the Trash) leaves the list by itself.
+  - **Open project** on the welcome screen finds a project file; on the Mac you can also **drop a `.mimesis`
+    file on the window** (or on the Dock icon) to open it.
   - **⋯ › New** (⌘N), at the top of the menu, closes both clips and starts afresh; with something open it asks
     first: **Save**, **Don't Save** or Cancel.
   - **To delete a project**: **⋯ › Recent projects…** lists each with **where it is** (its full path on the Mac),
@@ -364,6 +381,7 @@ yellow marks over the timeline (tap to jump), and in the library.
 - **🧍 on a clip** follows the body through the clip's In to Out (a few seconds of work; an hourglass shows
   meanwhile) and draws its **skeleton** over the video, with the **angle at the elbows and knees** written
   beside them, changing as the clip plays. With several people in frame it follows the biggest one.
+  Zoomed in, the skeleton follows the picture but its lines and numbers **keep their size and stay sharp**.
 - **Sidebar › Angles** graphs one joint's angle through the segment, **A against B on the same time axis**
   (matched moments one above the other), with a white line at the playhead and the two values and how far
   apart they are. Its menu chooses the joint (elbows, shoulders, hips, knees) and which angles the skeleton

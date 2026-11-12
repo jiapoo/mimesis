@@ -350,8 +350,33 @@ struct DrawingLayer: View {
                     .onChanged { drag in changed(drag, frame) }
                     .onEnded { drag in ended(drag, frame) },
                 isEnabled: editing)
+            #if os(macOS)
+            // What the pointer is over, for its shape.
+            .onContinuousHover { phase in
+                guard editing else { return }
+                switch phase {
+                case .active(let at): pen.over = over(at, frame)
+                case .ended: pen.over = .nothing
+                }
+            }
+            #endif
         }
         .allowsHitTesting(editing)
+    }
+
+    /// What's under the pointer: a point or box corner of the chosen drawing, a drawing, or nothing.
+    private func over(_ at: CGPoint, _ frame: CGRect) -> Pen.Over {
+        if moving != nil || draft != nil { return pen.over }
+        if let chosen = shown.first(where: { $0.id == pen.selected }) {
+            let points = chosen.points.map { toView($0, frame) }
+            if chosen.isShape {
+                if points.contains(where: { distance($0, at) < grab }) { return .point }
+            } else if let corner = corners(chosen.bounds(points)).firstIndex(where: { distance($0, at) < grab }) {
+                return .corner(corner)
+            }
+        }
+        let hit = shown.contains { $0.touches(at, points: $0.points.map { toView($0, frame) }, tolerance: 8) }
+        return hit ? .drawing : .nothing
     }
 
     // MARK: - Making, choosing, moving and erasing

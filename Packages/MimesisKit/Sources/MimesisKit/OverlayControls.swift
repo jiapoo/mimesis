@@ -67,6 +67,43 @@ final class OverlayUI {
     }
 }
 
+/// "A over B": which clip is on top in the overlay. The whole of it is a button: a click swaps them.
+struct OverlayBadge: View {
+    let comparison: Comparison
+    /// Over the video (dark glass), or in a bar (raised).
+    var onVideo = false
+
+    var body: some View {
+        let top = comparison.overlayTop == 0 ? "A" : "B", base = comparison.overlayTop == 0 ? "B" : "A"
+        Button { comparison.overlayUI.swapTop(comparison) } label: {
+            HStack(spacing: 6) {
+                letter(top, on: true)
+                Text("over").font(.system(size: 12, weight: .medium)).foregroundStyle(Theme.secondary)
+                letter(base, on: false)
+                Image(systemName: "arrow.up.arrow.down")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(Color.white.opacity(0.7))
+            }
+            .padding(.leading, 5)
+            .padding(.trailing, 10)
+            .frame(height: onVideo ? 30 : 36)
+            .background(onVideo ? Color.black.opacity(0.45) : Theme.raised, in: Capsule())
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .fixedSize()
+        .help("\(top) is on top of \(base), see-through. Click to put \(base) on top instead.")
+    }
+
+    private func letter(_ text: String, on: Bool) -> some View {
+        Text(text)
+            .font(.system(size: 12, weight: .bold))
+            .foregroundStyle(on ? Theme.onAccent : .white)
+            .frame(width: 22, height: 22)
+            .background(on ? Theme.accent : Color.white.opacity(0.18), in: Circle())
+    }
+}
+
 /// The overlay's controls, in the bar under the videos (none over the picture): what touches do (move the
 /// top clip, or zoom), how see-through the top clip is, the cutout, and a menu with the rest.
 struct OverlayControls: View {
@@ -126,7 +163,9 @@ struct OverlayControls: View {
                 .frame(width: compact ? 70 : 110)
             Text("\(Int((comparison.overlayOpacity * 100).rounded()))%")
                 .font(.system(size: 11, weight: .semibold).monospacedDigit())
-                .frame(width: 30, alignment: .leading)
+                .lineLimit(1)
+                .fixedSize()
+                .frame(width: 32, alignment: .leading)
         }
         .help("How see-through \(topLetter) is over \(baseLetter)")
     }

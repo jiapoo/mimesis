@@ -226,12 +226,13 @@ struct ReportView: View {
                 Text(problem).foregroundStyle(.red)
             }
             HStack {
-                Button("Close") { dismiss() }
+                Button("Close") { dismiss() }.help("Close the report")
                 Spacer()
                 if let file {
                     #if os(macOS)
                     ShareLink(item: file) { Label("Share", systemImage: "square.and.arrow.up") }
                     Button { saveAs(file) } label: { Label("Save as…", systemImage: "square.and.arrow.down") }
+                        .help("Choose where to save the PDF, and its name")
                         .buttonStyle(.borderedProminent)
                     #else
                     ShareLink(item: file) { Label("Share or save", systemImage: "square.and.arrow.up") }
@@ -239,6 +240,7 @@ struct ReportView: View {
                     #endif
                 } else {
                     Button("Make the report") { make() }
+                        .help("A PDF of every segment: its marked frames, drawings, angles and notes")
                         .buttonStyle(.borderedProminent)
                         .disabled(progress != nil)
                 }

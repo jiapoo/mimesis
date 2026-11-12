@@ -15,6 +15,8 @@ struct WelcomeView: View {
     var recent: [RecentProject] = []
     var onOpenProject: (RecentProject) -> Void = { _ in }
     var onAllProjects: () -> Void = {}
+    /// Find a project file to open.
+    var onBrowseProject: () -> Void = {}
 
     #if os(iOS)
     @Environment(\.verticalSizeClass) private var verticalSizeClass
@@ -57,7 +59,7 @@ struct WelcomeView: View {
         .scrollBounceBehavior(.basedOnSize)
         // Dropped anywhere but a card: into the first empty side (two: A and B).
         .dropDestination(for: URL.self) { urls, _ in
-            let videos = urls.filter(isVideo)
+            let videos = urls.filter { isVideo($0) || isProject($0) }
             guard !videos.isEmpty else { return false }
             onDropped(videos, nil)
             return true
@@ -95,17 +97,25 @@ struct WelcomeView: View {
     private var ways: some View {
         VStack(spacing: 10) {
             HStack(spacing: 10) {
+                Button(action: onBrowseProject) {
+                    Label("Open project", systemImage: "folder")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(WideButtonStyle())
+                .help("Open a project file (Name.mimesis): both videos and every edit, as they were saved")
                 Button(action: onCourt) {
                     Label("Live replay", systemImage: "camera.viewfinder")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(WideButtonStyle())
+                .help("Film with this device and watch each attempt again a few seconds later, hands-free")
                 if let onLibrary, sideways {
                     Button(action: onLibrary) {
                         Label("Library", systemImage: "books.vertical")
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(WideButtonStyle())
+                    .help("Every video opened in Mimesis, with its tags")
                 }
             }
             if let onLibrary, !sideways {
@@ -114,6 +124,7 @@ struct WelcomeView: View {
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(WideButtonStyle())
+                .help("Every video opened in Mimesis, with its tags")
             }
             if !recent.isEmpty {
                 // Recent projects: one tap to carry on.
@@ -125,6 +136,7 @@ struct WelcomeView: View {
                             .buttonStyle(.plain)
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(Theme.accent)
+                            .help("Every recent project, with where it is; delete one, or find another")
                     }
                     ForEach(recent.prefix(sideways ? 2 : 4)) { project in
                         Button { onOpenProject(project) } label: {
@@ -147,7 +159,7 @@ struct WelcomeView: View {
                 .padding(.top, 4)
             }
             #if os(macOS)
-            Label("Or drop one or two videos here", systemImage: "arrow.down.doc")
+            Label("Or drop one or two videos, or a project, here", systemImage: "arrow.down.doc")
                 .font(.system(size: 12))
                 .foregroundStyle(Theme.secondary.opacity(0.8))
             #endif
@@ -185,10 +197,12 @@ struct WelcomeView: View {
                     Label("Photos", systemImage: "photo.on.rectangle").frame(maxWidth: .infinity)
                 }
                 .buttonStyle(ChipStyle(active: true))
+                .help("Pick a video from Photos as clip \(side == 0 ? "A" : "B")")
                 Button { onOpenFile(side) } label: {
                     Label("Files", systemImage: "folder").frame(maxWidth: .infinity)
                 }
                 .buttonStyle(ChipStyle())
+                .help("Open a video file as clip \(side == 0 ? "A" : "B")")
             }
         }
         .padding(sideways ? 12 : 16)
@@ -198,7 +212,7 @@ struct WelcomeView: View {
             .strokeBorder(droppingOn == side ? Theme.accent : Theme.line, lineWidth: droppingOn == side ? 2 : 1))
         // Drop a video on this card: it goes in as this clip.
         .dropDestination(for: URL.self) { urls, _ in
-            let videos = urls.filter(isVideo)
+            let videos = urls.filter { isVideo($0) || isProject($0) }
             guard !videos.isEmpty else { return false }
             onDropped(videos, videos.count >= 2 ? nil : side)
             return true

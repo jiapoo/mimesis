@@ -86,7 +86,7 @@ public struct RecentProject: Codable, Identifiable, Equatable {
 /// videos, so it opens on any Mac, iPad or iPhone, whatever happens to the originals.
 @MainActor @Observable
 public final class ComparisonStore {
-    public static let fileExtension = "mimesis"
+    public nonisolated static let fileExtension = "mimesis"
 
     /// The projects opened or saved lately, the most recent first.
     public private(set) var recents: [RecentProject] = []
@@ -106,6 +106,7 @@ public final class ComparisonStore {
         try? FileManager.default.createDirectory(at: self.folder, withIntermediateDirectories: true)
         recents = (try? JSONDecoder().decode([RecentProject].self, from: Data(contentsOf: recentsFile))) ?? []
         moveOldProjects()
+        refreshRecents()
     }
 
     /// Application Support/Mimesis: the recent projects, and copies of clips picked from Photos.
@@ -267,6 +268,21 @@ public final class ComparisonStore {
             problem = "Couldn't delete “\(recent.name)”: \(error.localizedDescription)"
             return false
         }
+    }
+
+    /// Drops the recent projects whose file is gone: deleted, or sitting in the Trash (a bookmark
+    /// follows a file there, so it would otherwise stay in the list, and open).
+    public func refreshRecents() {
+        let kept = recents.filter { recent in
+            guard let url = location(of: recent) else { return false }
+            if url.pathComponents.contains(where: { $0 == ".Trash" || $0 == ".Trashes" }) { return false }
+            let accessing = url.startAccessingSecurityScopedResource()
+            defer { if accessing { url.stopAccessingSecurityScopedResource() } }
+            return FileManager.default.fileExists(atPath: url.path)
+        }
+        guard kept.count != recents.count else { return }
+        recents = kept
+        write(recents, to: recentsFile)
     }
 
     public func forget(_ recent: RecentProject) {

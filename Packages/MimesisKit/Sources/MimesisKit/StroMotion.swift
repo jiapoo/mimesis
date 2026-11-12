@@ -88,12 +88,14 @@ struct StroMotionView: View {
                 .pickerStyle(.segmented)
                 .labelsHidden()
                 .disabled(making)
+                .help("Which stretch of the clip the moments are taken from")
             }
 
             Stepper(value: $count, in: 3...12) {
                 Text("\(count) moments").monospacedDigit()
             }
             .disabled(making)
+            .help("How many times the body shows in the picture")
 
             Group {
                 if let image {
@@ -110,13 +112,14 @@ struct StroMotionView: View {
             .frame(maxWidth: .infinity, minHeight: 120)
 
             HStack {
-                Button("Close") { dismiss() }
+                Button("Close") { dismiss() }.help("Close")
                 Spacer()
                 if let file {
                     ShareLink(item: file) { Label("Share or save", systemImage: "square.and.arrow.up") }
                         .buttonStyle(.borderedProminent)
                 }
                 Button(image == nil ? "Make" : "Make again") { make() }
+                    .help("One picture with the body at several moments of the movement")
                     .buttonStyle(.bordered)
                     .disabled(making)
             }

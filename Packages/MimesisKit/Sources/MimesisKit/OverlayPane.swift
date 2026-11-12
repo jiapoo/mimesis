@@ -7,6 +7,8 @@ import SwiftUI
 /// - **Zoom** (🔍): pinch to zoom the whole picture, both clips together, drag to pan, double-tap to see it all.
 struct OverlayPane: View {
     let comparison: Comparison
+    /// "A over B" (click to swap) is in the frame's row: where there's no top bar to hold it (an iPhone).
+    var showsBadge = false
 
     @State private var offsetBase: CGSize?
     @State private var scaleBase: CGFloat?
@@ -33,13 +35,14 @@ struct OverlayPane: View {
             let picture = fitted(base.engine.videoSize, in: CGRect(origin: .zero, size: space.size))
             ZStack {
                 // (Each player view belongs to its video: made again when the two change places.)
+                // (The whole of it is made again, its see-through too: kept, the new player view came
+                // up solid, so the picture looked much brighter after the two had changed places.)
                 VideoPlayerRepresentable(player: base.engine.player)
-                    .id(ObjectIdentifier(base))
                     .frame(width: space.size.width, height: space.size.height)
+                    .id(ObjectIdentifier(base))
                 // The top clip, fitted into the picture underneath, then moved and resized: whole, or
                 // cut out once its cutout is ready (the player keeps decoding underneath, unseen).
                 VideoPlayerRepresentable(player: top.engine.player)
-                    .id(ObjectIdentifier(top))
                     .frame(width: picture.width, height: picture.height)
                     .scaleEffect(comparison.overlayScale)
                     .rotationEffect(.degrees(comparison.overlayRotation))
@@ -48,6 +51,7 @@ struct OverlayPane: View {
                         y: picture.midY + comparison.overlayOffset.height * picture.height)
                     .opacity(readyCutout == nil ? comparison.overlayOpacity : 0)
                     .allowsHitTesting(false)
+                    .id(ObjectIdentifier(top))
                 if let cutout = readyCutout {
                     CutoutLayer(clip: top, cutout: cutout)
                         .frame(width: picture.width, height: picture.height)
@@ -58,6 +62,7 @@ struct OverlayPane: View {
                             y: picture.midY + comparison.overlayOffset.height * picture.height)
                         .opacity(comparison.overlayOpacity)
                         .allowsHitTesting(false)
+                        .id(ObjectIdentifier(top))
                 }
                 // Drawings over the two together, on the picture underneath (so they zoom with it).
                 DrawingLayer(clip: base, editing: comparison.drawing != nil && !comparison.pen.panning, pen: comparison.pen, overlay: true)
@@ -76,6 +81,7 @@ struct OverlayPane: View {
                         guard !picking else { return }
                         // (Space held while drawing pans, whatever touches usually do.)
                         if !ui.movesTop || comparison.pen.panning {
+                            if comparison.pen.panning { comparison.pen.grabbing = true }
                             let start = panBase ?? base.pan
                             panBase = start
                             base.pan = CGSize(width: start.width + drag.translation.width,
@@ -89,7 +95,8 @@ struct OverlayPane: View {
                             width: start.width + drag.translation.width / max(1, picture.width),
                             height: start.height + drag.translation.height / max(1, picture.height))
                     }
-                    .onEnded { _ in offsetBase = nil; panBase = nil })
+                    .onEnded { _ in offsetBase = nil; panBase = nil; comparison.pen.grabbing = false })
+            .drawingPointer(comparison.pen, on: comparison.drawing != nil)
             .simultaneousGesture(
                 MagnifyGesture()
                     .onChanged { pinch in
@@ -134,28 +141,19 @@ struct OverlayPane: View {
         .background(Color.black)
         .clipped()
         .overlay(alignment: .top) {
-            // Everything the overlay needs is here, over the picture, so the bar underneath is the same
-            // in every layout. First row: what's on top, and what moves the top clip. Second row: what
-            // touches do, the size or zoom, how see-through the top clip is, and the cutout.
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(alignment: .top, spacing: 6) {
-                    badge
-                    Spacer(minLength: 0)
-                    adjustments
-                    if base.zoom > 1 {
-                        RoundButton(symbol: "arrow.down.right.and.arrow.up.left") {
-                            withAnimation(.easeOut(duration: 0.2)) { base.resetView() }
-                        }
-                        .help("See the whole picture")
-                    }
-                }
+            // Everything the overlay needs, in one row over the picture (the bar underneath is the same
+            // in every layout): what touches do, the size or zoom, how see-through the top clip is and
+            // the cutout on the left; what moves the top clip on the right. Shorter where it's narrow,
+            // and scrolling sideways where even that doesn't fit. Hidden while drawing: the drawing
+            // tools are there then.
+            if comparison.drawing == nil {
                 ViewThatFits(in: .horizontal) {
-                    HStack(spacing: 6) { controls(compact: false); cutoutOptions }
-                    HStack(spacing: 6) { controls(compact: true); cutoutOptions }
-                    ScrollView(.horizontal, showsIndicators: false) { HStack(spacing: 6) { controls(compact: true); cutoutOptions } }
+                    row(compact: false)
+                    row(compact: true)
+                    ScrollView(.horizontal, showsIndicators: false) { row(compact: true) }
                 }
+                .padding(10)
             }
-            .padding(10)
         }
         .overlay(alignment: .center) {
             if let hint {
@@ -205,17 +203,32 @@ struct OverlayPane: View {
         }
     }
 
+    private func row(compact: Bool) -> some View {
+        HStack(spacing: 6) {
+            if showsBadge { OverlayBadge(comparison: comparison, onVideo: true) }
+            controls(compact: compact)
+            cutoutOptions
+            Spacer(minLength: 0)
+            adjustments
+            if base.zoom > 1 || base.pan != .zero {
+                RoundButton(symbol: "arrow.down.right.and.arrow.up.left") {
+                    withAnimation(.easeOut(duration: 0.2)) { base.resetView() }
+                }
+                .help("See the whole picture")
+            }
+        }
+    }
+
     private func controls(compact: Bool) -> some View {
         OverlayControls(comparison: comparison, compact: compact)
             .padding(4)
             .background(Color.black.opacity(0.35), in: Capsule())
     }
 
-    /// Swap, mirror, line up (the bodies, or the backgrounds), turn, put back.
+    /// Mirror, line up (the bodies, or the backgrounds), turn, put back. (Which clip is on top is
+    /// swapped with "A over B", beside the layout at the top.)
     private var adjustments: some View {
         HStack(spacing: 6) {
-            RoundButton(symbol: "arrow.up.arrow.down") { ui.swapTop(comparison) }
-                .help("Swap: \(baseLetter) on top")
             RoundButton(symbol: "arrow.left.and.right.righttriangle.left.righttriangle.right",
                         active: top.engine.mirroredHorizontally) { ui.moving(comparison) { top.toggleMirror() } }
                 .help("Mirror \(topLetter) side to side, e.g. a right-hander to match a left-hander")
@@ -292,27 +305,6 @@ struct OverlayPane: View {
         if let problem = ui.problem { return problem }
         if picking { return "Tap the person in \(topLetter)" }
         return nil
-    }
-
-    private var badge: some View {
-        HStack(spacing: 6) {
-            letter(topLetter, on: true)
-            Text("over").font(.system(size: 12, weight: .medium)).foregroundStyle(Theme.secondary)
-            letter(baseLetter, on: false)
-        }
-        .foregroundStyle(.white)
-        .padding(.leading, 4)
-        .padding(.trailing, 10)
-        .padding(.vertical, 4)
-        .background(Color.black.opacity(0.45), in: Capsule())
-    }
-
-    private func letter(_ text: String, on: Bool) -> some View {
-        Text(text)
-            .font(.system(size: 12, weight: .bold))
-            .foregroundStyle(on ? Theme.onAccent : .white)
-            .frame(width: 22, height: 22)
-            .background(on ? Theme.accent : Color.white.opacity(0.18), in: Circle())
     }
 
     /// Picks the top clip's subject under a tap: back from the view to the top picture, as filmed.

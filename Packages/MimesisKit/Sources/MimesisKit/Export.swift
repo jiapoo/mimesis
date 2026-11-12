@@ -314,6 +314,7 @@ struct ExportView: View {
             }
             .pickerStyle(.segmented)
             .labelsHidden()
+            .help("How the two clips are laid out in the exported video")
             .disabled(exporter.progress != nil)
 
             if let progress = exporter.progress {
@@ -328,7 +329,7 @@ struct ExportView: View {
             }
 
             HStack {
-                Button("Close") { exporter.cancel(); dismiss() }
+                Button("Close") { exporter.cancel(); dismiss() }.help("Close (stops an export under way)")
                 Spacer()
                 if let file = exporter.file {
                     #if os(macOS)
@@ -342,6 +343,7 @@ struct ExportView: View {
                     #endif
                 } else {
                     Button("Export") { exporter.start(comparison, style: style) }
+                        .help("Make one video of both clips, lined up as they play here, with the drawings and notes")
                         .buttonStyle(.borderedProminent)
                         .disabled(exporter.progress != nil || !comparison.canLink)
                 }

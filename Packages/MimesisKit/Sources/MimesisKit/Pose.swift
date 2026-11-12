@@ -252,13 +252,16 @@ extension Clip {
 struct SkeletonLayer: View {
     let clip: Clip
     let angles: Set<JointAngle>
-    /// How far the video is zoomed in: the lines, dots and numbers are drawn that much smaller, so on
-    /// screen they keep their size while the picture grows.
+    /// How far the video is zoomed in, and moved. The skeleton is drawn over the zoomed video, not
+    /// zoomed with it: its joints follow the picture, while the lines, dots and numbers are drawn at
+    /// their own size, sharp (zoomed with the video they were a small drawing blown up, and blurred).
     var zoom: CGFloat = 1
+    var pan: CGSize = .zero
 
     var body: some View {
-        let k = 1 / max(1, zoom)
+        let k: CGFloat = 1
         GeometryReader { space in
+            let centre = CGPoint(x: space.size.width / 2, y: space.size.height / 2)
             let frame = pictureFrame(in: space.size)
             let aspect = frame.height > 0 ? frame.width / frame.height : 1
             let mirrored = clip.engine.mirroredHorizontally
@@ -267,7 +270,9 @@ struct SkeletonLayer: View {
                     func at(_ joint: BodyPose.Joint) -> CGPoint? {
                         guard let p = pose.joints[joint] else { return nil }
                         let x = mirrored ? 1 - p.x : p.x
-                        return CGPoint(x: frame.minX + x * frame.width, y: frame.minY + p.y * frame.height)
+                        let fitted = CGPoint(x: frame.minX + x * frame.width, y: frame.minY + p.y * frame.height)
+                        return CGPoint(x: centre.x + (fitted.x - centre.x) * zoom + pan.width,
+                                       y: centre.y + (fitted.y - centre.y) * zoom + pan.height)
                     }
                     var bones = Path()
                     for (a, b) in BodyPose.bones {

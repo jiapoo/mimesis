@@ -13,7 +13,7 @@ public final class MenuRequests {
     public static let shared = MenuRequests()
 
     public enum Request: Equatable {
-        case new, open, openRecent(RecentProject.ID), save, saveAs, export, edit, swap
+        case new, open, openRecent(RecentProject.ID), save, saveAs, export, edit, swap, undo, redo
     }
 
     public var pending: Request?
@@ -52,6 +52,13 @@ public struct MimesisCommands: Commands {
                 .keyboardShortcut("e", modifiers: .command)
                 .disabled(!menu.hasBoth)
         }
+        // Edit › Undo and Redo: the comparison's edits; while typing, the typing's own.
+        CommandGroup(replacing: .undoRedo) {
+            Button("Undo") { Self.undo(redo: false) }
+                .keyboardShortcut("z", modifiers: .command)
+            Button("Redo") { Self.undo(redo: true) }
+                .keyboardShortcut("z", modifiers: [.command, .shift])
+        }
         CommandGroup(after: .pasteboard) {
             Divider()
             Button("Edit Clip…") { menu.pending = .edit }
@@ -60,5 +67,15 @@ public struct MimesisCommands: Commands {
             Button("Swap A and B") { menu.pending = .swap }
                 .disabled(!menu.hasBoth)
         }
+    }
+
+    private static func undo(redo: Bool) {
+        #if os(macOS)
+        if NSApp.keyWindow?.firstResponder is NSText {
+            NSApp.sendAction(Selector((redo ? "redo:" : "undo:")), to: nil, from: nil)
+            return
+        }
+        #endif
+        MenuRequests.shared.pending = redo ? .redo : .undo
     }
 }

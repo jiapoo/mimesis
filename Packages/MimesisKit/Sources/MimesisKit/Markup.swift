@@ -97,8 +97,16 @@ final class Pen {
         didSet { if tool != .select { selected = nil } }
     }
     var always = false
-    /// Space is held (Mac): drags pan the zoomed video instead of drawing.
+    /// Space is held (Mac): drags move the video instead of drawing.
     var panning = false
+    /// The button is down while Space is held: the hand closes.
+    var grabbing = false
+    /// What the pointer is over, for its shape (Mac): nothing, a drawing, one of the chosen drawing's
+    /// points, or a corner of its box (0 top left, clockwise).
+    enum Over: Equatable { case nothing, drawing, point, corner(Int) }
+    var over: Over = .nothing
+    /// How far the options bar has been dragged from its place at the top.
+    var barOffset: CGSize = .zero
     /// The drawing chosen with the select tool: its box and handles show, and the options bar changes it.
     var selected: UUID?
     private var colors: [Tool: Drawing.RGBA] = [:]
@@ -164,6 +172,7 @@ struct MarkupTools: View {
     var compact = false
 
     @Environment(\.self) private var environment
+    @State private var gripFrom: CGSize?
 
     var body: some View {
         switch part {
@@ -199,6 +208,7 @@ struct MarkupTools: View {
         .background(Color.black.opacity(0.4), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Color.white.opacity(0.1)))
         .fixedSize()
+        .plainPointer()
     }
 
     private func toolButton(_ tool: Pen.Tool) -> some View {
@@ -235,6 +245,7 @@ struct MarkupTools: View {
 
     private var options: some View {
         HStack(spacing: 10) {
+            grip
             // (Undo and redo are in the top bar; on an iPhone, in the bar under the clips.)
             if hasLook {
                 colours
@@ -292,6 +303,27 @@ struct MarkupTools: View {
         .background(Color.black.opacity(0.4), in: Capsule())
         .overlay(Capsule().strokeBorder(Color.white.opacity(0.1)))
         .fixedSize()
+        .plainPointer()
+    }
+
+    /// The bar's handle: drag it to move the bar off what you're drawing; double-click puts it back.
+    private var grip: some View {
+        Image(systemName: "line.3.horizontal")
+            .font(.system(size: 12, weight: .bold))
+            .foregroundStyle(Theme.secondary)
+            .frame(width: 22, height: 28)
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 2, coordinateSpace: .global)
+                    .onChanged { drag in
+                        let start = gripFrom ?? pen.barOffset
+                        gripFrom = start
+                        pen.barOffset = CGSize(width: start.width + drag.translation.width,
+                                               height: start.height + drag.translation.height)
+                    }
+                    .onEnded { _ in gripFrom = nil })
+            .onTapGesture(count: 2) { withAnimation(.easeOut(duration: 0.2)) { pen.barOffset = .zero } }
+            .help("Drag to move this bar; double-click to put it back")
     }
 
     /// A copy of the chosen drawing, a little down and to the right, chosen in its place.
@@ -350,7 +382,9 @@ struct MarkupTools: View {
             .frame(width: 22, height: 22)
             Text(pen.width.formatted(.number.precision(.fractionLength(0...1))))
                 .font(.system(size: 11, weight: .semibold).monospacedDigit())
-                .frame(width: 26, alignment: .leading)
+                .lineLimit(1)
+                .fixedSize()
+                .frame(width: 28, alignment: .leading)
         }
         .help("Thickness, in points")
     }
@@ -365,9 +399,12 @@ struct MarkupTools: View {
                     change { $0.color = pen.color }
                 }), range: 0.1...1)
                 .frame(width: 70)
+            // (Wide enough for "100%" on one line.)
             Text("\(Int((pen.color.a * 100).rounded()))%")
                 .font(.system(size: 11, weight: .semibold).monospacedDigit())
-                .frame(width: 32, alignment: .leading)
+                .lineLimit(1)
+                .fixedSize()
+                .frame(width: 38, alignment: .leading)
         }
         .help("Opacity")
     }
@@ -402,3 +439,65 @@ struct MarkupTools: View {
         Rectangle().fill(Color.white.opacity(0.15)).frame(width: 1, height: 22)
     }
 }
+
+// MARK: - The pointer's shape (Mac)
+
+extension View {
+    /// While drawing, the pointer says what a press will do, as in Photoshop: a crosshair to draw, a
+    /// hand to move (Space held, or over a drawing with the select tool), a pointing hand over a
+    /// drawing a click would choose, resize arrows on a corner of the chosen drawing's box, an eraser.
+    @ViewBuilder func drawingPointer(_ pen: Pen, on: Bool) -> some View {
+        #if os(macOS)
+        pointerStyle(on ? pen.pointer : nil)
+        #else
+        self
+        #endif
+    }
+
+    /// The ordinary arrow, over the drawing tools themselves.
+    @ViewBuilder func plainPointer() -> some View {
+        #if os(macOS)
+        pointerStyle(.default)
+        #else
+        self
+        #endif
+    }
+}
+
+#if os(macOS)
+extension Pen {
+    var pointer: PointerStyle {
+        if panning { return grabbing ? .grabActive : .grabIdle }
+        switch over {
+        case .point:
+            return .rectSelection
+        case .corner(let corner):
+            let positions: [FrameResizePosition] = [.topLeading, .topTrailing, .bottomTrailing, .bottomLeading]
+            return .frameResize(position: positions[corner % 4])
+        case .drawing:
+            if tool == .eraser { return .image(Self.eraserPointer, hotSpot: .bottomLeading) }
+            return tool == .select ? .grabIdle : .link
+        case .nothing:
+            switch tool {
+            case .select: return .default
+            case .eraser: return .image(Self.eraserPointer, hotSpot: .bottomLeading)
+            default: return .rectSelection
+            }
+        }
+    }
+
+    /// A white eraser with a dark edge, to show on any video.
+    private static let eraserPointer: Image = {
+        let renderer = ImageRenderer(content:
+            Image(systemName: "eraser.fill")
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(.white)
+                .shadow(color: .black, radius: 1)
+                .shadow(color: .black, radius: 1)
+                .padding(3))
+        renderer.scale = 2
+        if let image = renderer.nsImage { return Image(nsImage: image) }
+        return Image(systemName: "eraser.fill")
+    }()
+}
+#endif

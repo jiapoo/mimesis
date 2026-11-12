@@ -28,7 +28,7 @@ struct LibraryView: View {
             }
             .navigationTitle(filter.map { "\($0) moments" } ?? "Library")
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() }.help("Close the library") }
                 ToolbarItem(placement: .primaryAction) { filterMenu }
                 if let filter {
                     ToolbarItem(placement: .primaryAction) {

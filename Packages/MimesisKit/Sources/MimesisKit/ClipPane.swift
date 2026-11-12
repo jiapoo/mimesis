@@ -68,7 +68,7 @@ struct ClipPane: View {
         .contentShape(Rectangle())
         .onTapGesture(perform: onFocus)
         .dropDestination(for: URL.self) { urls, _ in
-            let videos = urls.filter(isVideo)
+            let videos = urls.filter { isVideo($0) || isProject($0) }
             guard !videos.isEmpty else { return false }
             onDropped(videos)
             return true
@@ -116,9 +116,6 @@ struct ClipPane: View {
             ZStack {
                 VideoPlayerRepresentable(player: clip.engine.player)
                 // In the same frame as the video, so drawings zoom and pan with it.
-                if clip.showsSkeleton {
-                    SkeletonLayer(clip: clip, angles: skeletonAngles, zoom: clip.zoom)
-                }
                 // (Space held while drawing: the drags go to the video, to pan it, as in Photoshop.)
                 DrawingLayer(clip: clip, editing: drawing && !pen.panning, pen: pen)
                 // On the Mac the video's own view takes the clicks; a clear layer over it gives them to
@@ -130,8 +127,15 @@ struct ClipPane: View {
                 .scaleEffect(clip.zoom)
                 .offset(clip.pan)
                 .frame(width: space.size.width, height: space.size.height)
+                // The skeleton follows the zoomed picture, but is drawn at its own size, so it stays sharp.
+                .overlay {
+                    if clip.showsSkeleton {
+                        SkeletonLayer(clip: clip, angles: skeletonAngles, zoom: clip.zoom, pan: clip.pan)
+                    }
+                }
                 .clipped()
                 .contentShape(Rectangle())
+                .drawingPointer(pen, on: drawing)
                 .gesture(
                     MagnifyGesture()
                         .onChanged { clip.zoom = min(8, max(1, zoomBase * $0.magnification)) }
@@ -145,9 +149,9 @@ struct ClipPane: View {
                         .onChanged { drag in
                             // While drawing, the drag belongs to the drawing.
                             guard !drawing || pen.panning else { return }
-                            // Panning with Space only moves a zoomed picture; it never steps frames.
-                            if drawing && clip.zoom <= 1 { return }
-                            if clip.zoom > 1 {
+                            if drawing { pen.grabbing = true }
+                            // Space held while drawing moves the picture, zoomed or not; it never steps frames.
+                            if clip.zoom > 1 || drawing {
                                 clip.pan = CGSize(
                                     width: panBase.width + drag.translation.width,
                                     height: panBase.height + drag.translation.height)
@@ -162,6 +166,7 @@ struct ClipPane: View {
                         .onEnded { _ in
                             panBase = clip.pan
                             jogged = 0
+                            pen.grabbing = false
                         })
                 .onTapGesture(count: 2) { resetView() }
                 // Focus the moment the pointer goes down: no waiting to rule out a double-click
@@ -183,6 +188,10 @@ struct ClipPane: View {
                 // Linked, both clips are one: each keeps its buttons (mirror, sound, open…).
                 if (focused || linked) && !drawing {
                     actions.transition(.opacity)
+                } else if drawing, clip.zoom > 1 || clip.pan != .zero {
+                    // Zoomed or moved while drawing: one button puts the whole frame back.
+                    RoundButton(symbol: "arrow.down.right.and.arrow.up.left", action: resetView)
+                        .help("Fit the whole frame")
                 }
             }
             .padding(10)
@@ -248,7 +257,7 @@ struct ClipPane: View {
 
     private var actions: some View {
         HStack(spacing: 6) {
-            if clip.zoom > 1 {
+            if clip.zoom > 1 || clip.pan != .zero {
                 RoundButton(symbol: "arrow.down.right.and.arrow.up.left", action: resetView)
                     .help("Fit the whole frame")
             }
@@ -499,6 +508,11 @@ struct EchoMark: View {
 /// A clip's own time: "1.23 s".
 func clock(_ value: Double) -> String {
     value.formatted(.number.precision(.fractionLength(2))) + " s"
+}
+
+/// A Mimesis project file (`Name.mimesis`), for drops.
+func isProject(_ url: URL) -> Bool {
+    url.isFileURL && url.pathExtension.lowercased() == ComparisonStore.fileExtension
 }
 
 /// A file that plays as a video (by its extension), for drops.

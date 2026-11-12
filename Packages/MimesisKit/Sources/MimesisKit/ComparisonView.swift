@@ -65,7 +65,9 @@ public struct ComparisonView: View {
                     onLibrary: library.clips.isEmpty ? nil : { showingLibrary = true },
                     recent: Array(store.recents.prefix(4)),
                     onOpenProject: { item in Task { await store.open(item, into: comparison) } },
-                    onAllProjects: { browsing = true })
+                    onAllProjects: { browsing = true },
+                    onBrowseProject: { openProject() })
+                    .onAppear { store.refreshRecents() }
             } else {
                 // As in Arete's player, on every device: the videos edge to edge; the timeline across
                 // their bottom, see-through; and a solid bar of buttons under them. (A phone only runs
@@ -91,21 +93,37 @@ public struct ComparisonView: View {
                         // (On the right: the segments are on the left.)
                         .overlay(alignment: .topTrailing) {
                             if comparison.drawing != nil {
-                                markup(.strip, compact: phone).padding(.trailing, 8).padding(.top, phone ? 50 : 96)
-                                    .transition(.move(edge: .trailing).combined(with: .opacity))
+                                // One column where it's tall enough; two where it isn't, so the last tools
+                                // (the shapes, the angle) are never under the timeline.
+                                ViewThatFits(in: .vertical) {
+                                    markup(.strip, compact: false)
+                                    markup(.strip, compact: true)
+                                }
+                                .padding(.trailing, 8)
+                                .padding(.top, phone ? 50 : 96)
+                                .padding(.bottom, phone ? 64 : 136)
+                                .transition(.move(edge: .trailing).combined(with: .opacity))
                             }
                         }
-                        .overlay(alignment: .top) {
+                        .overlay {
                             if comparison.drawing != nil {
                                 // The whole bar where it fits; a shorter one where it doesn't (an iPhone, or
-                                // the sidebar open in a small window).
-                                ViewThatFits(in: .horizontal) {
-                                    markup(.options, compact: false)
-                                    markup(.options, compact: true)
-                                    ScrollView(.horizontal, showsIndicators: false) { markup(.options, compact: true) }
+                                // the sidebar open in a small window). It starts at the top, and can be
+                                // dragged by its handle to anywhere over the clips.
+                                GeometryReader { area in
+                                    let top: CGFloat = phone ? 6 : 48
+                                    let moved = comparison.pen.barOffset
+                                    ViewThatFits(in: .horizontal) {
+                                        markup(.options, compact: false)
+                                        markup(.options, compact: true)
+                                        ScrollView(.horizontal, showsIndicators: false) { markup(.options, compact: true) }
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.horizontal, 8)
+                                    .padding(.top, top)
+                                    .offset(x: min(max(moved.width, -area.size.width / 2 + 40), area.size.width / 2 - 40),
+                                            y: min(max(moved.height, 4 - top), max(4 - top, area.size.height - top - 150)))
                                 }
-                                .padding(.horizontal, 8)
-                                .padding(.top, phone ? 6 : 48)
                                 .transition(.move(edge: .top).combined(with: .opacity))
                             }
                         }
@@ -124,6 +142,16 @@ public struct ComparisonView: View {
                 // or pushed off the window.
                 .frame(minWidth: 0, maxWidth: .infinity)
                 .clipped()
+                #if os(iOS)
+                // Typing in the segments' panel: a tap on the clips finishes it.
+                .overlay {
+                    if comparison.typing {
+                        Color.clear.contentShape(Rectangle()).onTapGesture {
+                            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                        }
+                    }
+                }
+                #endif
                 }
                 // On an iPhone the segments slide in over the clips.
                 .overlay(alignment: .leading) {
@@ -192,6 +220,8 @@ public struct ComparisonView: View {
         .toolbarBackgroundVisibility(.visible, for: .windowToolbar)
         #endif
         .environment(library)
+        // No keyboard-focus ring around buttons: every one of them is clicked or has a key.
+        .focusEffectDisabled()
         .background(Theme.canvas.ignoresSafeArea())
         .preferredColorScheme(.dark)
         .tint(Theme.accent)
@@ -201,18 +231,47 @@ public struct ComparisonView: View {
         // Catch it first, unless someone is typing.
         .onAppear {
             guard tabMonitor == nil else { return }
-            tabMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .keyUp]) { event in
-                // While drawing, holding Space pans the zoomed video with a drag (as in Photoshop), and
+            tabMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .keyUp, .leftMouseDown]) { event in
+                let text = event.window?.firstResponder as? NSText
+                if event.type == .leftMouseDown {
+                    // Typing in the segments' panel (a name, a note): a click anywhere outside the field
+                    // finishes it, back to reading. (The click still does what it would.)
+                    if comparison.typing, let text, let window = event.window, window.attachedSheet == nil,
+                       !text.convert(text.bounds, to: nil).insetBy(dx: -6, dy: -6).contains(event.locationInWindow) {
+                        window.makeFirstResponder(nil)
+                    }
+                    return event
+                }
+                // While drawing, holding Space moves the video with a drag (as in Photoshop), and
                 // doesn't play.
-                if event.keyCode == 49, comparison.drawing != nil, !comparison.typing,
-                   !(event.window?.firstResponder is NSText), event.window?.attachedSheet == nil {
-                    comparison.pen.panning = event.type == .keyDown
-                    return nil
+                if event.keyCode == 49 {
+                    if event.type == .keyUp {
+                        let was = comparison.pen.panning
+                        comparison.pen.panning = false
+                        comparison.pen.grabbing = false
+                        return was ? nil : event
+                    }
+                    if comparison.drawing != nil, text == nil, event.window?.attachedSheet == nil,
+                       event.modifierFlags.intersection([.command, .option, .control]).isEmpty {
+                        comparison.pen.panning = true
+                        return nil
+                    }
                 }
                 guard event.type == .keyDown else { return event }
+                // ⌘Z and ⇧⌘Z: the Edit menu's own Undo would take them and do nothing (it knows only
+                // about typing), so they're caught here; in a text field they're left to the typing.
+                if event.keyCode == 6, text == nil, event.window?.attachedSheet == nil, anyLoaded,
+                   event.modifierFlags.intersection([.command, .option, .control]) == .command {
+                    if event.modifierFlags.contains(.shift) {
+                        comparison.history.redo(comparison)
+                    } else {
+                        comparison.history.undo(comparison)
+                    }
+                    return nil
+                }
                 guard event.keyCode == 48, // Tab
                       event.modifierFlags.intersection([.command, .option, .control, .shift]).isEmpty,
-                      !(event.window?.firstResponder is NSText),
+                      text == nil,
                       event.window?.attachedSheet == nil,
                       anyLoaded
                 else { return event }
@@ -254,6 +313,8 @@ public struct ComparisonView: View {
             if phase == .active { Inbox.shared.collectShared() }
             #endif
             if phase != .active { store.remember(comparison) }
+            // A project deleted in Finder (or the Files app) meanwhile leaves the recent ones.
+            if phase == .active { store.refreshRecents() }
         }
         .alert("Save project", isPresented: $naming) {
             TextField("Name", text: $newName)
@@ -298,6 +359,8 @@ public struct ComparisonView: View {
             case .export: if comparison.canLink { exporting = true }
             case .edit: editClip()
             case .swap: if bothLoaded { comparison.swapClips() }
+            case .undo: comparison.history.undo(comparison)
+            case .redo: comparison.history.redo(comparison)
             }
         }
         .onChange(of: store.recents, initial: true) { _, recents in MenuRequests.shared.recents = recents }
@@ -334,6 +397,7 @@ public struct ComparisonView: View {
         .sheet(isPresented: $exporting) {
             ExportView(comparison: comparison)
         }
+        .onChange(of: browsing) { _, showing in if showing { store.refreshRecents() } }
         .sheet(isPresented: $browsing) {
             SavedComparisonsView(store: store, onOpen: { item in
                 browsing = false
@@ -454,7 +518,18 @@ public struct ComparisonView: View {
         if layout == .right { comparison.focus = 1 }
     }
 
+    /// The layout, and in the overlay which clip is on top ("A over B": click to swap).
     private var layoutSwitch: some View {
+        HStack(spacing: 8) {
+            layoutButtons
+            if comparison.layout == .overlay && bothLoaded {
+                OverlayBadge(comparison: comparison)
+            }
+        }
+        .fixedSize()
+    }
+
+    private var layoutButtons: some View {
             HStack(spacing: 2) {
                 ForEach(Comparison.Layout.allCases) { layout in
                     let on = comparison.layout == layout
@@ -585,6 +660,12 @@ public struct ComparisonView: View {
     private func dropped(_ urls: [URL], on side: Int?) {
         // Kept first: a file dragged from another app (Imago, Photos) can be a temporary copy that's
         // gone a moment after the drop, which left the clip black.
+        // A project file dropped on the window: opened.
+        if let project = urls.first(where: isProject) {
+            _ = project.startAccessingSecurityScopedResource()
+            Task { await store.open(project, into: comparison) }
+            return
+        }
         let urls = urls.map(Self.keepDropped)
         if urls.count >= 2 {
             open(urls[0], in: 0)
@@ -889,8 +970,11 @@ public struct ComparisonView: View {
                 for clip in comparison.clips { clip.drawings.removeAll { $0.id == id } }
                 comparison.pen.selected = nil
             }
+            // (On the Mac ⌘Z and ⇧⌘Z are caught before the Edit menu: see the key monitor.)
+            #if !os(macOS)
             key("z", [.command]) { comparison.history.undo(comparison) }
             key("z", [.command, .shift]) { comparison.history.redo(comparison) }
+            #endif
         }
         .hidden()
         .disabled(comparison.typing)
@@ -918,9 +1002,9 @@ public struct ComparisonView: View {
         let layout = wide ? AnyLayout(HStackLayout(spacing: 1)) : AnyLayout(VStackLayout(spacing: 1))
         return layout {
             if comparison.layout == .overlay {
-                OverlayPane(comparison: comparison)
+                OverlayPane(comparison: comparison, showsBadge: phone)
                     .dropDestination(for: URL.self) { urls, _ in
-                        let videos = urls.filter(isVideo)
+                        let videos = urls.filter { isVideo($0) || isProject($0) }
                         guard !videos.isEmpty else { return false }
                         dropped(videos, on: nil)
                         return true
@@ -1121,8 +1205,10 @@ struct SavedComparisonsView: View {
             }
             .navigationTitle("Recent projects")
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } }
-                ToolbarItem(placement: .primaryAction) { Button("Open other…", action: onBrowse) }
+                ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() }.help("Close this list") }
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Open other…", action: onBrowse).help("Find a project file that isn't in this list")
+                }
             }
             .confirmationDialog(
                 "Delete “\(deleting?.name ?? "")”?",
@@ -1169,6 +1255,7 @@ struct ReelBar: View {
             }
             Spacer()
             Button("Stop") { reel.stop() }.buttonStyle(ChipStyle(active: true))
+                .help("Stop playing the tagged moments one after another")
         }
         .foregroundStyle(.white)
         .padding(.horizontal, 14).padding(.vertical, 8)

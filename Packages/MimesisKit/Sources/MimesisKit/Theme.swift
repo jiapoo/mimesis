@@ -32,6 +32,10 @@ struct RoundButton: View {
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
+        // Never the keyboard's focus (and its ring): these are clicked, or have a key of their own.
+        #if os(macOS)
+        .focusable(false)
+        #endif
     }
 }
 

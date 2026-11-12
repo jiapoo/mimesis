@@ -106,7 +106,9 @@ struct SegmentSidebar: View {
         field = nil
     }
 
-    /// A one-line field for the text being edited: Return keeps it, Esc leaves it as it was.
+    /// A one-line field for the text being edited, in a dark well with a crimson edge so it reads as
+    /// "being written": Return or a click anywhere else keeps it and goes back to reading, Esc leaves
+    /// it as it was.
     private func inlineField(_ what: Field, prompt: String, size: CGFloat = 13) -> some View {
         TextField(prompt, text: $text)
             .textFieldStyle(.plain)
@@ -116,6 +118,15 @@ struct SegmentSidebar: View {
             #if os(macOS)
             .onExitCommand { cancel() }
             #endif
+            .padding(.horizontal, 7)
+            .frame(height: 24)
+            .background(Color.black.opacity(0.35), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(Theme.accent.opacity(0.8), lineWidth: 1))
+    }
+
+    /// A click on something else in the panel finishes what's being written first.
+    private func leaveField() {
+        if editing != nil { commit() }
     }
 
     // MARK: The list
@@ -156,7 +167,10 @@ struct SegmentSidebar: View {
                 .contentShape(Rectangle())
                 // Double-click the name to rename it; one click chooses the segment.
                 .onTapGesture(count: 2) { edit(.segment(segment.id), segment.name) }
-                .onTapGesture { comparison.selectSegment(index) }
+                .onTapGesture {
+                    leaveField()
+                    comparison.selectSegment(index)
+                }
                 .help("Click to choose this segment; double-click to rename it; right-click for more")
                 .contextMenu {
                     Button("Rename", systemImage: "pencil") { edit(.segment(segment.id), segment.name) }
@@ -373,14 +387,16 @@ struct SegmentSidebar: View {
                         Spacer(minLength: 0)
                     }
                 }
-                .padding(8)
+                .padding(.horizontal, 8)
+                .padding(.vertical, editing == .note(item.note.id) ? 4 : 8)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.white.opacity(editing == .note(item.note.id) ? 0.10 : 0.05),
+                .background(Color.white.opacity(0.05),
                             in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                 .contentShape(Rectangle())
                 // Double-click to change it; one click goes to its frame.
                 .onTapGesture(count: 2) { edit(.note(item.note.id), item.note.text) }
                 .onTapGesture {
+                    leaveField()
                     comparison.go(to: DrawnFrame(clip: item.clip, time: item.note.time, everyFrame: false, overlay: false,
                                                  count: 0, colors: [], ids: []))
                 }
@@ -406,7 +422,7 @@ struct SegmentSidebar: View {
                 if editing == .about {
                     Button("Done") { commit() }
                         .buttonStyle(ChipStyle(active: true))
-                        .help("Finish writing (Esc leaves it as it was)")
+                        .help("Finish writing (or click anywhere else; Esc leaves it as it was)")
                 }
             }
             if editing == .about {
@@ -419,8 +435,8 @@ struct SegmentSidebar: View {
                     .onExitCommand { cancel() }
                     #endif
                     .padding(8)
-                    .background(Color.white.opacity(0.10), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Theme.accent.opacity(0.6)))
+                    .background(Color.black.opacity(0.35), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Theme.accent.opacity(0.8)))
             } else {
                 let written = comparison.segment.notes ?? ""
                 Text(written.isEmpty ? "Double-click to write what to look at in this segment." : written)

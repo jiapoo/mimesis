@@ -227,6 +227,15 @@ The five steps below build it.
       original (2026-11-11; builds, not yet tried by hand)
 - ✅ General wording, no sport-specific words; Court mode is now Live replay (2026-11-11)
 - ✅ Linked play kept smooth by tiny speed changes instead of jumping frames (2026-11-10)
+- ✅ Overlay in one row over the picture, "A over B" (click to swap) beside the layout; the picture no longer
+      brighter after a swap (2026-11-12; the brightness fix not yet seen on screen)
+- ✅ Skeleton sharp when zoomed: drawn over the zoomed video at its own size (2026-11-12)
+- ✅ Names and notes in the sidebar: a click anywhere else finishes writing (2026-11-12)
+- ✅ Projects: a dropped .mimesis file opens, Open project on the welcome screen, deleted or trashed projects
+      leave the recent ones (2026-11-12)
+- ✅ Drawing: ⌘Z / ⇧⌘Z while drawing, a movable options bar, tools in two columns when the window is short,
+      Space-drag at any zoom, pointer shapes on the Mac (2026-11-12; not yet tried by hand)
+- ✅ A tip on every button (2026-11-12)
 
 ## Phase 7.6 — For people serious about improving
 
