@@ -368,12 +368,23 @@ struct SegmentSidebar: View {
                 title("Snapshots")
                 ForEach(Array(kept.enumerated()), id: \.element.id) { number, snapshot in
                     HStack(spacing: 8) {
-                        HStack(spacing: 1) {
-                            ForEach(Array(snapshot.times.enumerated()), id: \.offset) { index, time in
-                                if let time {
-                                    FrameThumb(url: comparison.clips[index].url, time: time)
-                                        .frame(width: snapshot.times.compactMap { $0 }.count > 1 ? 40 : 64, height: 40)
-                                        .clipped()
+                        Group {
+                            // Its picture, as it was in the box; an older one's frames side by side.
+                            if let image = snapshot.cgImage {
+                                Image(decorative: image, scale: 1)
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(width: 64, height: 40)
+                                    .clipped()
+                            } else {
+                                HStack(spacing: 1) {
+                                    ForEach(Array(snapshot.times.enumerated()), id: \.offset) { index, time in
+                                        if let time {
+                                            FrameThumb(url: comparison.clips[index].url, time: time)
+                                                .frame(width: snapshot.times.compactMap { $0 }.count > 1 ? 40 : 64, height: 40)
+                                                .clipped()
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -391,7 +402,7 @@ struct SegmentSidebar: View {
                                 .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
-                        .help("Save this snapshot as a picture: the frames and their drawings, nothing else")
+                        .help("Save this snapshot as a picture: what was inside its box")
                         Button { comparison.deleteSnapshot(snapshot.id) } label: {
                             Image(systemName: "xmark")
                                 .font(.system(size: 8, weight: .heavy))

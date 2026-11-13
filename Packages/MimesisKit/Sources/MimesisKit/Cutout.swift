@@ -527,8 +527,21 @@ struct CutoutLayer: View {
     let clip: Clip
     let cutout: Cutout
     private var renderer: CutoutRenderer { cutout.renderer }
+    @Environment(\.stills) private var stills
 
     var body: some View {
+        // A snapshot being made: the cutout as it was on screen, as a picture (and the renderer, the
+        // one on screen, left alone).
+        if let stills {
+            if let image = stills.cutouts[ObjectIdentifier(clip)] {
+                Image(decorative: image, scale: 1).resizable().scaledToFit()
+            }
+        } else {
+            live
+        }
+    }
+
+    private var live: some View {
         TimelineView(.animation) { _ in
             if let image = renderer.frame(cutout: cutout, mirrored: clip.engine.mirroredHorizontally) {
                 Image(decorative: image, scale: 1)

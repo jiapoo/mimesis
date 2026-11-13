@@ -44,6 +44,14 @@ public struct ComparisonView: View {
     /// Videos sent from another app, waiting to be put in A or B.
     @State private var incoming: [URL] = []
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.displayScale) private var displayScale
+    /// The snapshot's box, over the clips, while one is being framed.
+    @State private var snapBox: CGRect?
+    /// The size of the clips' area (where the box goes).
+    @State private var panesSize: CGSize = .zero
+    /// The last snapshot box, as shares of the clips' area ("x y width height"), so the next one starts
+    /// there, whatever the window's size.
+    @AppStorage("snapshotBox") private var lastSnapBox = ""
     #if os(macOS)
     @State private var tabMonitor: Any?
     #endif
@@ -95,13 +103,27 @@ public struct ComparisonView: View {
                     ZStack(alignment: .bottom) {
                         GeometryReader { space in
                             panes(wide: space.size.width >= space.size.height)
+                                // While the snapshot's box is up: only the pictures, as they'll be kept.
+                                .environment(\.cleanPicture, snapBox != nil)
+                        }
+                        .onGeometryChange(for: CGSize.self) { $0.size } action: { panesSize = $0 }
+                        // The snapshot's box: drag it, or its handles; the camera in the bar takes it.
+                        .overlay {
+                            if snapBox != nil {
+                                SnapshotFrame(box: Binding(get: { snapBox ?? .zero }, set: { snapBox = $0 }), area: panesSize)
+                                    .transition(.opacity)
+                            }
                         }
                         VStack(spacing: 6) {
                             if let reel, reel.running { ReelBar(reel: reel).padding(.horizontal, 12) }
-                            // The timeline stays while drawing, to step to another frame.
-                            Transport(comparison: comparison, part: .timeline)
+                            // The timeline stays while drawing, to step to another frame; it steps
+                            // aside while a snapshot is framed, so the box can reach the bottom.
+                            if snapBox == nil {
+                                Transport(comparison: comparison, part: .timeline)
+                            }
                         }
                         .animation(.easeOut(duration: 0.2), value: comparison.drawing)
+                        .animation(.easeOut(duration: 0.15), value: snapBox == nil)
                     }
                     // The drawing tools, as in Photoshop: the tools down the left, the chosen tool's
                     // options across the top.
@@ -150,7 +172,13 @@ public struct ComparisonView: View {
                     Transport(comparison: comparison, part: .bar, extras: phone ? AnyView(dockExtras) : nil,
                               sidebarShown: showsSidebar,
                               onSidebar: { withAnimation(.easeOut(duration: 0.2)) { showsSidebar.toggle() } },
-                              onSnapshot: { say("Snapshot kept: it's in the sidebar, and in the report") })
+                              framing: snapBox != nil,
+                              onFrame: frameSnapshot,
+                              onSnapshot: takeSnapshot,
+                              onCancelFrame: {
+                                  rememberSnapBox()
+                                  withAnimation(.easeOut(duration: 0.15)) { snapBox = nil }
+                              })
                 }
                 // The clips take what the sidebar leaves, however little: the sidebar is never squeezed
                 // or pushed off the window.
@@ -1030,7 +1058,7 @@ public struct ComparisonView: View {
         }
         return clips.joined(separator: ";") + "|\(comparison.layout)|\(comparison.linked)|\(comparison.linkedSpeed)"
             + "|\(comparison.takes.map { $0.map(\.url.lastPathComponent) })\(comparison.takeIndex)"
-            + "|\(comparison.segmentIndex)|\(comparison.segments.map { $0.name + ($0.notes ?? "") })"
+            + "|\(comparison.segmentIndex)|\(comparison.segments.map { $0.name + ($0.notes ?? "") + "\($0.snapshots?.map(\.id) ?? [])" })"
             + "|\(comparison.overlayTop)|\(comparison.overlayOpacity)|\(comparison.overlayOffset.width),\(comparison.overlayOffset.height)|\(comparison.overlayScale)|\(comparison.overlayRotation)"
     }
 
@@ -1055,14 +1083,20 @@ public struct ComparisonView: View {
         // Each key looks up the focused clip when pressed: on the Mac a shortcut can keep its first
         // action after the view changes, so one that held a clip kept driving it after Tab.
         Group {
-            key("[") { if !comparison.linked { comparison.focused?.setTrimStart() } }
-            key("]") { if !comparison.linked { comparison.focused?.setTrimEnd() } }
+            // (While drawing, [ and ] are the thickness: see `MarkupKeys`.)
+            if comparison.drawing == nil {
+                key("[") { if !comparison.linked { comparison.focused?.setTrimStart() } }
+                key("]") { if !comparison.linked { comparison.focused?.setTrimEnd() } }
+            }
             key("s") { if !comparison.linked { comparison.focused?.toggleSync() } }
             key("l") { if comparison.canLink { comparison.linked.toggle() } }
             key("\t") { switchFocus() }
-            // Esc: stop drawing; else watch both clips (neither dimmed).
+            // Esc: put the snapshot's box away; stop drawing; else watch both clips (neither dimmed).
             key(.escape) {
-                if comparison.pen.selected != nil {
+                if snapBox != nil {
+                    rememberSnapBox()
+                    withAnimation(.easeOut(duration: 0.15)) { snapBox = nil }
+                } else if comparison.pen.selected != nil {
                     comparison.pen.selected = nil
                 } else if comparison.drawing != nil {
                     comparison.drawing = nil
@@ -1070,12 +1104,30 @@ public struct ComparisonView: View {
                     comparison.linked = true
                 }
             }
-            // While drawing: Delete removes the chosen drawing.
-            key(.delete) {
-                guard comparison.drawing != nil, let id = comparison.pen.selected else { return }
-                for clip in comparison.clips { clip.drawings.removeAll { $0.id == id } }
-                comparison.pen.selected = nil
+            // The snapshot's box is up: Return takes it.
+            if snapBox != nil { key(.return) { takeSnapshot() } }
+            // F: the snapshot's box; again, take it.
+            key("f") { if snapBox == nil { frameSnapshot() } else { takeSnapshot() } }
+            // D: draw on the clips; again, stop.
+            key("d") { if anyLoaded { snapBox = nil; comparison.toggleDrawingBoth() } }
+            // B: the skeleton, on the selected clip (both while linked).
+            key("b") {
+                let clips = comparison.linked ? comparison.clips.filter(\.isLoaded) : [comparison.focused].compactMap { $0 }
+                clips.forEach { $0.toggleSkeleton() }
             }
+            // ⌥L: loop, or stop at the end.
+            key("l", [.option]) { comparison.loops.toggle() }
+            // ⌃⌘S: the segments' sidebar.
+            key("s", [.control, .command]) { withAnimation(.easeOut(duration: 0.2)) { showsSidebar.toggle() } }
+            // ⌘1–⌘4: the layout.
+            ForEach(Array(Comparison.Layout.allCases.enumerated()), id: \.offset) { index, layout in
+                key(KeyEquivalent(Character("\(index + 1)")), [.command]) {
+                    guard anyLoaded, layout != .overlay || comparison.canLink else { return }
+                    withAnimation(.easeOut(duration: 0.2)) { choose(layout) }
+                }
+            }
+            // ⌘0: the whole frame again (zoomed or moved).
+            key("0", [.command]) { withAnimation(.easeOut(duration: 0.2)) { comparison.clips.forEach { $0.resetView() } } }
             // (On the Mac ⌘Z and ⇧⌘Z are caught before the Edit menu: see the key monitor.)
             #if !os(macOS)
             key("z", [.command]) { comparison.history.undo(comparison) }
@@ -1084,6 +1136,12 @@ public struct ComparisonView: View {
         }
         .hidden()
         .disabled(comparison.typing)
+        // While drawing: the colours, thickness, opacity, this frame or every frame, duplicate, delete.
+        if let target = comparison.drawing {
+            MarkupKeys(surfaces: target == .both ? comparison.clips.filter(\.isLoaded)
+                        : [comparison.clips[target == .clip(1) ? 1 : 0]],
+                       pen: comparison.pen, enabled: !comparison.typing && snapBox == nil)
+        }
         if comparison.linked {
             Group {
                 key(.space) { comparison.togglePlay() }
@@ -1169,6 +1227,46 @@ public struct ComparisonView: View {
         }
     }
 
+    // MARK: Snapshot
+
+    /// The camera's first click: stop on this frame and put up the box, over all the clips, a little in
+    /// from their edges.
+    private func frameSnapshot() {
+        guard panesSize.width > 0, panesSize.height > 0 else { return }
+        comparison.drawing = nil
+        comparison.pauseForSnapshot()
+        withAnimation(.easeOut(duration: 0.15)) {
+            snapBox = SnapshotFrame.remembered(lastSnapBox, in: panesSize) ?? SnapshotFrame.start(in: panesSize)
+        }
+    }
+
+    /// Keeps where the box is, for next time.
+    private func rememberSnapBox() {
+        guard let box = snapBox else { return }
+        lastSnapBox = SnapshotFrame.shares(of: box, in: panesSize)
+    }
+
+    /// The camera's second click: keep what's inside the box, exactly as it is on screen.
+    private func takeSnapshot() {
+        guard let box = snapBox else { return }
+        rememberSnapBox()
+        let size = panesSize
+        Task {
+            let stills = await SnapshotCapture.stills(of: comparison)
+            let picture = panes(wide: size.width >= size.height)
+                .environment(\.stills, stills)
+                .environment(\.cleanPicture, true)
+                .environment(library)
+                .preferredColorScheme(.dark)
+                .tint(Theme.accent)
+            let image = SnapshotCapture.take(picture, size: size, box: box, scale: displayScale)
+            comparison.addSnapshot(image: image)
+            withAnimation(.easeOut(duration: 0.15)) { snapBox = nil }
+            say(image == nil ? "Snapshot kept, without its picture: it couldn't be made"
+                : "Snapshot kept: it's in the sidebar, and in the report")
+        }
+    }
+
     private func key(_ k: KeyEquivalent, _ modifiers: EventModifiers = [], action: @escaping () -> Void) -> some View {
         Button("", action: action).keyboardShortcut(k, modifiers: modifiers)
     }
@@ -1187,10 +1285,10 @@ extension Comparison.Layout {
     /// What it shows, for its button's tooltip.
     var explanation: String {
         switch self {
-        case .both: "Both clips, side by side"
-        case .left: "Clip A only, the whole window"
-        case .right: "Clip B only, the whole window"
-        case .overlay: "One clip over the other, see-through (needs both clips)"
+        case .both: "Both clips, side by side (⌘1)"
+        case .left: "Clip A only, the whole window (⌘2)"
+        case .right: "Clip B only, the whole window (⌘3)"
+        case .overlay: "One clip over the other, see-through (needs both clips) (⌘4)"
         }
     }
 

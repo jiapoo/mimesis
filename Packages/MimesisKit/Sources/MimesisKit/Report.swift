@@ -172,6 +172,8 @@ enum Report {
     /// A snapshot's picture: the frame of each clip it kept, with that frame's drawings, side by side
     /// at one height (a single clip: that clip alone). No buttons, rings or timeline: only the pictures.
     static func picture(of snapshot: Snapshot, in segment: Segment, comparison: Comparison) async -> CGImage? {
+        // Taken with its box: what was inside it, as it was on screen.
+        if let image = snapshot.cgImage { return image }
         var frames: [CGImage] = []
         for (index, time) in snapshot.times.enumerated() {
             let clip = comparison.clips[index]

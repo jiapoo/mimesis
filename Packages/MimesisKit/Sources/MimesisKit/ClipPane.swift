@@ -39,6 +39,10 @@ struct ClipPane: View {
     @State private var jogged = 0
     @State private var stroMotion = false
     @State private var dropping = false
+    /// The view put back from elsewhere (⌘0): pinches and drags start from there.
+    private var fitted: Bool { clip.zoom == 1 && clip.pan == .zero }
+    /// Only the picture: the snapshot's box is up, or it's being taken.
+    @Environment(\.cleanPicture) private var clean
 
     var body: some View {
         Group {
@@ -52,7 +56,7 @@ struct ClipPane: View {
         // soft crimson ring, inset and rounded, with a faint glow.
         .overlay {
             Color.black
-                .opacity(showsFocus && !focused && !dropping ? 0.32 : 0)
+                .opacity(showsFocus && !focused && !dropping && !clean ? 0.32 : 0)
                 .allowsHitTesting(false)
         }
         .overlay {
@@ -60,7 +64,7 @@ struct ClipPane: View {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .strokeBorder(Theme.accent, lineWidth: 2.5)
                 .shadow(color: Theme.accent.opacity(0.5), radius: 6)
-                .opacity((focused && showsFocus) || dropping ? 1 : 0)
+                .opacity(((focused && showsFocus) || dropping) && !clean ? 1 : 0)
                 .scaleEffect((focused && showsFocus) || dropping ? 1 : 0.985)
                 .allowsHitTesting(false)
         }
@@ -74,6 +78,9 @@ struct ClipPane: View {
             return true
         } isTargeted: { dropping = $0 }
         .animation(.easeOut(duration: 0.15), value: focused)
+        .onChange(of: fitted) { _, fitted in
+            if fitted { zoomBase = 1; panBase = .zero }
+        }
         .sheet(isPresented: $stroMotion) { StroMotionView(clip: clip, letter: letter) }
     }
 
@@ -114,7 +121,7 @@ struct ClipPane: View {
     private var video: some View {
         GeometryReader { space in
             ZStack {
-                VideoPlayerRepresentable(player: clip.engine.player)
+                ClipPicture(clip: clip)
                 // In the same frame as the video, so drawings zoom and pan with it.
                 // (Space held while drawing: the drags go to the video, to pan it, as in Photoshop.)
                 DrawingLayer(surface: clip, editing: drawing && !pen.pans, pen: pen)
@@ -182,6 +189,7 @@ struct ClipPane: View {
         .overlay(alignment: .top) {
             // The letter and time always; the clip's buttons only on the focused clip.
             // (The drawing tools float over both clips, from the comparison.)
+            if !clean {
             HStack(alignment: .top, spacing: 8) {
                 ViewThatFits(in: .horizontal) {
                     badge(name: false, time: true)
@@ -194,10 +202,11 @@ struct ClipPane: View {
                 } else if drawing, clip.zoom > 1 || clip.pan != .zero {
                     // Zoomed or moved while drawing: one button puts the whole frame back.
                     RoundButton(symbol: "arrow.down.right.and.arrow.up.left", action: resetView)
-                        .help("Fit the whole frame")
+                        .help("Fit the whole frame (⌘0)")
                 }
             }
             .padding(10)
+            }
         }
         // Notes pinned around this moment, above the timeline.
         .overlay(alignment: .bottomLeading) {
@@ -262,7 +271,7 @@ struct ClipPane: View {
         HStack(spacing: 6) {
             if clip.zoom > 1 || clip.pan != .zero {
                 RoundButton(symbol: "arrow.down.right.and.arrow.up.left", action: resetView)
-                    .help("Fit the whole frame")
+                    .help("Fit the whole frame (⌘0)")
             }
             if !drawsTogether {
                 RoundButton(symbol: "pencil.tip", active: drawing) {
@@ -331,7 +340,7 @@ struct ClipPane: View {
         switch clip.poseTrack?.state {
         case .preparing(let done)? where clip.showsSkeleton: "Finding the body… \(Int(done * 100)) %"
         case .failed(let why)? where clip.showsSkeleton: why
-        default: "Skeleton: follow the body through this clip's stretch and show its joints and their angles"
+        default: "Skeleton: follow the body through this clip's stretch and show its joints and their angles (B)"
         }
     }
 

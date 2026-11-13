@@ -53,6 +53,9 @@ public struct Snapshot: Codable, Equatable, Identifiable, Sendable {
     public var times: [Double?]
     /// The layout then (`Comparison.Layout`'s raw value).
     public var layout: String
+    /// What was inside the snapshot's box, exactly as it was on screen (JPEG). Nil in older saves: their
+    /// picture is made from the frames, side by side.
+    public var image: Data?
 
     /// "A 1.23 s · B 2.10 s"
     var label: String {
@@ -237,9 +240,15 @@ extension Comparison {
 
     // MARK: Snapshots
 
-    /// Keeps this moment: the frames on screen now, with their drawings.
-    public func addSnapshot() {
+    /// Stops every clip on the frame it's showing, to take a snapshot of it.
+    public func pauseForSnapshot() {
         if linked { pause() } else { clips.forEach { $0.engine.pause() } }
+    }
+
+    /// Keeps this moment: the frames on screen now, with their drawings, and `image`, the picture
+    /// that was inside the snapshot's box.
+    public func addSnapshot(image: Data? = nil) {
+        pauseForSnapshot()
         let times: [Double?] = clips.enumerated().map { index, clip in
             guard clip.isLoaded else { return nil }
             if layout == .left && index == 1 { return nil }
@@ -247,7 +256,7 @@ extension Comparison {
             return clip.engine.currentTime
         }
         guard times.contains(where: { $0 != nil }) else { return }
-        segments[segmentIndex].snapshots = (segments[segmentIndex].snapshots ?? []) + [Snapshot(times: times, layout: layout.rawValue)]
+        segments[segmentIndex].snapshots = (segments[segmentIndex].snapshots ?? []) + [Snapshot(times: times, layout: layout.rawValue, image: image)]
     }
 
     /// Shows a snapshot's frames again, laid out as they were (each clip on its own frame, so not linked).

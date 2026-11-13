@@ -17,8 +17,12 @@ struct Transport: View {
     /// button that shows or hides it.
     var sidebarShown = false
     var onSidebar: () -> Void = {}
-    /// A snapshot was just taken (to say so).
+    /// The snapshot's box is up (the camera then takes it), and what the camera does: put the box up,
+    /// take what's in it, or put the box away.
+    var framing = false
+    var onFrame: () -> Void = {}
     var onSnapshot: () -> Void = {}
+    var onCancelFrame: () -> Void = {}
     @Environment(Library.self) private var library
     @State private var showingSpeed = false
     @State private var showingClipTools = false
@@ -107,18 +111,24 @@ struct Transport: View {
                 RoundButton(symbol: comparison.loops ? "repeat" : "arrow.right.to.line", active: comparison.loops, size: compact ? 30 : 32) {
                     comparison.loops.toggle()
                 }
-                .help(comparison.loops ? "Looping: at the end, play goes back to the start and on. Click to stop at the end instead."
-                      : "Play stops at the end. Click to loop: back to the start and on.")
-                RoundButton(symbol: "camera", size: compact ? 30 : 32) {
-                    comparison.addSnapshot()
-                    onSnapshot()
+                .help(comparison.loops ? "Looping: at the end, play goes back to the start and on. Click to stop at the end instead (⌥L)."
+                      : "Play stops at the end. Click to loop: back to the start and on (⌥L).")
+                // A snapshot in two clicks: the first puts up a box to choose what to keep, the
+                // second (the camera) keeps what's inside it.
+                if framing {
+                    RoundButton(symbol: "xmark", size: compact ? 30 : 32, action: onCancelFrame)
+                        .help("No snapshot: put the box away (Esc). The box starts here again next time.")
+                    RoundButton(symbol: "camera", active: true, size: compact ? 30 : 32, action: onSnapshot)
+                        .help("Take the snapshot: keeps what's inside the box, exactly as it is on screen (Return or F). It's listed in the sidebar, goes into the report and can be saved as a picture.")
+                } else {
+                    RoundButton(symbol: "camera.viewfinder", size: compact ? 30 : 32, action: onFrame)
+                        .help("Snapshot (F): puts a box over the clips to choose what to keep (where it was last time): drag it, or its eight handles. Then click the camera to take it.")
                 }
-                .help("Snapshot: keep these frames with their drawings. It's listed in the sidebar, goes into the report as a key frame, and can be saved as a picture.")
                 // The one Draw button: draws on every clip on screen.
                 RoundButton(symbol: "pencil.tip.crop.circle", active: comparison.drawing != nil, size: compact ? 30 : 32) {
                     comparison.toggleDrawingBoth()
                 }
-                .help("Draw on the clips: lines, arrows, circles and angles on the frames on screen")
+                .help("Draw on the clips: lines, arrows, circles and angles on the frames on screen (D)")
                 // Undo and redo are in the top bar; an iPhone has none, so they're here.
                 if compact { UndoButtons(comparison: comparison, size: 30) }
                 speedSlider
@@ -180,7 +190,7 @@ struct Transport: View {
         }
         .buttonStyle(.plain)
         .fixedSize()
-        .help("Segments: show or hide the sidebar with the list of segments, each clip's In/Out, sync points and speed, the drawings and notes")
+        .help("Segments (⌃⌘S): show or hide the sidebar with the list of segments, each clip's In/Out, sync points and speed, the drawings and notes")
     }
 
     /// Which clip the controls drive: A, B, or A+B: linked, both playing and stepping together, lined up

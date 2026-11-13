@@ -81,14 +81,14 @@ below 50 frames a second and slow motion will look jumpy. See [Filming tips](#fi
   ruler (drag it sideways to move frame by frame), and over it the **marks**: crimson ◆ sync points, a pencil
   where a frame has drawings, a yellow speech bubble where a note is pinned. Tap a mark to go there.
 - **The bar** under the videos, left to right:
-  - **▤ Segments**: shows or hides the sidebar (below); it reads the chosen segment's name;
+  - **▤ Segments** (⌃⌘S): shows or hides the sidebar (below); it reads the chosen segment's name;
   - **A | A🔗B | B**: which clip the controls drive, or both linked;
   - the selected clip's **In / Out**, **◆ sync** and **speed** (while the sidebar is hidden; it has them too).
     On an **iPhone** these are behind one **✂ button** (crimson once any is set), so the bar always fits;
   - **frame back / play / frame forward**;
-  - **🔁 Loop**: on, play goes back to the start at the end and carries on; off, it stops at the end;
-  - **📷 Snapshot**: keeps the frames on screen with their drawings (see [Snapshots](#snapshots));
-  - **✏ Draw**: the one Draw button, for every clip on screen;
+  - **🔁 Loop** (⌥L): on, play goes back to the start at the end and carries on; off, it stops at the end;
+  - **Snapshot** (F): a box to choose what to keep, then 📷 keeps it (see [Snapshots](#snapshots));
+  - **✏ Draw** (D): the one Draw button, for every clip on screen;
   - the playback **speed** (tap it for a slider).
   - On a Mac or iPad the bar also shows the selected clip's In, Out, Sync and Speed whenever it's wide enough,
     with the sidebar open too.
@@ -194,13 +194,13 @@ starts that clip afresh in every segment.
 - **Mirror** (**⇋**, or ⇧⌘H): flips a clip side to side, only as it's shown — the file isn't changed.
   Use it to compare a left-hander with a right-hander.
 - **Zoom**: pinch on the video (trackpad pinch on Mac). **Pan**: drag while zoomed in. **Back to the whole
-  frame**: double-tap, or the **fit** button that appears top right.
+  frame**: double-tap, the **fit** button that appears top right, or **⌘0**.
 
 ---
 
 ## Drawing and measuring angles
 
-Tap **✏** in the bar: there is one Draw button, and it draws on **every clip on screen** (A and B side by
+Tap **✏** in the bar (or press **D**): there is one Draw button, and it draws on **every clip on screen** (A and B side by
 side: draw on either, with no clip singled out). The clips pause and the drawing tools
 appear, laid out as in Photoshop. The timeline stays, so you can step to another frame and keep drawing.
 
@@ -208,7 +208,7 @@ appear, laid out as in Photoshop. The timeline stays, so you can step to another
 
 | Tool | What it does |
 |---|---|
-| **Select** (arrow) | Click a drawing to choose it: its box and handles appear. Drag it to move it; drag a handle to reshape a shape, or a corner of the box to resize a hand-drawn stroke. Click anywhere else to let go. **With any tool, a click on a drawing chooses it too.** |
+| **Select** (arrow) | Click a drawing to choose it: its box and handles appear. Drag it to move it; drag one of the box's **eight handles** (corners, and the middle of each side) to resize it, or a round handle on a shape's own points to reshape it. Click anywhere else to let go. **With any tool, a click on a drawing chooses it too.** |
 | **Hand** | Drag to move the picture (pinch to zoom). The same as holding Space with any other tool. |
 | **Pen** | A solid line by hand. |
 | **Marker** | Wide and see-through, for highlighting. |
@@ -219,31 +219,34 @@ appear, laid out as in Photoshop. The timeline stays, so you can step to another
 
 **Across the top: the chosen tool's options**
 
-- **Colours**: six swatches and the colour wheel for any other.
+- **Colours**: six swatches (keys **1**–**6**: crimson, yellow, white, cyan, green, black) and the colour
+  wheel for any other.
 - **Thickness**: a slider from 0.5 pt, with a dot as thick as the line and the width in points. The slider is
-  finer at the thin end.
-- **Opacity**.
-- **This frame / Every frame**: a drawing on *this frame* only shows on the frame it was drawn on; *every
-  frame* shows it throughout (a reference line).
-- With a drawing chosen, the bar changes **that drawing**: colour, thickness, opacity, **duplicate**, and a
-  **trash** button (or the Delete key).
+  finer at the thin end. **[** thinner, **]** thicker.
+- **Opacity**: **⌥[** more see-through, **⌥]** more solid, a tenth at a time.
+- **This frame / Every frame** (**W**): a drawing on *this frame* only shows on the frame it was drawn on;
+  *every frame* shows it throughout (a reference line).
+- With a drawing chosen, the bar (and those keys) change **that drawing**: colour, thickness, opacity,
+  **duplicate** (⌘D), and a **trash** button (Delete).
+- With the eraser: **Erase this frame** (⇧Delete).
 - **Hold Space and drag** (Mac) to move the picture while drawing, as in Photoshop (the pointer becomes a
   hand). The ⤡ button at the top of the clip puts the whole frame back.
 - **Move the bar**: drag its **≡ handle** (at its left end) to anywhere over the clips; double-click the
   handle to put it back at the top.
 - **The pointer** (Mac) shows what a press will do: a **crosshair** to draw, a **hand** to move (Space held,
   or over a drawing with the select tool), a **pointing hand** over a drawing a click would choose,
-  **resize arrows** on a corner of the chosen drawing's box, an **eraser**.
+  **resize arrows** on a handle of the chosen drawing's box, an **eraser**.
 - The tools are always in **one column**; where the window is short (or on an iPhone) the buttons get
   smaller, so none is hidden under the timeline.
 - **Keys for the tools** (Mac): V select, H hand, P pen, M marker, N pencil, E eraser, L line, A arrow,
-  R rectangle, O circle, G angle.
+  R rectangle, O circle, G angle. Every key while drawing is in
+  [Keyboard shortcuts](#keyboard-shortcuts-mac).
 - An angle's **degrees** are written in a dark box, like the skeleton's: zoomed in, they follow the picture
   but keep their size and stay sharp.
 - On an **iPhone** the bar shows the colour in hand as one swatch when there's no room for all of them: tap
   it for the colours, thickness and opacity.
 - Undo and redo are in the top bar (⌘Z, ⇧⌘Z), and work while drawing.
-- **Done** (or Esc).
+- **Done** (or Esc, or D again).
 
 Each tool keeps its own colour and thickness. Drawings stay on the picture through zoom, pan, resizing and
 mirroring, are saved with the segment, are listed in the sidebar, are marked with a pencil over the
@@ -455,12 +458,21 @@ A clip can hold several **takes**: the same movement filmed on different days.
 
 ### Snapshots
 
-**📷** in the bar keeps the moment on screen: the frame each clip is showing, with what's drawn on those
-frames. No buttons, rings or timeline are in it: only the pictures and the drawings.
+A snapshot takes two clicks (or **F**, then **F** or Return):
+
+1. **Snapshot** (a camera in a frame) in the bar stops the clips and puts a **box** over them: the first
+   time all of them, A and B, a little in from the edges; after that, **where the box was last time**
+   (remembered as a share of the clips' area, so it fits a resized window too). Drag inside it to move it, drag any of its **eight handles**
+   (corners and the middle of each side) to resize it, or drag outside it to draw a new one. The letters,
+   times and buttons step aside, and the rest is dimmed, so what's in the box is what you'll get.
+2. **📷** (it takes the button's place), **Return** or **F** keeps exactly what's inside the box: the pictures,
+   with their zoom, the overlay, the skeleton and the drawings. **✕** beside it, or **Esc**, puts the box
+   away without a snapshot.
 
 - Snapshots are listed in the sidebar (**Snapshots**). **Tap one** to go back to exactly those frames, laid
   out as they were, and **draw some more**: the snapshot shows what's on its frames, so new drawings are in it.
-- **⤓** on a snapshot saves it as a **picture** (PNG): the clips side by side at one height.
+- **⤓** on a snapshot saves it as a **picture** (PNG): what was in its box. (Snapshots from before the
+  box: the clips side by side at one height.)
 - **✕** removes the snapshot (the drawings stay on their frames).
 - Each snapshot is a key frame in the **report**.
 
@@ -524,12 +536,42 @@ On iPhone and iPad a copy is kept in Mimesis so the library can open it again la
 
 | Keys | Does |
 |---|---|
-| [ and ] | Trim In / Out at the playhead |
+| [ and ] | Trim In / Out at the playhead (while drawing: the thickness) |
 | S | Add or remove a sync point here |
 | Tab | A, then B, then A🔗B (linked), then A again |
 | L | Link / unlink |
-| Esc | Link the clips (A🔗B); while drawing, stop drawing |
+| Esc | Link the clips (A🔗B) |
 | ⌘Z / ⇧⌘Z | Undo / redo: trims, sync points, speeds, drawings |
+| ⌥L | Loop on / off |
+| B | Skeleton on / off (the selected clip; both while linked) |
+| ⌘1 ⌘2 ⌘3 ⌘4 | Layout: A \| B, A, B, Overlay |
+| ⌘0 | The whole frame again (after zooming or moving) |
+| ⌃⌘S | Show / hide the segments' sidebar |
+
+**Snapshot**
+
+| Keys | Does |
+|---|---|
+| F | Put up the snapshot's box (where it was last time) |
+| F or Return | Take it: what's inside the box |
+| Esc | Put the box away, no snapshot |
+
+**Drawing**
+
+| Keys | Does |
+|---|---|
+| D | Draw on the clips; again, stop drawing (Esc too) |
+| V H | Select · hand (or hold Space to move the picture) |
+| P M N E | Pen · marker · pencil · eraser |
+| L A R O G | Line · arrow · rectangle · circle · angle |
+| 1 – 6 | Colour: crimson, yellow, white, cyan, green, black |
+| [ ] | Thinner / thicker |
+| ⌥[ ⌥] | More see-through / more solid |
+| W | This frame only / every frame |
+| ⌘D | Duplicate the chosen drawing |
+| Delete | Delete the chosen drawing |
+| ⇧Delete | Erase everything drawn on this frame |
+| Esc | Let go of the chosen drawing; again, stop drawing |
 
 **Menus**
 

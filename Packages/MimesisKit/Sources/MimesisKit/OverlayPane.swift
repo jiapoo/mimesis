@@ -16,6 +16,8 @@ struct OverlayPane: View {
     @State private var zoomBase: CGFloat?
     @State private var panBase: CGSize?
     @State private var showingMore = false
+    /// Only the picture: the snapshot's box is up, or it's being taken.
+    @Environment(\.cleanPicture) private var clean
 
     private var ui: OverlayUI { comparison.overlayUI }
     private var picking: Bool { ui.picking }
@@ -45,12 +47,12 @@ struct OverlayPane: View {
                 // (Each player view belongs to its video: made again when the two change places.)
                 // (The whole of it is made again, its see-through too: kept, the new player view came
                 // up solid, so the picture looked much brighter after the two had changed places.)
-                VideoPlayerRepresentable(player: base.engine.player)
+                ClipPicture(clip: base)
                     .frame(width: space.size.width, height: space.size.height)
                     .id(ObjectIdentifier(base))
                 // The top clip, fitted into the picture underneath, then moved and resized: whole, or
                 // cut out once its cutout is ready (the player keeps decoding underneath, unseen).
-                VideoPlayerRepresentable(player: top.engine.player)
+                ClipPicture(clip: top)
                     .frame(width: picture.width, height: picture.height)
                     .scaleEffect(comparison.overlayScale)
                     .rotationEffect(.degrees(comparison.overlayRotation))
@@ -156,7 +158,7 @@ struct OverlayPane: View {
             // the cutout on the left; what moves the top clip on the right. Shorter where it's narrow,
             // and scrolling sideways where even that doesn't fit. Hidden while drawing: the drawing
             // tools are there then.
-            if comparison.drawing == nil {
+            if comparison.drawing == nil && !clean {
                 ViewThatFits(in: .horizontal) {
                     row(compact: false)
                     row(compact: true)
@@ -167,7 +169,7 @@ struct OverlayPane: View {
             }
         }
         .overlay(alignment: .center) {
-            if let hint {
+            if let hint, !clean {
                 Text(hint)
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(.white)
@@ -225,7 +227,7 @@ struct OverlayPane: View {
                 RoundButton(symbol: "arrow.down.right.and.arrow.up.left") {
                     withAnimation(.easeOut(duration: 0.2)) { base.resetView() }
                 }
-                .help("See the whole picture")
+                .help("See the whole picture (⌘0)")
             }
         }
     }
@@ -243,7 +245,7 @@ struct OverlayPane: View {
                 RoundButton(symbol: "arrow.down.right.and.arrow.up.left") {
                     withAnimation(.easeOut(duration: 0.2)) { base.resetView() }
                 }
-                .help("See the whole picture")
+                .help("See the whole picture (⌘0)")
             }
             RoundButton(symbol: "slider.horizontal.3", active: showingMore) { showingMore.toggle() }
                 .help("Size, mirror, line up, turn, put back, and the cutout's options")
