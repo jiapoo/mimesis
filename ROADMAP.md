@@ -269,8 +269,11 @@ The five steps below build it.
 - ✅ Tried a sports biomechanics engine (2026-11-18): OpenSim's full-body model fitted to the tracked
       motion (`Tools/opensim_ik.py` in the engine's repo). It tidies bones and joint ranges (joints moved
       14 mm on average) but can't mend a frame the tracker got wrong: the tracker is the limit
-- ⬜ 3D next: a better tracker than Apple's for fast, athletic poses (the research kind OpenCap builds
-      on), then OpenSim after it; seeing the kept 3D on a real iPhone or iPad; an angle graph from the 3D
+- ✅ Tried a stronger tracker (2026-11-18): RTMW3D (OpenMMLab, whole body with hands) on the same
+      forehand was right in every frame looked at, where Apple's stood stiff or squatted; OpenSim after
+      it keeps the poses (`Tools/track_rtmw3d.py` in the engine's repo). Not in the app yet
+- ⬜ 3D next: RTMW3D as the Mac's tracker (the model run with Core ML; its training data's terms checked
+      first), with its hand points for the fingers, then OpenSim's limits after it; seeing the kept 3D on a real iPhone or iPad; an angle graph from the 3D
       angles; decide whether 3D joins `main` (branch `3d`; the engine is private: it holds the mannequin)
 - ⬜ Not before 2027 (set aside 2026-11-18): racket, ball, drawing in 3D, a muscle map
 - ⬜ Arete and Imago on AreteMedia's drawing and skeleton (Arete: started on its branch
