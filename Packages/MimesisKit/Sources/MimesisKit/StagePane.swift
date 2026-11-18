@@ -55,16 +55,24 @@ struct StagePane: View {
         loaded.map { "\($0.clip.url?.path ?? "")|\($0.clip.trimStart)|\($0.clip.end)|\($0.clip.engine.mirroredHorizontally)" }
     }
 
+    /// Finds each clip's body in 3D, on the Mac: it's heavy work (about a minute for ten seconds of
+    /// video), and what it finds is saved in the project. An iPhone or iPad shows what a project has,
+    /// and doesn't look for the body itself.
     private func track() {
+        #if os(macOS)
         for item in loaded {
             let clip = item.clip
             guard let url = clip.url else { continue }
             let range = clip.trimStart...max(clip.trimStart + 0.01, clip.end)
             let mirrored = clip.engine.mirroredHorizontally
             if let have = clip.motion, have.url == url, have.range == range, have.mirrored == mirrored { continue }
+            // (Kept in the project for the same stretch and way round: used as it is.)
+            if let have = clip.motion, have.found != nil, abs(have.range.lowerBound - range.lowerBound) < 0.02,
+               abs(have.range.upperBound - range.upperBound) < 0.02, have.mirrored == mirrored { continue }
             clip.motion?.cancel()
             clip.motion = MotionTrack(url: url, range: range, fps: Double(clip.engine.fps > 0 ? clip.engine.fps : 30), mirrored: mirrored)
         }
+        #endif
     }
 
     /// The pose a clip shows now: at the time its player is really on.
@@ -205,6 +213,11 @@ struct StagePane: View {
     @ViewBuilder private var status: some View {
         let lines: [String] = loaded.compactMap { item in
             let name = item.index == 0 ? "A" : "B"
+            #if !os(macOS)
+            if item.clip.motion == nil {
+                return "\(name): 3D is made on a Mac. Open this project in Mimesis there, look at it in 3D and save it; then it shows here."
+            }
+            #endif
             switch item.clip.motion?.state {
             case .preparing(let done)?: return "Finding \(name)'s body in 3D… \(Int(done * 100)) %"
             case .failed(let why)?: return "\(name): \(why)"

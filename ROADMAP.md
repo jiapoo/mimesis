@@ -256,15 +256,22 @@ The five steps below build it.
       with an HDR cutout (2026-11-12; the flash not yet checked)
 - ✅ The clip editor opens where the clip was, still playing; trimming zooms in when a handle is held still
       and slides gently at the edges (AreteMedia 1.16.0) (2026-11-18; seen on the iPhone simulator)
-- ✅ 3D, on trial (branch `3d`; engine: github.com/jiapoo/apple-motion 0.5.0, with a modelled mannequin posed from the tracking): a 3D layout with each clip's
+- ✅ 3D, on trial (branch `3d`; engine: github.com/jiapoo/apple-motion 0.6.0, with a modelled mannequin posed from the tracking): a 3D layout with each clip's
       body found in 3D on a stage to look round, on the same timeline; together or side by side, facing the
       front, travelling or on the spot; true elbow and knee angles; what's found is kept, so a video is
       followed once (2026-11-18; seen on the Mac with a rendered clip and one real clip)
-- ⏸ **3D is postponed (2026-11-18).** Where it stands: branch `3d` builds for Mac and iPhone/iPad and is
-      pushed; the engine is github.com/jiapoo/apple-motion 0.5.0 (private: it holds the mannequin). It is
-      not merged into `main`.
-- ⬜ 3D next (when taken up again): try real people filmed from behind and the side; 3D on iPhone and iPad (needs a real device);
-      an angle graph from the 3D angles; decide whether 3D joins `main`
+- ✅ 3D is made on the Mac and kept in the project (2026-11-18, engine 0.6.0): a Mac finds each clip's
+      body in 3D; saving writes it into the project beside the video, so iPhone and iPad (which don't
+      track) show it when they open that project, and a Mac doesn't track it again
+- ✅ 3D keeps to one person in front of a crowd (2026-11-18): when a frame misses the player (a blur in
+      a fast swing) it stays where they were instead of jumping to a spectator; tried on a forehand
+      filmed in front of a stand
+- ✅ Tried a sports biomechanics engine (2026-11-18): OpenSim's full-body model fitted to the tracked
+      motion (`Tools/opensim_ik.py` in the engine's repo). It tidies bones and joint ranges (joints moved
+      14 mm on average) but can't mend a frame the tracker got wrong: the tracker is the limit
+- ⬜ 3D next: a better tracker than Apple's for fast, athletic poses (the research kind OpenCap builds
+      on), then OpenSim after it; seeing the kept 3D on a real iPhone or iPad; an angle graph from the 3D
+      angles; decide whether 3D joins `main` (branch `3d`; the engine is private: it holds the mannequin)
 - ⬜ Not before 2027 (set aside 2026-11-18): racket, ball, drawing in 3D, a muscle map
 - ⬜ Arete and Imago on AreteMedia's drawing and skeleton (Arete: started on its branch
       `shared-drawing-wip`, never built; Imago: not started). Set aside 2026-11-12.

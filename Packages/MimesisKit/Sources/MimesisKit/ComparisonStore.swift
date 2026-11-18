@@ -1,5 +1,7 @@
 import AreteMedia
 import Foundation
+import MotionCore
+import MotionKit
 import Observation
 #if os(iOS)
 import UIKit
@@ -185,6 +187,18 @@ public final class ComparisonStore {
             }
             state.clips[index]?.file = name
             kept.insert(name)
+            // The body found in 3D goes with its video (made on a Mac, where the tracking runs): an
+            // iPhone or iPad opening the project shows it without having to find the body itself.
+            if let track = clip.motion, let found = track.found, !found.isEmpty {
+                let stored = StoredMotion(start: track.range.lowerBound, end: track.range.upperBound, mirrored: track.mirrored, motion: found)
+                let file = StoredMotion.fileName(for: name)
+                if let data = try? JSONEncoder().encode(stored), (try? data.write(to: target.appendingPathComponent(file), options: .atomic)) != nil {
+                    kept.insert(file)
+                }
+            } else if files.fileExists(atPath: target.appendingPathComponent(StoredMotion.fileName(for: name)).path) {
+                // (Not looked at in 3D this time: what was kept before stays.)
+                kept.insert(StoredMotion.fileName(for: name))
+            }
         }
         // The other takes' videos too.
         for (slot, takes) in comparison.takes.enumerated() {
@@ -469,9 +483,26 @@ extension Clip {
             makeCutout(pickAt: pick)
             cutout?.boxed = state.box ?? false
         }
+        // The body found in 3D for this video, kept in the project.
+        if let videos, let file = state.file,
+           let data = try? Data(contentsOf: videos.appendingPathComponent(StoredMotion.fileName(for: file))),
+           let stored = try? JSONDecoder().decode(StoredMotion.self, from: data) {
+            motion = MotionTrack(url: url, range: stored.start...max(stored.start + 0.01, stored.end), mirrored: stored.mirrored, motion: stored.motion)
+        }
         await engine.seekToTime(trimStart)
         return true
     }
+}
+
+/// A video's body in 3D as a project keeps it (`<video's name>.motion.json`, beside the video): the
+/// stretch it covers, whether the video was mirrored, and the movement as it was found.
+struct StoredMotion: Codable {
+    var start: Double
+    var end: Double
+    var mirrored: Bool
+    var motion: Motion3D
+
+    static func fileName(for video: String) -> String { video + ".motion.json" }
 }
 
 extension Comparison {
