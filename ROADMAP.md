@@ -256,7 +256,7 @@ The five steps below build it.
       with an HDR cutout (2026-11-12; the flash not yet checked)
 - ✅ The clip editor opens where the clip was, still playing; trimming zooms in when a handle is held still
       and slides gently at the edges (AreteMedia 1.16.0) (2026-11-18; seen on the iPhone simulator)
-- ✅ 3D, on trial (branch `3d`; engine: github.com/jiapoo/apple-motion 0.2.0): a 3D layout with each clip's
+- ✅ 3D, on trial (branch `3d`; engine: github.com/jiapoo/apple-motion 0.3.0): a 3D layout with each clip's
       body found in 3D on a stage to look round, on the same timeline; together or side by side, facing the
       front, travelling or on the spot; true elbow and knee angles; what's found is kept, so a video is
       followed once (2026-11-18; seen on the Mac with a rendered clip and one real clip)
