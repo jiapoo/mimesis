@@ -256,7 +256,7 @@ The five steps below build it.
       with an HDR cutout (2026-11-12; the flash not yet checked)
 - ✅ The clip editor opens where the clip was, still playing; trimming zooms in when a handle is held still
       and slides gently at the edges (AreteMedia 1.16.0) (2026-11-18; seen on the iPhone simulator)
-- ✅ 3D, on trial (branch `3d`; engine: github.com/jiapoo/apple-motion 0.8.0, with a modelled mannequin posed from the tracking): a 3D layout with each clip's
+- ✅ 3D, on trial (branch `3d`; engine: github.com/jiapoo/apple-motion 0.9.0, with a modelled mannequin posed from the tracking): a 3D layout with each clip's
       body found in 3D on a stage to look round, on the same timeline; together or side by side, facing the
       front, travelling or on the spot; true elbow and knee angles; what's found is kept, so a video is
       followed once (2026-11-18; seen on the Mac with a rendered clip and one real clip)
@@ -284,8 +284,12 @@ The five steps below build it.
       the side or above the body was flat as a card, which looked wrong from any view but the camera's);
       depth now follows from the body's proportions: limb lengths, the shoulders' and hips' widths and
       the trunk, with the tracker only saying towards the camera or away
+- ✅ Depth from a learnt model (2026-11-18, engine 0.9.0): the hand-made depth rules looked worse, not
+      better (limbs snapped whenever "towards or away" was guessed wrong); now MotionBERT, a model
+      trained on motion-capture recordings, makes the 3D body from the joints' paths in the picture
+      over the whole clip. The Mac app carries it (`Mac/Models/BodyLift.mlpackage`, 62 MB, not in git)
 - ⬜ 3D next: the fingers from the tracker's hand points; OpenSim's joint limits inside the app (today a
-      script); check the terms of the model's training data before it ships; seeing the kept 3D on a real
+      script); check the terms of both models' training data before they ship (MotionBERT's is Human3.6M and AMASS); seeing the kept 3D on a real
       iPhone or iPad; an angle graph from the 3D angles; decide whether 3D joins `main` (branch `3d`; the
       engine is private: it holds the mannequin)
 - ⬜ Not before 2027 (set aside 2026-11-18): racket, ball, drawing in 3D, a muscle map
