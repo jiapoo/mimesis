@@ -256,7 +256,7 @@ The five steps below build it.
       with an HDR cutout (2026-11-12; the flash not yet checked)
 - ✅ The clip editor opens where the clip was, still playing; trimming zooms in when a handle is held still
       and slides gently at the edges (AreteMedia 1.16.0) (2026-11-18; seen on the iPhone simulator)
-- ✅ 3D, on trial (branch `3d`; engine: github.com/jiapoo/apple-motion 0.7.0, with a modelled mannequin posed from the tracking): a 3D layout with each clip's
+- ✅ 3D, on trial (branch `3d`; engine: github.com/jiapoo/apple-motion 0.7.2, with a modelled mannequin posed from the tracking): a 3D layout with each clip's
       body found in 3D on a stage to look round, on the same timeline; together or side by side, facing the
       front, travelling or on the spot; true elbow and knee angles; what's found is kept, so a video is
       followed once (2026-11-18; seen on the Mac with a rendered clip and one real clip)
@@ -276,6 +276,10 @@ The five steps below build it.
       with Core ML (the forehand's 6 s in about 22 s); the model (176 MB) is carried in the Mac app from
       `Mac/Models/WholeBody.mlpackage`, which is not in git (made by `Tools/make_wholebody_model.py` in
       the engine's repo); without it the Mac falls back to Apple's tracker
+- ✅ A steadier 3D body (2026-11-18, engine 0.7.2): points the tracker is unsure of are filled in from
+      the frames either side, each point's path is low-pass filtered, and bones keep their length, with
+      depth worked out from that; on the forehand joints tremble 1–3 mm a frame instead of 8–25, and
+      the biggest jump is 17 cm instead of 72
 - ⬜ 3D next: the fingers from the tracker's hand points; OpenSim's joint limits inside the app (today a
       script); check the terms of the model's training data before it ships; seeing the kept 3D on a real
       iPhone or iPad; an angle graph from the 3D angles; decide whether 3D joins `main` (branch `3d`; the
