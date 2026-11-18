@@ -260,7 +260,10 @@ The five steps below build it.
       body found in 3D on a stage to look round, on the same timeline; together or side by side, facing the
       front, travelling or on the spot; true elbow and knee angles; what's found is kept, so a video is
       followed once (2026-11-18; seen on the Mac with a rendered clip and one real clip)
-- ⬜ 3D next: try real people filmed from behind and the side; 3D on iPhone and iPad (needs a real device);
+- ⏸ **3D is postponed (2026-11-18).** Where it stands: branch `3d` builds for Mac and iPhone/iPad and is
+      pushed; the engine is github.com/jiapoo/apple-motion 0.5.0 (private: it holds the mannequin). It is
+      not merged into `main`.
+- ⬜ 3D next (when taken up again): try real people filmed from behind and the side; 3D on iPhone and iPad (needs a real device);
       an angle graph from the 3D angles; decide whether 3D joins `main`
 - ⬜ Not before 2027 (set aside 2026-11-18): racket, ball, drawing in 3D, a muscle map
 - ⬜ Arete and Imago on AreteMedia's drawing and skeleton (Arete: started on its branch
