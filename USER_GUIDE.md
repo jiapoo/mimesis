@@ -451,6 +451,10 @@ A clip can hold several **takes**: the same movement filmed on different days.
   edited copy in the clip; the original file isn't changed, and the clip's ⋯ › **Revert to the original** goes
   back. Because the picture or the length has changed, that clip's In/Out, sync points, drawings and notes
   start afresh.
+  - The editor **opens where the clip was**, and keeps playing if it was playing.
+  - **Trimming a long video**: drag a handle roughly into place, then **hold it still for a moment** (or just
+    press and hold it): the filmstrip zooms in to a few seconds, and the handle now moves **frame by frame**.
+    Push it against a side and the strip slides along at a steady, slow pace. Let go to zoom back out.
 - **⋯ › Report (PDF)…** makes a document to share with a coach or a student: each segment with its note, each
   clip's stretch and sync times, and its **key frames** (those with a sync point, a drawing or a pinned note)
   from both clips with the drawings on them, the note, and the joint angle when the body has been measured;

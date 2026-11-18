@@ -254,6 +254,8 @@ The five steps below build it.
       Save sheet, Space always plays (2026-11-12; not yet tried by hand)
 - ✅ Which clip is on top in the overlay is the same in every segment; no bright flash leaving the overlay
       with an HDR cutout (2026-11-12; the flash not yet checked)
+- ✅ The clip editor opens where the clip was, still playing; trimming zooms in when a handle is held still
+      and slides gently at the edges (AreteMedia 1.16.0) (2026-11-18; seen on the iPhone simulator)
 - ⬜ Arete and Imago on AreteMedia's drawing and skeleton (Arete: started on its branch
       `shared-drawing-wip`, never built; Imago: not started). Set aside 2026-11-12.
 

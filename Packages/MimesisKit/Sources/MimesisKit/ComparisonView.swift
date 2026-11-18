@@ -961,10 +961,15 @@ public struct ComparisonView: View {
     private func editClip(_ index: Int? = nil) {
         let index = index ?? comparison.clips.firstIndex { $0 === comparison.focused } ?? 0
         guard let url = comparison.clips[index].url else { return }
+        // Where the clip is and whether it's playing, before everything is paused: the editor opens
+        // at the same place, still playing if it was.
+        let clip = comparison.clips[index]
+        let time = clip.engine.player?.currentTime().seconds ?? clip.engine.currentTime
+        let playing = clip.engine.isPlaying
         if comparison.linked { comparison.pause() }
         comparison.clips.forEach { $0.engine.pause() }
         comparison.drawing = nil
-        editing = EditTarget(index: index, url: url)
+        editing = EditTarget(index: index, url: url, time: time.isFinite ? time : clip.engine.currentTime, playing: playing)
     }
 
     /// The edited copy takes the clip's place. Its picture or length has changed, so the clip's In/Out,
@@ -1041,6 +1046,7 @@ public struct ComparisonView: View {
 
     private func editor(_ target: EditTarget) -> some View {
         MediaEditView(url: target.url, accent: Theme.accent,
+                      startTime: target.time, startsPlaying: target.playing,
                       onCancel: { editing = nil },
                       onSave: { copy in await edited(target.index, copy: copy) })
             .background(Theme.canvas.ignoresSafeArea())
@@ -1478,6 +1484,9 @@ extension View {
 struct EditTarget: Identifiable {
     let index: Int
     let url: URL
+    /// Where the clip was, and whether it was playing: the editor opens there and carries on.
+    var time: Double = 0
+    var playing = false
     var id: String { "\(index)-\(url.path)" }
 }
 
