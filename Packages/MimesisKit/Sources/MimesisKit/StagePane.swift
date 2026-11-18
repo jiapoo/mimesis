@@ -16,6 +16,9 @@ struct StagePane: View {
     /// Each body moves across the floor as it did in its video (roughly: from one camera); off, it
     /// stays on the spot, which compares shapes best.
     @State private var travels = false
+    /// Which hand grips in each clip (holds the racket, the bat, the club): chosen by hand, since the
+    /// tracking can't tell (on two serves the busier wrist was the tossing one).
+    @State private var grips: [BodySide?] = [nil, nil]
 
     private static let colors: [Color] = [Theme.accent, Color(red: 0.3, green: 0.85, blue: 1)]
     private var loaded: [(index: Int, clip: Clip)] {
@@ -96,7 +99,9 @@ struct StagePane: View {
                                offset: side, opacity: items.count > 1 && together && item.index == 1 ? 0.6 : 1,
                                shift: travels ? travel(item.clip) : .zero,
                                // The modelled mannequin (with hands and feet), posed from the tracking.
-                               character: BodyCharacter.mannequin)
+                               character: BodyCharacter.mannequin,
+                               // The hand chosen for this clip grips (as round a handle); the other rests.
+                               grip: grips[item.index])
         }
     }
 
@@ -133,6 +138,17 @@ struct StagePane: View {
                 .fixedSize()
                 .help(together ? "One body stands in the other, to compare their shapes. Click to stand them side by side."
                       : "The bodies stand side by side. Click to stand one in the other.")
+            }
+            ForEach(loaded, id: \.index) { item in
+                let grip = grips[item.index]
+                Button {
+                    grips[item.index] = grip == nil ? .left : grip == .left ? .right : nil
+                } label: {
+                    Label("\(item.index == 0 ? "A" : "B")\(grip == nil ? "" : grip == .left ? " L" : " R")", systemImage: "hand.raised.fingers.spread")
+                }
+                .buttonStyle(ChipStyle(active: grip != nil))
+                .fixedSize()
+                .help("Which hand grips in clip \(item.index == 0 ? "A" : "B") (holds the racket): its fingers close round a handle. Click for left, right, or neither.")
             }
             Button { travels.toggle() } label: { Label(named ? "Travel" : "", systemImage: "figure.walk") }
                 .buttonStyle(ChipStyle(active: travels))
