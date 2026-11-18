@@ -94,7 +94,9 @@ struct StagePane: View {
             let side = items.count > 1 && !together ? (item.index == 0 ? -0.7 : 0.7) : 0
             return StageFigure(id: item.index == 0 ? "A" : "B", pose: pose(item.clip), color: Self.colors[item.index],
                                offset: side, opacity: items.count > 1 && together && item.index == 1 ? 0.6 : 1,
-                               shift: travels ? travel(item.clip) : .zero)
+                               shift: travels ? travel(item.clip) : .zero,
+                               // The modelled mannequin (with hands and feet), posed from the tracking.
+                               character: BodyCharacter.mannequin)
         }
     }
 
