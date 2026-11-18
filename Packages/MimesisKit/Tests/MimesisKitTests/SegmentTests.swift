@@ -6,6 +6,21 @@ import Testing
 /// How the two clips of a segment play together, and keeping several segments apart.
 @MainActor
 struct SegmentTests {
+    @Test func theSpeedKeysMoveTheLinkedSpeedByTenthsWithinItsRange() {
+        let comparison = Comparison()
+        comparison.nudgeLinkedSpeed(-0.1)
+        #expect(comparison.linkedSpeed == 0.9)
+        comparison.nudgeLinkedSpeed(0.1)
+        comparison.nudgeLinkedSpeed(0.1)
+        #expect(comparison.linkedSpeed == 1.1)
+        comparison.linkedSpeed = 0.1
+        comparison.nudgeLinkedSpeed(-0.1)
+        #expect(comparison.linkedSpeed == 0.1)
+        comparison.linkedSpeed = 2
+        comparison.nudgeLinkedSpeed(0.1)
+        #expect(comparison.linkedSpeed == 2)
+    }
+
     @Test func theShorterStretchIsSlowedToLastAsLongAsTheLonger() {
         // A: 2.0 to 3.2 (1.2 s). B: 5.0 to 6.0 (1.0 s).
         let pair = Warp.pair(SegmentSide(start: 2, end: 3.2), SegmentSide(start: 5, end: 6))

@@ -318,6 +318,12 @@ public final class Comparison {
         didSet { if isPlaying { applyRates() } }
     }
 
+    /// The linked speed up or down by `delta`, to the nearest 0.1×, within 0.1×–2× (as a single clip's
+    /// speed keys do).
+    public func nudgeLinkedSpeed(_ delta: Double) {
+        linkedSpeed = min(2, max(0.1, ((linkedSpeed + delta) * 10).rounded() / 10))
+    }
+
     public private(set) var isPlaying = false
     private var ticker: Task<Void, Never>?
 

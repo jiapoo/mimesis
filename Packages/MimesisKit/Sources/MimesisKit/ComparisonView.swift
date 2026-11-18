@@ -1156,6 +1156,13 @@ public struct ComparisonView: View {
                 key(.leftArrow) { comparison.step(-1) }
                 key(.rightArrow) { comparison.step(1) }
                 key(.home) { comparison.pause(); Task { await comparison.seek(to: comparison.range.lowerBound) } }
+                // The speed of both together (a single clip's are in `MovistKeys`).
+                key("x") { comparison.nudgeLinkedSpeed(-0.1) }
+                key("c") { comparison.nudgeLinkedSpeed(0.1) }
+                key("z") { comparison.linkedSpeed = 1 }
+                key("`", [.option]) { comparison.linkedSpeed = 0.5 }
+                key("1", [.option]) { comparison.linkedSpeed = 1 }
+                key("2", [.option]) { comparison.linkedSpeed = 2 }
             }
             .hidden()
             .disabled(comparison.typing)

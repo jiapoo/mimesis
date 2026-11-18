@@ -422,7 +422,7 @@ struct Transport: View {
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
-        .help("Playback speed")
+        .help("Playback speed (X slower, C faster, Z back to 1×)")
         .popover(isPresented: $showingSpeed, arrowEdge: .bottom) {
             // Arete's own speed slider: the speed on top, notches at 0.1, 0.5, 1, 1.5 and 2×.
             VerticalSpeedSlider(speed: Float(speed), accent: Theme.accent) { setSpeed(Double($0)) }
