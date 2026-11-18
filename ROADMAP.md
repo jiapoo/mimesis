@@ -256,7 +256,7 @@ The five steps below build it.
       with an HDR cutout (2026-11-12; the flash not yet checked)
 - ✅ The clip editor opens where the clip was, still playing; trimming zooms in when a handle is held still
       and slides gently at the edges (AreteMedia 1.16.0) (2026-11-18; seen on the iPhone simulator)
-- ✅ 3D, on trial (branch `3d`; engine: github.com/jiapoo/apple-motion 0.9.0, with a modelled mannequin posed from the tracking): a 3D layout with each clip's
+- ✅ 3D, on trial (branch `3d`; engine: github.com/jiapoo/apple-motion 0.10.0, with a modelled mannequin posed from the tracking): a 3D layout with each clip's
       body found in 3D on a stage to look round, on the same timeline; together or side by side, facing the
       front, travelling or on the spot; true elbow and knee angles; what's found is kept, so a video is
       followed once (2026-11-18; seen on the Mac with a rendered clip and one real clip)
@@ -288,6 +288,13 @@ The five steps below build it.
       better (limbs snapped whenever "towards or away" was guessed wrong); now MotionBERT, a model
       trained on motion-capture recordings, makes the 3D body from the joints' paths in the picture
       over the whole clip. The Mac app carries it (`Mac/Models/BodyLift.mlpackage`, 62 MB, not in git)
+- ✅ Hands, feet and hidden arms (2026-11-18, engine 0.10.0): the mannequin's hands and feet reach where
+      they were tracked (its narrower hips had brought a wide stance together: 0.36 m for a tracked
+      0.54 m); an arm the camera couldn't see no longer ends up behind the back; and the body travels
+      over its planted foot (Travel is on to begin with), so it steps instead of sliding on the spot
+- ⬜ 3D, the real feel of a movement: a body-mesh model (GVHMR or WHAM: every joint's turn, the spine's
+      twist, wrists and feet) in place of 17 joints. They need the SMPL body model, whose licence the
+      user must sign up for (non-commercial; a paid one for a product)
 - ⬜ 3D next: the fingers from the tracker's hand points; OpenSim's joint limits inside the app (today a
       script); check the terms of both models' training data before they ship (MotionBERT's is Human3.6M and AMASS); seeing the kept 3D on a real
       iPhone or iPad; an angle graph from the 3D angles; decide whether 3D joins `main` (branch `3d`; the

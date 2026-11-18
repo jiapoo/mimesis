@@ -15,7 +15,7 @@ struct StagePane: View {
     @State private var faceSame = true
     /// Each body moves across the floor as it did in its video (roughly: from one camera); off, it
     /// stays on the spot, which compares shapes best.
-    @State private var travels = false
+    @State private var travels = true
     /// Which hand grips in each clip (holds the racket, the bat, the club): chosen by hand, since the
     /// tracking can't tell (on two serves the busier wrist was the tossing one).
     @State private var grips: [BodySide?] = [nil, nil]
