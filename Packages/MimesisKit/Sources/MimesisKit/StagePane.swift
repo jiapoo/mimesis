@@ -34,7 +34,7 @@ struct StagePane: View {
             MotionStage(figures: figures, camera: $camera)
                 .background(Color(red: 0.02, green: 0.04, blue: 0.09))
                 .overlay(alignment: .top) { controls.padding(10) }
-                .overlay(alignment: .bottomLeading) { readings.padding(.leading, 12).padding(.bottom, 110) }
+                .overlay(alignment: .bottomLeading) { readings.padding(.leading, 12).padding(.bottom, 150) }
                 .overlay { status }
         }
         .background(Color.black)
@@ -119,6 +119,8 @@ struct StagePane: View {
         } label: {
             Text(name)
                 .font(.system(size: 12, weight: .semibold))
+                .lineLimit(1)
+                .fixedSize()
                 .foregroundStyle(on ? Theme.onAccent : Color.white.opacity(0.8))
                 .padding(.horizontal, 10)
                 .frame(height: 26)
