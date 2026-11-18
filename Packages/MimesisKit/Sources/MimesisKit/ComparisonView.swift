@@ -520,7 +520,7 @@ public struct ComparisonView: View {
         case .both: [0, 1]
         case .left: [0]
         case .right: [1]
-        case .overlay: []
+        case .overlay, .stage: []
         }
     }
 
@@ -1171,6 +1171,9 @@ public struct ComparisonView: View {
     private func panes(wide: Bool) -> some View {
         let layout = wide ? AnyLayout(HStackLayout(spacing: 1)) : AnyLayout(VStackLayout(spacing: 1))
         return layout {
+            if comparison.layout == .stage {
+                StagePane(comparison: comparison)
+            }
             if comparison.layout == .overlay {
                 OverlayPane(comparison: comparison, showsBadge: phone)
                     .dropDestination(for: URL.self) { urls, _ in
@@ -1285,6 +1288,7 @@ extension Comparison.Layout {
         case .left: "A"
         case .right: "B"
         case .overlay: "Overlay"
+        case .stage: "3D"
         }
     }
 
@@ -1295,6 +1299,7 @@ extension Comparison.Layout {
         case .left: "Clip A only, the whole window (⌘2)"
         case .right: "Clip B only, the whole window (⌘3)"
         case .overlay: "One clip over the other, see-through (needs both clips) (⌘4)"
+        case .stage: "The bodies in 3D, to look at from any side (on trial) (⌘5)"
         }
     }
 
@@ -1304,6 +1309,7 @@ extension Comparison.Layout {
         case .left: "a.square"
         case .right: "b.square"
         case .overlay: "square.2.layers.3d"
+        case .stage: "cube.transparent"
         }
     }
 }

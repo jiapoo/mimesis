@@ -1,4 +1,5 @@
 import AreteMedia
+import MotionKit
 import Foundation
 import Observation
 
@@ -17,6 +18,8 @@ public final class Clip {
     /// The body followed through the clip's stretch, once asked for (not saved: it's found again), and
     /// whether its skeleton shows over the video.
     var poseTrack: PoseTrack?
+    /// The body followed in 3D through the clip's stretch (the 3D layout).
+    var motion: MotionTrack?
     public var showsSkeleton = false
     /// The video this clip showed before it was edited (turned, cropped, trimmed), to go back to.
     public var beforeEdit: URL?
@@ -174,6 +177,8 @@ public final class Clip {
 public final class Comparison {
     public enum Layout: String, CaseIterable, Identifiable {
         case both, left, right, overlay
+        /// The two bodies in 3D, on a stage to look round (on trial).
+        case stage
         public var id: Self { self }
         public var title: String {
             switch self {
@@ -181,6 +186,7 @@ public final class Comparison {
             case .left: "Left"
             case .right: "Right"
             case .overlay: "Overlay"
+            case .stage: "3D"
             }
         }
     }
@@ -329,7 +335,7 @@ public final class Comparison {
         case .both: clips.filter(\.isLoaded)
         case .left: clips[0].isLoaded ? [clips[0]] : []
         case .right: clips[1].isLoaded ? [clips[1]] : []
-        case .overlay: clips.filter(\.isLoaded)
+        case .overlay, .stage: clips.filter(\.isLoaded)
         }
     }
 
