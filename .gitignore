@@ -4,3 +4,5 @@ xcuserdata/
 DerivedData/
 .build/
 .swiftpm/
+# The whole-body 3D model (176 MB): made by Tools/make_wholebody_model.py in apple-motion.
+Mac/Models/

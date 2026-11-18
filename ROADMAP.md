@@ -256,7 +256,7 @@ The five steps below build it.
       with an HDR cutout (2026-11-12; the flash not yet checked)
 - ✅ The clip editor opens where the clip was, still playing; trimming zooms in when a handle is held still
       and slides gently at the edges (AreteMedia 1.16.0) (2026-11-18; seen on the iPhone simulator)
-- ✅ 3D, on trial (branch `3d`; engine: github.com/jiapoo/apple-motion 0.6.0, with a modelled mannequin posed from the tracking): a 3D layout with each clip's
+- ✅ 3D, on trial (branch `3d`; engine: github.com/jiapoo/apple-motion 0.7.0, with a modelled mannequin posed from the tracking): a 3D layout with each clip's
       body found in 3D on a stage to look round, on the same timeline; together or side by side, facing the
       front, travelling or on the spot; true elbow and knee angles; what's found is kept, so a video is
       followed once (2026-11-18; seen on the Mac with a rendered clip and one real clip)
@@ -272,9 +272,14 @@ The five steps below build it.
 - ✅ Tried a stronger tracker (2026-11-18): RTMW3D (OpenMMLab, whole body with hands) on the same
       forehand was right in every frame looked at, where Apple's stood stiff or squatted; OpenSim after
       it keeps the poses (`Tools/track_rtmw3d.py` in the engine's repo). Not in the app yet
-- ⬜ 3D next: RTMW3D as the Mac's tracker (the model run with Core ML; its training data's terms checked
-      first), with its hand points for the fingers, then OpenSim's limits after it; seeing the kept 3D on a real iPhone or iPad; an angle graph from the 3D
-      angles; decide whether 3D joins `main` (branch `3d`; the engine is private: it holds the mannequin)
+- ✅ The stronger tracker is the Mac's tracker (2026-11-18, engine 0.7.0): RTMW3D runs inside the app
+      with Core ML (the forehand's 6 s in about 22 s); the model (176 MB) is carried in the Mac app from
+      `Mac/Models/WholeBody.mlpackage`, which is not in git (made by `Tools/make_wholebody_model.py` in
+      the engine's repo); without it the Mac falls back to Apple's tracker
+- ⬜ 3D next: the fingers from the tracker's hand points; OpenSim's joint limits inside the app (today a
+      script); check the terms of the model's training data before it ships; seeing the kept 3D on a real
+      iPhone or iPad; an angle graph from the 3D angles; decide whether 3D joins `main` (branch `3d`; the
+      engine is private: it holds the mannequin)
 - ⬜ Not before 2027 (set aside 2026-11-18): racket, ball, drawing in 3D, a muscle map
 - ⬜ Arete and Imago on AreteMedia's drawing and skeleton (Arete: started on its branch
       `shared-drawing-wip`, never built; Imago: not started). Set aside 2026-11-12.
