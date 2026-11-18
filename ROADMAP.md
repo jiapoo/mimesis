@@ -256,6 +256,13 @@ The five steps below build it.
       with an HDR cutout (2026-11-12; the flash not yet checked)
 - ✅ The clip editor opens where the clip was, still playing; trimming zooms in when a handle is held still
       and slides gently at the edges (AreteMedia 1.16.0) (2026-11-18; seen on the iPhone simulator)
+- ✅ 3D, on trial (branch `3d`; engine: github.com/jiapoo/apple-motion 0.1.0): a 3D layout with each clip's
+      body found in 3D on a stage to look round, on the same timeline; together or side by side, facing the
+      front, travelling or on the spot; true elbow and knee angles; what's found is kept, so a video is
+      followed once (2026-11-18; seen on the Mac with a rendered clip and one real clip)
+- ⬜ 3D next: try real people filmed from behind and the side; 3D on iPhone and iPad (needs a real device);
+      an angle graph from the 3D angles; decide whether 3D joins `main`
+- ⬜ Not before 2027 (set aside 2026-11-18): racket, ball, drawing in 3D, a muscle map
 - ⬜ Arete and Imago on AreteMedia's drawing and skeleton (Arete: started on its branch
       `shared-drawing-wip`, never built; Imago: not started). Set aside 2026-11-12.
 

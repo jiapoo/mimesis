@@ -13,6 +13,9 @@ struct StagePane: View {
     @State private var together = true
     /// Both turned to face the front as their stretch starts, so clips filmed from different sides compare.
     @State private var faceSame = true
+    /// Each body moves across the floor as it did in its video (roughly: from one camera); off, it
+    /// stays on the spot, which compares shapes best.
+    @State private var travels = false
 
     private static let colors: [Color] = [Theme.accent, Color(red: 0.3, green: 0.85, blue: 1)]
     private var loaded: [(index: Int, clip: Clip)] {
@@ -74,18 +77,40 @@ struct StagePane: View {
         return pose
     }
 
+    /// How far a clip's body has moved across the floor since its stretch began, turned as its pose is.
+    private func travel(_ clip: Clip) -> Vec3 {
+        let asked = clip.engine.currentTime
+        let shown = clip.engine.player?.currentTime().seconds ?? asked
+        var moved = clip.motion?.travel(at: shown.isFinite ? shown : asked) ?? .zero
+        if faceSame, let first = clip.motion?.motion?.poses.compactMap({ $0 }).first {
+            moved = moved.turned(by: -first.facing)
+        }
+        return moved
+    }
+
     private var figures: [StageFigure] {
         let items = loaded
         return items.map { item in
             let side = items.count > 1 && !together ? (item.index == 0 ? -0.7 : 0.7) : 0
             return StageFigure(id: item.index == 0 ? "A" : "B", pose: pose(item.clip), color: Self.colors[item.index],
-                               offset: side, opacity: items.count > 1 && together && item.index == 1 ? 0.6 : 1)
+                               offset: side, opacity: items.count > 1 && together && item.index == 1 ? 0.6 : 1,
+                               shift: travels ? travel(item.clip) : .zero)
         }
     }
 
     // MARK: Over the stage
 
+    /// The views on the left, the options on the right: with their names where there's room, as icons
+    /// where there isn't.
     private var controls: some View {
+        ViewThatFits(in: .horizontal) {
+            controlRow(named: true)
+            controlRow(named: false)
+        }
+        .foregroundStyle(.white)
+    }
+
+    private func controlRow(named: Bool) -> some View {
         HStack(spacing: 6) {
             HStack(spacing: 2) {
                 view("Front", .front)
@@ -96,20 +121,26 @@ struct StagePane: View {
             }
             .padding(2)
             .background(Color.black.opacity(0.45), in: Capsule())
+            .fixedSize()
             Spacer(minLength: 0)
             if loaded.count > 1 {
                 Button { withAnimation(.easeOut(duration: 0.2)) { together.toggle() } } label: {
-                    Label(together ? "Together" : "Side by side", systemImage: together ? "person.2.fill" : "person.2")
+                    Label(named ? (together ? "Together" : "Side by side") : "", systemImage: together ? "person.2.fill" : "person.2")
                 }
                 .buttonStyle(ChipStyle(active: together))
+                .fixedSize()
                 .help(together ? "One body stands in the other, to compare their shapes. Click to stand them side by side."
                       : "The bodies stand side by side. Click to stand one in the other.")
             }
-            Button { faceSame.toggle() } label: { Label("Face front", systemImage: "arrow.triangle.merge") }
+            Button { travels.toggle() } label: { Label(named ? "Travel" : "", systemImage: "figure.walk") }
+                .buttonStyle(ChipStyle(active: travels))
+                .fixedSize()
+                .help("Each body moves across the floor as it did in its video (an estimate, from one camera). Off: it stays on the spot, which compares shapes best.")
+            Button { faceSame.toggle() } label: { Label(named ? "Face front" : "", systemImage: "arrow.triangle.merge") }
                 .buttonStyle(ChipStyle(active: faceSame))
+                .fixedSize()
                 .help("Turn each body to face the front as its stretch starts, so clips filmed from different sides compare. Off: as the camera saw them.")
         }
-        .foregroundStyle(.white)
     }
 
     private func view(_ name: String, _ preset: StageCamera) -> some View {
