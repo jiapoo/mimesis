@@ -12,7 +12,7 @@ let package = Package(
         // Shared with Arete and Imago; the same version as project.yml pins.
         .package(url: "https://github.com/jiapoo/apple-media", exact: "1.16.0"),
         // The 3D engine, on trial (branch 3d).
-        .package(url: "https://github.com/jiapoo/apple-motion", exact: "0.10.0"),
+        .package(url: "https://github.com/jiapoo/apple-motion", exact: "0.11.0"),
     ],
     targets: [
         .target(name: "MimesisKit", dependencies: [

@@ -65,6 +65,13 @@ struct StagePane: View {
             guard let url = clip.url else { continue }
             let range = clip.trimStart...max(clip.trimStart + 0.01, clip.end)
             let mirrored = clip.engine.mirroredHorizontally
+            // A movement another tool made for this video, kept beside it (`<video's name>.motion.json`,
+            // as a project keeps its own): shown in place of looking for the body here.
+            if clip.motion == nil,
+               let data = try? Data(contentsOf: url.deletingLastPathComponent().appendingPathComponent(StoredMotion.fileName(for: url.lastPathComponent))),
+               let stored = try? JSONDecoder().decode(StoredMotion.self, from: data), stored.mirrored == mirrored {
+                clip.motion = MotionTrack(url: url, range: stored.start...max(stored.start + 0.01, stored.end), mirrored: mirrored, motion: stored.motion)
+            }
             if let have = clip.motion, have.url == url, have.range == range, have.mirrored == mirrored { continue }
             // (Kept in the project for the same stretch and way round: used as it is.)
             if let have = clip.motion, have.found != nil, abs(have.range.lowerBound - range.lowerBound) < 0.02,

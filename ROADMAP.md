@@ -256,7 +256,7 @@ The five steps below build it.
       with an HDR cutout (2026-11-12; the flash not yet checked)
 - ✅ The clip editor opens where the clip was, still playing; trimming zooms in when a handle is held still
       and slides gently at the edges (AreteMedia 1.16.0) (2026-11-18; seen on the iPhone simulator)
-- ✅ 3D, on trial (branch `3d`; engine: github.com/jiapoo/apple-motion 0.10.0, with a modelled mannequin posed from the tracking): a 3D layout with each clip's
+- ✅ 3D, on trial (branch `3d`; engine: github.com/jiapoo/apple-motion 0.11.0, with a modelled mannequin posed from the tracking): a 3D layout with each clip's
       body found in 3D on a stage to look round, on the same timeline; together or side by side, facing the
       front, travelling or on the spot; true elbow and knee angles; what's found is kept, so a video is
       followed once (2026-11-18; seen on the Mac with a rendered clip and one real clip)
@@ -296,6 +296,10 @@ The five steps below build it.
       engine's repo), on the forehand: every joint's turn, a coherent body, a hidden arm in the right
       place; feet narrower than the picture; about 10 minutes for 6 s. Its licence (research and
       non-profit only) and SMPL-X's (non-commercial) keep it out of a product that is sold
+- ✅ The mannequin moved by every joint's turn (2026-11-19, engine 0.11.0): a pose can carry how each
+      part is turned, and the mannequin is posed from that; a movement another tool made for a video
+      (`<video's name>.motion.json` beside it) is shown in place of tracking. Seen with GVHMR's forehand,
+      for the user's own use: GVHMR's licence keeps it out of a product
 - ⬜ 3D, the real feel of a movement: decide how to use what GVHMR showed: as it is for personal use
       only, or its ideas (which limb is nearer, the spine's twist) with a model whose licence allows
       selling

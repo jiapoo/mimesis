@@ -1,5 +1,5 @@
 {
-  "originHash" : "38b435ec4fa04ae855f9b12eaeb0e59ccb72b383e5e75e2d4aaef77aaba44329",
+  "originHash" : "3a4768241a67d1892d3d76af1b953928b1678287f2638058da3cd0889cad5016",
   "pins" : [
     {
       "identity" : "apple-media",
@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/jiapoo/apple-motion",
       "state" : {
-        "revision" : "58b61db36743bd9be272f318e1126100a7aaa98d",
-        "version" : "0.10.0"
+        "revision" : "dda5a8f5ce6d4aef3fe188a4c11d4f9064f663da",
+        "version" : "0.11.0"
       }
     }
   ],
