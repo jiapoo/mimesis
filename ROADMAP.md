@@ -292,9 +292,13 @@ The five steps below build it.
       they were tracked (its narrower hips had brought a wide stance together: 0.36 m for a tracked
       0.54 m); an arm the camera couldn't see no longer ends up behind the back; and the body travels
       over its planted foot (Travel is on to begin with), so it steps instead of sliding on the spot
-- ⬜ 3D, the real feel of a movement: a body-mesh model (GVHMR or WHAM: every joint's turn, the spine's
-      twist, wrists and feet) in place of 17 joints. They need the SMPL body model, whose licence the
-      user must sign up for (non-commercial; a paid one for a product)
+- ✅ Tried a body-mesh model (2026-11-19): GVHMR, ported to run on the Mac (`Tools/gvhmr_mac` in the
+      engine's repo), on the forehand: every joint's turn, a coherent body, a hidden arm in the right
+      place; feet narrower than the picture; about 10 minutes for 6 s. Its licence (research and
+      non-profit only) and SMPL-X's (non-commercial) keep it out of a product that is sold
+- ⬜ 3D, the real feel of a movement: decide how to use what GVHMR showed: as it is for personal use
+      only, or its ideas (which limb is nearer, the spine's twist) with a model whose licence allows
+      selling
 - ⬜ 3D next: the fingers from the tracker's hand points; OpenSim's joint limits inside the app (today a
       script); check the terms of both models' training data before they ship (MotionBERT's is Human3.6M and AMASS); seeing the kept 3D on a real
       iPhone or iPad; an angle graph from the 3D angles; decide whether 3D joins `main` (branch `3d`; the
