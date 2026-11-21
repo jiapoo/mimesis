@@ -40,13 +40,13 @@ public enum ProFeature: String, Identifiable, CaseIterable, Sendable {
     }
 }
 
-/// Mimesis Pro: one purchase (`com.ljworkshop.mimesis.pro`, non-consumable, Family Sharing) that unlocks
+/// Mimesis Pro: one purchase (`com.ljworkshop.mimesis.pro.unlock`, non-consumable, Family Sharing off) that unlocks
 /// Pro on every device of the account (universal purchase). Checked on the device with StoreKit 2, no
 /// server: the transactions StoreKit holds for this Apple ID say whether it's been bought.
 @MainActor @Observable
 public final class ProStore {
     public static let shared = ProStore()
-    public static let productID = "com.ljworkshop.mimesis.pro"
+    public static let productID = "com.ljworkshop.mimesis.pro.unlock"
 
     /// Bought (by this Apple ID or someone in its family), and not refunded.
     public private(set) var isPro = false
@@ -86,6 +86,10 @@ public final class ProStore {
 
     /// Reads what this Apple ID owns now.
     public func refresh() async {
+        #if DEBUG
+        // Debug only: `-ProForScreenshots YES` shows Pro without buying it (App Store screenshots).
+        if UserDefaults.standard.bool(forKey: "ProForScreenshots") { isPro = true; return }
+        #endif
         var owned = false
         for await result in Transaction.currentEntitlements {
             if case .verified(let transaction) = result, transaction.productID == Self.productID,
@@ -193,12 +197,14 @@ struct ProSheet: View {
     private var store: ProStore { ProStore.shared }
 
     var body: some View {
+        // Scrolls where the screen is short (an iPhone on its side), so Buy and Restore are always reachable.
+        ScrollView {
         VStack(alignment: .leading, spacing: 18) {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(verbatim: "Mimesis Pro")
                         .font(.system(size: 26, weight: .bold))
-                    Text("One purchase, no subscription, on all your Apple devices. Family Sharing included.")
+                    Text("One purchase, no subscription, on all your Apple devices.")
                         .font(.system(size: 13)).foregroundStyle(Theme.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -267,12 +273,14 @@ struct ProSheet: View {
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(Theme.secondary)
                     .disabled(store.busy)
-                    .help("Already bought Mimesis Pro on this Apple ID (or in your family)? Unlock it here")
+                    .help("Already bought Mimesis Pro on this Apple ID? Unlock it here")
             }
             }
         }
         .padding(24)
         .frame(maxWidth: 460)
+        }
+        .scrollBounceBehavior(.basedOnSize)
         .background(Theme.card)
         .preferredColorScheme(.dark)
         .task { if store.product == nil { await store.loadProduct() } }

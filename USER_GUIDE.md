@@ -651,8 +651,7 @@ the right-hand clip (the lower one when they're stacked, the picture in the over
 Exported videos and saved snapshot pictures carry it in the same place; snapshots themselves are kept without it,
 so after buying Pro, saving one again gives a clean picture.
 
-**Mimesis Pro** is one purchase, not a subscription, on all your Apple devices with the same Apple ID, and shared
-with your family (Family Sharing). It adds:
+**Mimesis Pro** is one purchase, not a subscription, on all your Apple devices with the same Apple ID. It adds:
 
 - the person **cut out** over the other clip: pick the player, the soft box, the tint, lining up the bodies or
   the backgrounds;

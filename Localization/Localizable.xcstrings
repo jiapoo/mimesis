@@ -2778,67 +2778,67 @@
         }
       }
     },
-    "Already bought Mimesis Pro on this Apple ID (or in your family)? Unlock it here": {
+    "Already bought Mimesis Pro on this Apple ID? Unlock it here": {
       "extractionState": "manual",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Mimesis Pro schon mit dieser Apple-ID (oder in deiner Familie) gekauft? Hier freischalten"
+            "value": "Mimesis Pro schon mit dieser Apple-ID gekauft? Hier freischalten"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "¿Ya compraste Mimesis Pro con este Apple ID (o en tu familia)? Desbloquéalo aquí"
+            "value": "¿Ya compraste Mimesis Pro con este Apple ID? Desbloquéalo aquí"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vous avez déjà acheté Mimesis Pro avec cet identifiant Apple (ou en famille) ? Déverrouillez-le ici"
+            "value": "Vous avez déjà acheté Mimesis Pro avec cet identifiant Apple ? Déverrouillez-le ici"
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Hai già acquistato Mimesis Pro con questo ID Apple (o in famiglia)? Sbloccalo qui"
+            "value": "Hai già acquistato Mimesis Pro con questo ID Apple? Sbloccalo qui"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "この Apple ID（またはファミリー）で Mimesis Pro を購入済みですか？ここでロックを解除"
+            "value": "この Apple ID で Mimesis Pro を購入済みですか？ここでロックを解除"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "이 Apple ID(또는 가족 공유)로 Mimesis Pro를 이미 구입했나요? 여기서 잠금 해제하세요"
+            "value": "이 Apple ID로 Mimesis Pro를 이미 구입했나요? 여기서 잠금 해제하세요"
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Já comprou o Mimesis Pro com este ID Apple (ou na sua família)? Desbloqueie aqui"
+            "value": "Já comprou o Mimesis Pro com este ID Apple? Desbloqueie aqui"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Уже покупали Mimesis Pro с этим Apple ID (или в семье)? Разблокируйте здесь"
+            "value": "Уже покупали Mimesis Pro с этим Apple ID? Разблокируйте здесь"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "已在此 Apple ID（或家人共享）中购买过 Mimesis Pro？在这里解锁"
+            "value": "已在此 Apple ID 中购买过 Mimesis Pro？在这里解锁"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "已在此 Apple ID（或家人共享）中購買過 Mimesis Pro？在這裡解鎖"
+            "value": "已在此 Apple ID 中購買過 Mimesis Pro？在這裡解鎖"
           }
         }
       }
@@ -17772,67 +17772,67 @@
         }
       }
     },
-    "One purchase, no subscription, on all your Apple devices. Family Sharing included.": {
+    "One purchase, no subscription, on all your Apple devices.": {
       "extractionState": "manual",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ein Kauf, kein Abo, auf all deinen Apple-Geräten. Mit Familienfreigabe."
+            "value": "Ein Kauf, kein Abo, auf all deinen Apple-Geräten."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Un solo pago, sin suscripción, en todos tus dispositivos Apple. Con En familia."
+            "value": "Un solo pago, sin suscripción, en todos tus dispositivos Apple."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Un seul achat, sans abonnement, sur tous vos appareils Apple. Partage familial inclus."
+            "value": "Un seul achat, sans abonnement, sur tous vos appareils Apple."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Un solo acquisto, nessun abbonamento, su tutti i tuoi dispositivi Apple. In Famiglia incluso."
+            "value": "Un solo acquisto, nessun abbonamento, su tutti i tuoi dispositivi Apple."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "1 回の購入、サブスクリプションなし、すべての Apple デバイスで使えます。ファミリー共有に対応。"
+            "value": "1 回の購入、サブスクリプションなし、すべての Apple デバイスで使えます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "한 번 구입, 구독 없음, 모든 Apple 기기에서 사용. 가족 공유 포함."
+            "value": "한 번 구입, 구독 없음, 모든 Apple 기기에서 사용."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Uma compra, sem assinatura, em todos os seus dispositivos Apple. Com Compartilhamento Familiar."
+            "value": "Uma compra, sem assinatura, em todos os seus dispositivos Apple."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Одна покупка, без подписки, на всех ваших устройствах Apple. С Семейным доступом."
+            "value": "Одна покупка, без подписки, на всех ваших устройствах Apple."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "一次购买，无需订阅，适用于你所有的 Apple 设备。支持家人共享。"
+            "value": "一次购买，无需订阅，适用于你所有的 Apple 设备。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "一次購買，無需訂閱，適用於你所有的 Apple 裝置。支援家人共享。"
+            "value": "一次購買，無需訂閱，適用於你所有的 Apple 裝置。"
           }
         }
       }

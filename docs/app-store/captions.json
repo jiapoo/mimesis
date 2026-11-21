@@ -1,0 +1,79 @@
+{
+  "en-US": {
+    "compare": ["Your swing, next to the one you learn from", "Line up every phase, slow it down, measure angles"],
+    "skeleton": ["See the body, not just the video", "Joint angles and A-against-B graphs (Pro)"],
+    "overlay": ["One on top of the other", "Cut out, lined up and tinted to show every difference (Pro)"],
+    "draw": ["Draw what you see", "Lines, arrows, circles and angles in degrees, on any frame"],
+    "pro": ["Free to compare. Pro once.", "One purchase on all your Apple devices, no subscription"]
+  },
+  "zh-Hans": {
+    "compare": ["你的动作，和你学习的动作并排", "对齐每个阶段，放慢，测量角度"],
+    "skeleton": ["看见身体，而不只是视频", "关节角度和 A 对比 B 的曲线（Pro）"],
+    "overlay": ["一个叠在另一个上", "抠像、对齐、着色，看清每一处差别（Pro）"],
+    "draw": ["画出你看到的", "在任意一帧上画线、箭头、圆和角度"],
+    "pro": ["比较免费，Pro 一次买断", "一次购买，所有 Apple 设备通用，无需订阅"]
+  },
+  "zh-Hant": {
+    "compare": ["你的動作，和你學習的動作並排", "對齊每個階段，放慢，測量角度"],
+    "skeleton": ["看見身體，而不只是影片", "關節角度和 A 對比 B 的曲線（Pro）"],
+    "overlay": ["一個疊在另一個上", "去背、對齊、上色，看清每一處差別（Pro）"],
+    "draw": ["畫出你看到的", "在任何一格上畫線、箭頭、圓和角度"],
+    "pro": ["比較免費，Pro 一次買斷", "一次購買，所有 Apple 裝置通用，無需訂閱"]
+  },
+  "ja": {
+    "compare": ["自分のフォームを、手本の隣に", "各フェーズをそろえ、スローにし、角度を測る"],
+    "skeleton": ["映像だけでなく、体を見る", "関節の角度と A 対 B のグラフ（Pro）"],
+    "overlay": ["ひとつを、もうひとつの上に", "切り抜いて重ね、色を付けて違いを見る（Pro）"],
+    "draw": ["見えたものを描く", "線、矢印、円、角度をどのフレームにも"],
+    "pro": ["比較は無料。Pro は買い切り", "1 回の購入で全 Apple デバイス、サブスクなし"]
+  },
+  "ko": {
+    "compare": ["내 동작을, 배우고 싶은 동작 옆에", "모든 단계를 맞추고, 느리게 보고, 각도를 재세요"],
+    "skeleton": ["영상이 아니라 몸을 보세요", "관절 각도와 A 대 B 그래프(Pro)"],
+    "overlay": ["하나를 다른 하나 위에", "배경 제거, 맞추기, 색칠로 차이를 한눈에(Pro)"],
+    "draw": ["보이는 것을 그리세요", "어느 프레임에나 선, 화살표, 원, 각도"],
+    "pro": ["비교는 무료, Pro는 한 번만", "한 번 구입으로 모든 Apple 기기에서, 구독 없음"]
+  },
+  "es": {
+    "compare": ["Tu golpe, junto al que te sirve de modelo", "Alinea cada fase, ralentiza y mide ángulos"],
+    "skeleton": ["Mira el cuerpo, no solo el vídeo", "Ángulos de las articulaciones y gráficas A contra B (Pro)"],
+    "overlay": ["Uno encima del otro", "Recortado, alineado y teñido para ver cada diferencia (Pro)"],
+    "draw": ["Dibuja lo que ves", "Líneas, flechas, círculos y ángulos en cualquier fotograma"],
+    "pro": ["Comparar es gratis. Pro, una vez.", "Un solo pago en todos tus dispositivos Apple, sin suscripción"]
+  },
+  "fr": {
+    "compare": ["Votre geste, à côté de votre modèle", "Alignez chaque phase, ralentissez, mesurez les angles"],
+    "skeleton": ["Voyez le corps, pas seulement la vidéo", "Angles des articulations et courbes A contre B (Pro)"],
+    "overlay": ["L'un sur l'autre", "Détouré, aligné et teinté pour voir chaque différence (Pro)"],
+    "draw": ["Dessinez ce que vous voyez", "Lignes, flèches, cercles et angles sur n'importe quelle image"],
+    "pro": ["Comparer est gratuit. Pro, une fois.", "Un seul achat sur tous vos appareils Apple, sans abonnement"]
+  },
+  "de": {
+    "compare": ["Dein Schlag neben deinem Vorbild", "Jede Phase ausrichten, verlangsamen, Winkel messen"],
+    "skeleton": ["Sieh den Körper, nicht nur das Video", "Gelenkwinkel und Diagramme A gegen B (Pro)"],
+    "overlay": ["Einer über dem anderen", "Freigestellt, ausgerichtet und eingefärbt (Pro)"],
+    "draw": ["Zeichne, was du siehst", "Linien, Pfeile, Kreise und Winkel auf jedem Bild"],
+    "pro": ["Vergleichen ist kostenlos. Pro einmal.", "Ein Kauf auf all deinen Apple-Geräten, kein Abo"]
+  },
+  "pt-BR": {
+    "compare": ["Seu golpe, ao lado do seu modelo", "Alinhe cada fase, desacelere e meça ângulos"],
+    "skeleton": ["Veja o corpo, não só o vídeo", "Ângulos das articulações e gráficos A contra B (Pro)"],
+    "overlay": ["Um sobre o outro", "Recortado, alinhado e tingido para ver cada diferença (Pro)"],
+    "draw": ["Desenhe o que você vê", "Linhas, setas, círculos e ângulos em qualquer quadro"],
+    "pro": ["Comparar é grátis. Pro, uma vez.", "Uma compra em todos os seus dispositivos Apple, sem assinatura"]
+  },
+  "it": {
+    "compare": ["Il tuo colpo, accanto al tuo modello", "Allinea ogni fase, rallenta e misura gli angoli"],
+    "skeleton": ["Guarda il corpo, non solo il video", "Angoli delle articolazioni e grafici A contro B (Pro)"],
+    "overlay": ["Uno sopra l'altro", "Scontornato, allineato e colorato per vedere ogni differenza (Pro)"],
+    "draw": ["Disegna quello che vedi", "Linee, frecce, cerchi e angoli su qualsiasi fotogramma"],
+    "pro": ["Confrontare è gratis. Pro, una volta.", "Un solo acquisto su tutti i tuoi dispositivi Apple, nessun abbonamento"]
+  },
+  "ru": {
+    "compare": ["Ваш удар рядом с образцом", "Совмещайте фазы, замедляйте, измеряйте углы"],
+    "skeleton": ["Смотрите на тело, а не только на видео", "Углы суставов и графики A против B (Pro)"],
+    "overlay": ["Один поверх другого", "Вырезан, совмещён и окрашен, чтобы видеть каждое отличие (Pro)"],
+    "draw": ["Рисуйте то, что видите", "Линии, стрелки, круги и углы на любом кадре"],
+    "pro": ["Сравнение бесплатно. Pro — один раз.", "Одна покупка на всех устройствах Apple, без подписки"]
+  }
+}

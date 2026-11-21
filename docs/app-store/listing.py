@@ -1,0 +1,404 @@
+# App Store listing for Mimesis (one app record, iPhone, iPad and Mac), eleven languages.
+# Run: python3 docs/app-store/listing.py  -> checks Apple's limits, writes listing.json next to this file.
+import json, os
+
+SUPPORT = "https://ljworkshop.com/mimesis/support/"
+MARKETING = "https://ljworkshop.com/mimesis/"
+LIMITS = {"name": 30, "subtitle": 30, "promo": 170, "keywords": 100, "description": 4000}
+
+L = {}
+
+L["en-US"] = dict(
+name="Mimesis: Sports Video Compare",
+subtitle="Your swing next to the model",
+promo="Put your video next to the one you learn from: line up every phase, slow it down, draw and measure angles. Free to compare; Mimesis Pro is a one-time purchase.",
+keywords="tennis,golf,swing,analysis,coach,slow motion,side by side,overlay,angle,technique,serve,forehand",
+description="""Put your video next to the one you learn from, and see exactly where they differ.
+
+Mimesis is a video comparison studio for coaches and serious players. Film a swing, a serve or a stroke, open it beside a model (a coach, a better day of your own, a teammate) and line the two up phase by phase.
+
+COMPARE
+• Two clips side by side, or one over the other, see-through
+• Sync points (racket drop, contact, finish): each phase between them plays matched, so the two clips move together
+• Linked playback in slow motion, frame by frame, or one clip at a time
+• Mirror a left-hander to match a right-hander, zoom into any detail
+
+DRAW AND MEASURE
+• Lines, arrows, circles, rectangles and angles in degrees, on any frame
+• Notes pinned to the frames that matter
+• Snapshots of exactly what's on screen, segments for each part of a session, and a library with tags
+
+LIVE REPLAY
+Film with your iPhone, iPad or Mac and watch each attempt again a few seconds later, hands-free.
+
+MIMESIS PRO
+A one-time purchase, no subscription, on all your Apple devices:
+• The person cut out and laid over the other clip, lined up by the body and tinted
+• The skeleton with joint angles, and graphs of A against B through the movement
+• StroMotion: the whole movement in one picture
+• A PDF report to share, and progress over takes on different days
+• Exports without the Mimesis mark
+
+Everything stays on your device. No account, no server, no subscription.""",
+)
+
+L["zh-Hans"] = dict(
+name="Mimesis：运动视频对比",
+subtitle="把你的动作放在范例旁边",
+promo="把你的视频放在你学习的视频旁边：逐阶段对齐、放慢、绘图并测量角度。比较完全免费；Mimesis Pro 一次买断。",
+keywords="网球,高尔夫,挥拍,动作分析,教练,慢动作,并排,叠加,角度,技术,发球,正手",
+description="""把你的视频放在你学习的视频旁边，清楚看到差别在哪里。
+
+Mimesis 是为教练和认真的球员打造的视频对比工作室。拍下一次挥拍、发球或击球，把它和范例（教练、你状态更好的一天、队友）并排打开，逐个阶段对齐。
+
+对比
+• 两段视频并排，或一段半透明地叠在另一段上
+• 同步点（引拍、击球、收拍）：每个阶段分别对齐播放，两段视频同步运动
+• 联动慢放、逐帧，或单独控制一段
+• 左右镜像，让左手持拍者对应右手持拍者；放大任何细节
+
+绘图与测量
+• 在任意一帧上画线、箭头、圆、矩形和以度为单位的角度
+• 在关键帧上钉备注
+• 屏幕所见即所得的快照、按片段整理一次训练，以及带标签的资料库
+
+实时回放
+用 iPhone、iPad 或 Mac 拍摄，几秒后免动手地重看每一次尝试。
+
+MIMESIS PRO
+一次购买，无需订阅，适用于你所有的 Apple 设备：
+• 抠出人物叠在另一段视频上，按身体对齐并着色
+• 骨架与关节角度，以及整个动作中 A 对比 B 的曲线
+• StroMotion：整个动作合成一张图
+• 可分享的 PDF 报告，以及不同日子的进步对比
+• 导出不带 Mimesis 标志
+
+所有内容都留在你的设备上。无需账户，没有服务器，没有订阅。""",
+)
+
+L["zh-Hant"] = dict(
+name="Mimesis：運動影片對比",
+subtitle="把你的動作放在範例旁邊",
+promo="把你的影片放在你學習的影片旁邊：逐階段對齊、放慢、繪圖並測量角度。比較完全免費；Mimesis Pro 一次買斷。",
+keywords="網球,高爾夫,揮拍,動作分析,教練,慢動作,並排,疊加,角度,技術,發球,正手",
+description="""把你的影片放在你學習的影片旁邊，清楚看到差別在哪裡。
+
+Mimesis 是為教練和認真的球員打造的影片對比工作室。拍下一次揮拍、發球或擊球，把它和範例（教練、你狀態更好的一天、隊友）並排打開，逐個階段對齊。
+
+對比
+• 兩部影片並排，或一部半透明地疊在另一部上
+• 同步點（引拍、擊球、收拍）：每個階段分別對齊播放，兩部影片同步運動
+• 連動慢放、逐格，或單獨控制一部
+• 左右鏡像，讓左手持拍者對應右手持拍者；放大任何細節
+
+繪圖與測量
+• 在任何一格上畫線、箭頭、圓、矩形和以度為單位的角度
+• 在關鍵影格上釘備註
+• 螢幕所見即所得的快照、依片段整理一次訓練，以及帶標籤的資料庫
+
+即時重播
+用 iPhone、iPad 或 Mac 拍攝，幾秒後免動手地重看每一次嘗試。
+
+MIMESIS PRO
+一次購買，無需訂閱，適用於你所有的 Apple 裝置：
+• 去背的人物疊在另一部影片上，依身體對齊並上色
+• 骨架與關節角度，以及整個動作中 A 對比 B 的曲線
+• StroMotion：整個動作合成一張圖
+• 可分享的 PDF 報告，以及不同日子的進步對比
+• 輸出不帶 Mimesis 標誌
+
+所有內容都留在你的裝置上。無需帳號，沒有伺服器，沒有訂閱。""",
+)
+
+L["ja"] = dict(
+name="Mimesis：スポーツ動画比較",
+subtitle="自分のフォームを手本の隣に",
+promo="自分の動画を手本の動画の隣に。各フェーズをそろえ、スローにし、描き込み、角度を測れます。比較は無料、Mimesis Pro は買い切りです。",
+keywords="テニス,ゴルフ,スイング,フォーム,分析,コーチ,スロー,比較,角度,サーブ",
+description="""自分の動画を手本の動画の隣に置いて、どこが違うのかをはっきり見ましょう。
+
+Mimesis はコーチと本気のプレーヤーのための動画比較スタジオです。スイング、サーブ、ショットを撮影し、手本（コーチ、調子のよかった日の自分、チームメイト）の隣に開いて、フェーズごとにそろえます。
+
+比較
+• 2 つのクリップを横に並べる、または半透明で重ねる
+• 同期点（ラケットダウン、インパクト、フィニッシュ）：その間の各フェーズがそろって再生され、2 つのクリップが一緒に動きます
+• 連動してスロー再生、コマ送り、または片方ずつ
+• 左利きを右利きに合わせて左右反転、どこでも拡大
+
+描いて測る
+• 線、矢印、円、長方形、角度（度）をどのフレームにも
+• 大事なフレームにメモをピン留め
+• 画面どおりのスナップショット、練習ごとの区間、タグ付きのライブラリ
+
+ライブリプレイ
+iPhone、iPad、Mac で撮影し、数秒後に各試技を手を使わずに見返せます。
+
+MIMESIS PRO
+1 回の購入、サブスクリプションなし、すべての Apple デバイスで使えます：
+• 人物を切り抜いてもう一方のクリップに重ね、体でそろえて色付け
+• 骨格と関節の角度、動き全体での A 対 B のグラフ
+• StroMotion：動き全体を 1 枚に
+• 共有できる PDF レポート、日ごとのテイクで上達を比較
+• Mimesis マークなしで書き出し
+
+すべてはデバイスの中に。アカウントもサーバーもサブスクリプションもありません。""",
+)
+
+L["ko"] = dict(
+name="Mimesis: 스포츠 영상 비교",
+subtitle="내 동작을 모범 동작 옆에",
+promo="내 영상을 배우고 싶은 영상 옆에: 단계마다 맞추고, 느리게 보고, 그리고, 각도를 재세요. 비교는 무료, Mimesis Pro는 한 번만 구입합니다.",
+keywords="테니스,골프,스윙,자세,분석,코치,슬로모션,비교,오버레이,각도,서브",
+description="""내 영상을 배우고 싶은 영상 옆에 놓고, 어디가 다른지 정확히 보세요.
+
+Mimesis는 코치와 진지한 선수를 위한 영상 비교 스튜디오입니다. 스윙, 서브, 스트로크를 촬영해 모범(코치, 컨디션 좋았던 날의 나, 팀 동료) 옆에 열고 단계별로 맞추세요.
+
+비교
+• 두 클립을 나란히, 또는 하나를 다른 하나 위에 반투명하게
+• 동기점(라켓 드롭, 임팩트, 피니시): 그 사이의 각 단계가 맞춰져 재생되어 두 클립이 함께 움직입니다
+• 연동 슬로 모션, 프레임 단위, 또는 한 클립씩
+• 왼손잡이를 오른손잡이에 맞춰 좌우 반전, 어디든 확대
+
+그리고 재기
+• 어느 프레임에나 선, 화살표, 원, 사각형, 각도(도)
+• 중요한 프레임에 메모 고정
+• 화면 그대로의 스냅샷, 훈련별 구간, 태그가 있는 보관함
+
+라이브 리플레이
+iPhone, iPad, Mac으로 촬영하고 몇 초 뒤 손을 쓰지 않고 각 시도를 다시 보세요.
+
+MIMESIS PRO
+한 번 구입, 구독 없음, 모든 Apple 기기에서:
+• 인물을 배경 제거해 다른 클립 위에 겹치고, 몸에 맞춰 색칠
+• 골격과 관절 각도, 동작 전체에서 A 대 B 그래프
+• StroMotion: 동작 전체를 한 장에
+• 공유할 수 있는 PDF 리포트, 날짜별 테이크로 발전 비교
+• Mimesis 표시 없이 내보내기
+
+모든 것은 기기 안에 남습니다. 계정도, 서버도, 구독도 없습니다.""",
+)
+
+L["es-ES"] = dict(
+name="Mimesis: Comparar vídeos",
+subtitle="Tu golpe junto al de tu modelo",
+promo="Pon tu vídeo junto al que te sirve de modelo: alinea cada fase, ralentiza, dibuja y mide ángulos. Comparar es gratis; Mimesis Pro es un pago único.",
+keywords="tenis,golf,swing,análisis,entrenador,cámara lenta,comparar,superponer,ángulo,técnica,saque,drive",
+description="""Pon tu vídeo junto al que te sirve de modelo y mira exactamente dónde se diferencian.
+
+Mimesis es un estudio de comparación de vídeo para entrenadores y jugadores exigentes. Graba un swing, un saque o un golpe, ábrelo junto a un modelo (un entrenador, un día mejor tuyo, un compañero) y alinéalos fase a fase.
+
+COMPARA
+• Dos clips uno al lado del otro, o uno encima del otro, semitransparente
+• Puntos de sincronía (caída de la raqueta, impacto, final): cada fase entre ellos se reproduce igualada, así los dos clips se mueven juntos
+• Reproducción vinculada a cámara lenta, fotograma a fotograma, o un clip cada vez
+• Refleja a un zurdo para compararlo con un diestro, amplía cualquier detalle
+
+DIBUJA Y MIDE
+• Líneas, flechas, círculos, rectángulos y ángulos en grados, en cualquier fotograma
+• Notas fijadas en los fotogramas que importan
+• Instantáneas de lo que ves en pantalla, segmentos para cada parte de una sesión y una biblioteca con etiquetas
+
+REPETICIÓN EN DIRECTO
+Graba con tu iPhone, iPad o Mac y vuelve a ver cada intento unos segundos después, sin manos.
+
+MIMESIS PRO
+Un solo pago, sin suscripción, en todos tus dispositivos Apple:
+• La persona recortada sobre el otro clip, alineada por el cuerpo y teñida
+• El esqueleto con los ángulos de las articulaciones y gráficas de A contra B durante el movimiento
+• StroMotion: todo el movimiento en una imagen
+• Un informe en PDF para compartir y el progreso entre tomas de distintos días
+• Exportaciones sin la marca Mimesis
+
+Todo se queda en tu dispositivo. Sin cuenta, sin servidor, sin suscripción.""",
+)
+L["es-MX"] = dict(L["es-ES"], description=L["es-ES"]["description"].replace("vídeo", "video").replace("Vídeo", "Video"),
+                  name="Mimesis: Comparar videos", promo=L["es-ES"]["promo"].replace("vídeo", "video"))
+
+L["fr-FR"] = dict(
+name="Mimesis : comparer en vidéo",
+subtitle="Votre geste à côté du modèle",
+promo="Placez votre vidéo à côté de votre modèle : alignez chaque phase, ralentissez, dessinez et mesurez les angles. Comparer est gratuit ; Mimesis Pro s'achète une fois.",
+keywords="tennis,golf,swing,analyse,coach,ralenti,côte à côte,superposition,angle,technique,service",
+description="""Placez votre vidéo à côté de celle qui vous sert de modèle, et voyez exactement où elles diffèrent.
+
+Mimesis est un studio de comparaison vidéo pour les coachs et les joueurs exigeants. Filmez un swing, un service ou un coup, ouvrez-le à côté d'un modèle (un coach, un meilleur jour à vous, un partenaire) et alignez-les phase par phase.
+
+COMPAREZ
+• Deux clips côte à côte, ou l'un sur l'autre, en transparence
+• Points de synchro (chute de la raquette, impact, fin du geste) : chaque phase entre eux est lue en accord, les deux clips bougent ensemble
+• Lecture liée au ralenti, image par image, ou un clip à la fois
+• Inversez un gaucher pour le comparer à un droitier, zoomez sur n'importe quel détail
+
+DESSINEZ ET MESUREZ
+• Lignes, flèches, cercles, rectangles et angles en degrés, sur n'importe quelle image
+• Des notes épinglées aux images qui comptent
+• Des instantanés de ce qui est à l'écran, des segments pour chaque partie d'une séance et une bibliothèque avec étiquettes
+
+REPLAY EN DIRECT
+Filmez avec votre iPhone, iPad ou Mac et revoyez chaque essai quelques secondes plus tard, sans les mains.
+
+MIMESIS PRO
+Un seul achat, sans abonnement, sur tous vos appareils Apple :
+• La personne détourée sur l'autre clip, alignée par le corps et teintée
+• Le squelette avec les angles des articulations et les courbes A contre B pendant le mouvement
+• StroMotion : tout le mouvement en une image
+• Un rapport PDF à partager et vos progrès d'une prise à l'autre
+• Des exports sans la marque Mimesis
+
+Tout reste sur votre appareil. Pas de compte, pas de serveur, pas d'abonnement.""",
+)
+
+L["de-DE"] = dict(
+name="Mimesis: Sportvideo-Vergleich",
+subtitle="Dein Schlag neben dem Vorbild",
+promo="Leg dein Video neben das, von dem du lernst: jede Phase ausrichten, verlangsamen, zeichnen und Winkel messen. Vergleichen ist kostenlos; Mimesis Pro kaufst du einmal.",
+keywords="Tennis,Golf,Schwung,Analyse,Trainer,Zeitlupe,nebeneinander,Overlay,Winkel,Technik,Aufschlag,Vorhand",
+description="""Leg dein Video neben das, von dem du lernst, und sieh genau, wo sie sich unterscheiden.
+
+Mimesis ist ein Videovergleichs-Studio für Trainer und ambitionierte Spieler. Filme einen Schwung, einen Aufschlag oder einen Schlag, öffne ihn neben einem Vorbild (einem Trainer, einem besseren Tag von dir, einem Mitspieler) und richte beide Phase für Phase aus.
+
+VERGLEICHEN
+• Zwei Clips nebeneinander oder durchscheinend übereinander
+• Sync-Punkte (Schlägerfall, Treffpunkt, Ausschwung): Jede Phase dazwischen läuft abgestimmt, sodass sich beide Clips gemeinsam bewegen
+• Verknüpfte Wiedergabe in Zeitlupe, Bild für Bild oder jeder Clip einzeln
+• Einen Linkshänder spiegeln, um ihn mit einem Rechtshänder zu vergleichen, in jedes Detail zoomen
+
+ZEICHNEN UND MESSEN
+• Linien, Pfeile, Kreise, Rechtecke und Winkel in Grad auf jedem Bild
+• Notizen an den Bildern, auf die es ankommt
+• Schnappschüsse von genau dem, was zu sehen ist, Abschnitte für jeden Teil einer Einheit und eine Mediathek mit Tags
+
+LIVE-REPLAY
+Filme mit iPhone, iPad oder Mac und sieh jeden Versuch ein paar Sekunden später freihändig noch einmal.
+
+MIMESIS PRO
+Ein einmaliger Kauf, kein Abo, auf all deinen Apple-Geräten:
+• Die freigestellte Person über dem anderen Clip, am Körper ausgerichtet und eingefärbt
+• Das Skelett mit Gelenkwinkeln und Diagrammen A gegen B durch die Bewegung
+• StroMotion: die ganze Bewegung in einem Bild
+• Ein PDF-Bericht zum Teilen und Fortschritt über Aufnahmen an verschiedenen Tagen
+• Exporte ohne das Mimesis-Zeichen
+
+Alles bleibt auf deinem Gerät. Kein Konto, kein Server, kein Abo.""",
+)
+
+L["pt-BR"] = dict(
+name="Mimesis: Comparar Vídeos",
+subtitle="Seu golpe ao lado do modelo",
+promo="Coloque seu vídeo ao lado daquele com que você aprende: alinhe cada fase, desacelere, desenhe e meça ângulos. Comparar é grátis; o Mimesis Pro é uma compra única.",
+keywords="tênis,golfe,swing,análise,treinador,câmera lenta,lado a lado,sobreposição,ângulo,técnica",
+description="""Coloque seu vídeo ao lado daquele com que você aprende e veja exatamente onde eles diferem.
+
+O Mimesis é um estúdio de comparação de vídeo para treinadores e jogadores dedicados. Filme um swing, um saque ou um golpe, abra ao lado de um modelo (um treinador, um dia melhor seu, um colega) e alinhe os dois fase a fase.
+
+COMPARE
+• Dois clipes lado a lado, ou um sobre o outro, translúcido
+• Pontos de sincronia (queda da raquete, contato, finalização): cada fase entre eles toca igualada, e os dois clipes se movem juntos
+• Reprodução vinculada em câmera lenta, quadro a quadro, ou um clipe de cada vez
+• Espelhe um canhoto para comparar com um destro, amplie qualquer detalhe
+
+DESENHE E MEÇA
+• Linhas, setas, círculos, retângulos e ângulos em graus, em qualquer quadro
+• Notas fixadas nos quadros que importam
+• Instantâneos exatamente do que está na tela, segmentos para cada parte de um treino e uma biblioteca com etiquetas
+
+REPLAY AO VIVO
+Filme com seu iPhone, iPad ou Mac e reveja cada tentativa alguns segundos depois, sem usar as mãos.
+
+MIMESIS PRO
+Uma compra única, sem assinatura, em todos os seus dispositivos Apple:
+• A pessoa recortada sobre o outro clipe, alinhada pelo corpo e tingida
+• O esqueleto com os ângulos das articulações e gráficos de A contra B durante o movimento
+• StroMotion: o movimento inteiro em uma imagem
+• Um relatório em PDF para compartilhar e o progresso entre tomadas de dias diferentes
+• Exportações sem a marca Mimesis
+
+Tudo fica no seu dispositivo. Sem conta, sem servidor, sem assinatura.""",
+)
+
+L["it"] = dict(
+name="Mimesis: confronta video sport",
+subtitle="Il tuo colpo vicino al modello",
+promo="Metti il tuo video accanto a quello da cui impari: allinea ogni fase, rallenta, disegna e misura gli angoli. Confrontare è gratis; Mimesis Pro è un acquisto unico.",
+keywords="tennis,golf,swing,analisi,allenatore,rallentatore,affiancati,sovrapposizione,angolo,tecnica,servizio",
+description="""Metti il tuo video accanto a quello da cui impari e guarda esattamente dove sono diversi.
+
+Mimesis è uno studio di confronto video per allenatori e giocatori seri. Filma uno swing, un servizio o un colpo, aprilo accanto a un modello (un allenatore, un tuo giorno migliore, un compagno) e allineali fase per fase.
+
+CONFRONTA
+• Due clip affiancate, o una sopra l'altra, semitrasparente
+• Punti sincro (caduta della racchetta, impatto, finale): ogni fase tra di loro scorre allineata, così le due clip si muovono insieme
+• Riproduzione collegata al rallentatore, fotogramma per fotogramma, o una clip alla volta
+• Rifletti un mancino per confrontarlo con un destrorso, ingrandisci ogni dettaglio
+
+DISEGNA E MISURA
+• Linee, frecce, cerchi, rettangoli e angoli in gradi, su qualsiasi fotogramma
+• Note fissate sui fotogrammi che contano
+• Istantanee di ciò che è sullo schermo, segmenti per ogni parte di una sessione e una libreria con etichette
+
+REPLAY DAL VIVO
+Filma con iPhone, iPad o Mac e rivedi ogni tentativo pochi secondi dopo, senza mani.
+
+MIMESIS PRO
+Un solo acquisto, nessun abbonamento, su tutti i tuoi dispositivi Apple:
+• La persona scontornata sopra l'altra clip, allineata dal corpo e colorata
+• Lo scheletro con gli angoli delle articolazioni e grafici di A contro B lungo il movimento
+• StroMotion: tutto il movimento in un'immagine
+• Un report PDF da condividere e i progressi tra riprese di giorni diversi
+• Esportazioni senza il marchio Mimesis
+
+Tutto resta sul tuo dispositivo. Nessun account, nessun server, nessun abbonamento.""",
+)
+
+L["ru"] = dict(
+name="Mimesis: сравнение видео",
+subtitle="Ваш удар рядом с образцом",
+promo="Поставьте своё видео рядом с образцом: совмещайте фазы, замедляйте, рисуйте и измеряйте углы. Сравнение бесплатно; Mimesis Pro — разовая покупка.",
+keywords="теннис,гольф,анализ,тренер,сравнение,угол,подача",
+description="""Поставьте своё видео рядом с тем, у которого учитесь, и увидьте, в чём именно разница.
+
+Mimesis — студия сравнения видео для тренеров и серьёзных игроков. Снимите замах, подачу или удар, откройте рядом с образцом (тренером, своим более удачным днём, партнёром) и совместите их по фазам.
+
+СРАВНЕНИЕ
+• Два клипа рядом или один поверх другого, полупрозрачно
+• Синхроточки (опускание ракетки, удар, завершение): каждая фаза между ними воспроизводится согласованно, и клипы движутся вместе
+• Связанное замедленное воспроизведение, покадрово или по одному клипу
+• Отразите левшу, чтобы сравнить с правшой, увеличьте любую деталь
+
+РИСУЙТЕ И ИЗМЕРЯЙТЕ
+• Линии, стрелки, круги, прямоугольники и углы в градусах на любом кадре
+• Заметки, закреплённые на важных кадрах
+• Снимки ровно того, что на экране, отрезки для каждой части тренировки и медиатека с тегами
+
+ПОВТОР ВЖИВУЮ
+Снимайте на iPhone, iPad или Mac и пересматривайте каждую попытку через несколько секунд, не касаясь устройства.
+
+MIMESIS PRO
+Одна покупка, без подписки, на всех ваших устройствах Apple:
+• Вырезанный человек поверх другого клипа, совмещённый по телу и окрашенный
+• Скелет с углами суставов и графики A против B на протяжении движения
+• StroMotion: всё движение на одном изображении
+• Отчёт в PDF и прогресс по дублям в разные дни
+• Экспорт без знака Mimesis
+
+Всё остаётся на вашем устройстве. Без учётной записи, без сервера, без подписки.""",
+)
+
+
+def main():
+    problems = 0
+    for lang, d in L.items():
+        for field, limit in LIMITS.items():
+            value = d[field]
+            size = len(value.encode("utf-8")) if field == "keywords" else len(value)
+            if size > limit:
+                print(f"{lang} {field}: {size} > {limit}")
+                problems += 1
+    out = {lang: dict(d, support_url=SUPPORT, marketing_url=MARKETING) for lang, d in L.items()}
+    json.dump(out, open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "listing.json"), "w"),
+              ensure_ascii=False, indent=1)
+    print(f"{len(L)} languages, {problems} over the limits")
+
+
+if __name__ == "__main__":
+    main()

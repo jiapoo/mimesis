@@ -32,6 +32,20 @@ struct MimesisMacApp: App {
 
 /// Videos opened with Mimesis (Finder's Open With, dropped on the Dock icon) go to the comparison screen.
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    /// Debug only: `Mimesis -WindowSize 1440x900` sizes the window, its frame included, for App Store
+    /// screenshots (a background script can't resize it).
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        #if DEBUG
+        guard let text = UserDefaults.standard.string(forKey: "WindowSize") else { return }
+        let parts = text.split(separator: "x").compactMap { Double($0) }
+        guard parts.count == 2 else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            guard let window = NSApp.windows.first(where: { $0.isVisible && $0.canBecomeMain }) else { return }
+            window.setFrame(NSRect(x: 40, y: 40, width: parts[0], height: parts[1]), display: true)
+        }
+        #endif
+    }
+
     func application(_ application: NSApplication, open urls: [URL]) {
         MainActor.assumeIsolated { Inbox.shared.receive(urls) }
     }

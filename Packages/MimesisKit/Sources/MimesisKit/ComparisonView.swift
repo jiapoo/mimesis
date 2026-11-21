@@ -342,6 +342,17 @@ public struct ComparisonView: View {
         }
         #endif
         .task {
+            #if DEBUG
+            // Debug only: `-Project <path>` opens that project at launch (App Store screenshots).
+            if let path = UserDefaults.standard.string(forKey: "Project") {
+                await store.open(URL(fileURLWithPath: path), into: comparison)
+                markSaved()
+                if let sync = LibrarySync() { library.startSync(sync) }
+                // `-DemoTour YES`: walk through the app by itself, for the App Review screen recording.
+                if UserDefaults.standard.bool(forKey: "DemoTour") { await demoTour() }
+                return
+            }
+            #endif
             if preload.contains(where: { $0 != nil }) {
                 for (index, url) in preload.prefix(2).enumerated() {
                     if let url { await comparison.clips[index].open(url) }
@@ -1251,6 +1262,54 @@ public struct ComparisonView: View {
             comparison.focus = 0
         }
     }
+
+    #if DEBUG
+    /// Debug only: the App Review recording's steps, one after another (`-DemoTour YES` with `-Project`).
+    private func demoTour() async {
+        #if os(macOS)
+        // The window's number, for `screencapture -l` to record just this window.
+        if let window = NSApp.windows.first(where: { $0.isVisible && $0.canBecomeMain }) {
+            FileHandle.standardError.write(Data("WINDOW \(window.windowNumber)\n".utf8))
+        }
+        #endif
+        func wait(_ seconds: Double) async { try? await Task.sleep(for: .seconds(seconds)) }
+        await wait(4)  // (the recording starts)
+        // Both clips linked, playing together in slow motion, twice through.
+        comparison.layout = .both
+        comparison.linked = true
+        comparison.linkedSpeed = 0.5
+        await comparison.seek(to: comparison.range.lowerBound)
+        comparison.togglePlay()
+        await wait(9)
+        comparison.pause()
+        // The trophy position: the angles and notes.
+        await comparison.seek(to: comparison.range.lowerBound + 0.9)
+        await wait(4)
+        // One over the other.
+        withAnimation(.easeOut(duration: 0.2)) { comparison.layout = .overlay }
+        await wait(4)
+        withAnimation(.easeOut(duration: 0.2)) { comparison.layout = .both }
+        await wait(1.5)
+        // Drawing.
+        comparison.toggleDrawingBoth()
+        await wait(4)
+        comparison.toggleDrawingBoth()
+        await wait(1)
+        // A snapshot: the box, then taking it.
+        frameSnapshot()
+        await wait(3)
+        takeSnapshot()
+        await wait(3)
+        // A Pro feature in the free version: the Pro sheet, with Restore Purchases.
+        ProStore.shared.paywall = .skeleton
+        await wait(6)
+        ProStore.shared.paywall = nil
+        await wait(2)
+        #if os(macOS)
+        FileHandle.standardError.write(Data("TOUR DONE\n".utf8))
+        #endif
+    }
+    #endif
 
     // MARK: Snapshot
 

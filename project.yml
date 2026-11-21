@@ -7,7 +7,7 @@ options:
 settings:
   base:
     SWIFT_VERSION: "6.0"
-    MARKETING_VERSION: "0.1"
+    MARKETING_VERSION: "1.0"
     CURRENT_PROJECT_VERSION: "1"
     CODE_SIGN_STYLE: Automatic
     DEVELOPMENT_TEAM: 49Y2NVWNTQ
@@ -41,6 +41,8 @@ targets:
         NSCameraUsageDescription: Live replay shows the camera a few seconds late, so you can watch what you just did.
         # The languages the app is in (as Localization/ has them), for the App Store and the system.
         CFBundleLocalizations: [en, zh-Hans, zh-Hant, ja, ko, es, fr, de, pt-BR, it, ru]
+        # No encryption beyond Apple's own: App Store Connect stops asking on every upload.
+        ITSAppUsesNonExemptEncryption: false
         # Mimesis opens videos from other apps: Share › Mimesis on iPhone and iPad, Open With and the Dock icon on the Mac.
         CFBundleDocumentTypes:
           - CFBundleTypeName: Video
@@ -96,6 +98,8 @@ targets:
         NSCameraUsageDescription: Live replay shows the camera a few seconds late, so you can watch what you just did.
         # The languages the app is in (as Localization/ has them), for the App Store and the system.
         CFBundleLocalizations: [en, zh-Hans, zh-Hant, ja, ko, es, fr, de, pt-BR, it, ru]
+        # No encryption beyond Apple's own: App Store Connect stops asking on every upload.
+        ITSAppUsesNonExemptEncryption: false
         # Mimesis opens videos from other apps: Share › Mimesis on iPhone and iPad, Open With and the Dock icon on the Mac.
         CFBundleDocumentTypes:
           - CFBundleTypeName: Video
