@@ -11,7 +11,7 @@ final class Exporter {
     enum Style: String, CaseIterable, Identifiable {
         case sideBySide, overlay
         var id: Self { self }
-        var title: String { self == .sideBySide ? "Side by side" : "Overlay" }
+        var title: String { self == .sideBySide ? String(localized: "Side by side") : String(localized: "Overlay") }
     }
 
     private(set) var progress: Double?
@@ -23,7 +23,7 @@ final class Exporter {
 
     func start(_ comparison: Comparison, style: Style) {
         guard comparison.canLink, let plan = Plan(comparison, style: style) else {
-            problem = "Open both clips first."
+            problem = String(localized: "Open both clips first.")
             return
         }
         file = nil
@@ -286,7 +286,7 @@ struct ExportView: View {
         panel.allowedContentTypes = [.mpeg4Movie]
         panel.nameFieldStringValue = file.lastPathComponent
         panel.canCreateDirectories = true
-        panel.title = "Save Video"
+        panel.title = String(localized: "Save Video")
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
             try? FileManager.default.removeItem(at: url)
@@ -294,7 +294,7 @@ struct ExportView: View {
             NSWorkspace.shared.activateFileViewerSelecting([url])
             dismiss()
         } catch {
-            exporter.problem = "Couldn't save the video: \(error.localizedDescription)"
+            exporter.problem = String(localized: "Couldn't save the video: \(error.localizedDescription)")
         }
     }
     #endif
@@ -307,8 +307,7 @@ struct ExportView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Export video").font(.title2.weight(.semibold))
-            Text("The linked span, both clips lined up at their sync points, at \(speedText(comparison.linkedSpeed)) "
-                 + "(set the speed on the transport for slow motion).")
+            Text("The linked span, both clips lined up at their sync points, at \(speedText(comparison.linkedSpeed)) (set the speed on the transport for slow motion).")
                 .font(.callout).foregroundStyle(.secondary)
             Picker("Layout", selection: $style) {
                 ForEach(Exporter.Style.allCases) { Text($0.title).tag($0) }

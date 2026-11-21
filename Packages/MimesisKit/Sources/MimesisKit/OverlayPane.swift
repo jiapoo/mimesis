@@ -9,6 +9,8 @@ struct OverlayPane: View {
     let comparison: Comparison
     /// "A over B" (click to swap) is in the frame's row: where there's no top bar to hold it (an iPhone).
     var showsBadge = false
+    /// "Mimesis" on the picture (the free version).
+    var showsMark = false
 
     @State private var offsetBase: CGSize?
     @State private var scaleBase: CGFloat?
@@ -152,6 +154,10 @@ struct OverlayPane: View {
         }
         .background(Color.black)
         .clipped()
+        // The free version's mark, on the picture underneath (the two are one picture here).
+        .overlay {
+            if showsMark { MimesisMark(videoSize: base.engine.videoSize) }
+        }
         .overlay(alignment: .top) {
             // Everything the overlay needs, in one row over the picture (the bar underneath is the same
             // in every layout): what touches do, the size or zoom, how see-through the top clip is and
@@ -180,7 +186,7 @@ struct OverlayPane: View {
             }
         }
         .confirmationDialog(
-            "This segment has \(comparison.overlayDrawings) drawing\(comparison.overlayDrawings == 1 ? "" : "s") made in the overlay",
+            "This segment has \(comparison.overlayDrawings) drawings made in the overlay",
             isPresented: Binding(get: { ui.askingToUnlock }, set: { if !$0 { ui.askingToUnlock = false } }),
             titleVisibility: .visible
         ) {
@@ -351,7 +357,7 @@ struct OverlayPane: View {
 
     private var hint: String? {
         if let problem = ui.problem { return problem }
-        if picking { return "Tap the person in \(topLetter)" }
+        if picking { return String(localized: "Tap the person in \(topLetter)") }
         return nil
     }
 
@@ -372,13 +378,13 @@ struct OverlayPane: View {
         var point = CGPoint(x: (local.x - shown.minX) / shown.width, y: (local.y - shown.minY) / shown.height)
         if top.engine.mirroredHorizontally { point.x = 1 - point.x }
         guard (0...1).contains(point.x), (0...1).contains(point.y) else {
-            ui.problem = "Tap on the person in \(topLetter)."
+            ui.problem = String(localized: "Tap on the person in \(topLetter).")
             return
         }
         if cutout.pick(at: top.engine.currentTime, point: point) {
             ui.picking = false
         } else {
-            ui.problem = "Nobody there: tap on the person in \(topLetter)."
+            ui.problem = String(localized: "Nobody there: tap on the person in \(topLetter).")
         }
     }
 

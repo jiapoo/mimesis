@@ -93,6 +93,8 @@ struct AngleGraph: View {
                     for (_, clip) in loaded { clip.trackPose() }
                 } label: {
                     Label("Measure the body in this segment", systemImage: "figure.arms.open")
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                 }
                 .buttonStyle(ChipStyle(active: true))
                 .help("Follow the body through each clip's In to Out, to graph its joint angles")
@@ -201,12 +203,12 @@ struct AngleGraph: View {
         var rows: [(label: String, values: [Double?])] = []
         let most = clips.map(\.syncs.count).max() ?? 0
         for index in 0..<most {
-            rows.append((label: "To sync \(index + 1)", values: clips.map { clip in
+            rows.append((label: String(localized: "To sync \(index + 1)"), values: clips.map { clip in
                 clip.syncs.indices.contains(index) ? clip.syncs[index] - clip.trimStart : nil
             }))
         }
         if clips.contains(where: { $0.trimEnd != nil }) {
-            rows.append((label: "In to Out", values: clips.map { clip in clip.trimEnd.map { $0 - clip.trimStart } }))
+            rows.append((label: String(localized: "In to Out"), values: clips.map { clip in clip.trimEnd.map { $0 - clip.trimStart } }))
         }
         return rows
     }

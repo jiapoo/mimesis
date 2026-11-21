@@ -58,7 +58,7 @@ final class OverlayUI {
                 }
             } catch {
                 #if targetEnvironment(simulator)
-                problem = "Lining up needs a real iPhone or iPad (Vision can't run it in Simulator)."
+                problem = String(localized: "Lining up needs a real iPhone or iPad (Vision can't run it in Simulator).")
                 #else
                 problem = error.localizedDescription
                 #endif
@@ -137,8 +137,8 @@ struct OverlayControls: View {
     /// ✋ moves the top clip; 🔍 zooms both.
     private var modeSwitch: some View {
         HStack(spacing: 2) {
-            mode("hand.draw", on: ui.movesTop, help: "Touches move, resize and turn \(topLetter)") { ui.movesTop = true }
-            mode("plus.magnifyingglass", on: !ui.movesTop, help: "Touches zoom and pan the whole picture, both clips") {
+            mode("hand.draw", on: ui.movesTop, help: String(localized: "Touches move, resize and turn \(topLetter)")) { ui.movesTop = true }
+            mode("plus.magnifyingglass", on: !ui.movesTop, help: String(localized: "Touches zoom and pan the whole picture, both clips")) {
                 ui.movesTop = false
             }
         }

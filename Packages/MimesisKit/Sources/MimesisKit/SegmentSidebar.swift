@@ -23,7 +23,7 @@ struct SegmentSidebar: View {
     @State private var speedFor: Int?
     /// A snapshot's picture, ready to save as a file.
     @State private var saving: PictureFile?
-    @State private var savingName = "Snapshot"
+    @State private var savingName = String(localized: "Snapshot")
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -148,7 +148,7 @@ struct SegmentSidebar: View {
                         .frame(width: 20, height: 20)
                         .background(on ? Theme.accent : Color.white.opacity(0.08), in: Circle())
                     if editing == .segment(segment.id) {
-                        inlineField(.segment(segment.id), prompt: "Name")
+                        inlineField(.segment(segment.id), prompt: String(localized: "Name"))
                     } else {
                         Text(segment.name)
                             .font(.system(size: 13, weight: on ? .semibold : .regular))
@@ -229,24 +229,24 @@ struct SegmentSidebar: View {
                 .frame(width: 24, height: 24)
                 .background(comparison.selected === clip ? Theme.accent : Color.white.opacity(0.14), in: Circle())
                 .padding(.horizontal, 8)
-            cell("In", clip.trimStart > 0 ? short(clip.trimStart) : "start", set: clip.trimStart > 0,
-                 help: "Start clip \(index == 0 ? "A" : "B") here, at its playhead ([)",
+            cell(String(localized: "In"), clip.trimStart > 0 ? short(clip.trimStart) : String(localized: "start"), set: clip.trimStart > 0,
+                 help: String(localized: "Start clip \(index == 0 ? "A" : "B") here, at its playhead ([)"),
                  clear: clip.trimStart > 0 ? { clip.clearTrimStart() } : nil) { clip.setTrimStart() }
                 .disabled(locked)
             line
-            cell("Out", clip.trimEnd.map(short) ?? "end", set: clip.trimEnd != nil,
-                 help: "End clip \(index == 0 ? "A" : "B") here, at its playhead (])",
+            cell(String(localized: "Out"), clip.trimEnd.map(short) ?? String(localized: "end"), set: clip.trimEnd != nil,
+                 help: String(localized: "End clip \(index == 0 ? "A" : "B") here, at its playhead (])"),
                  clear: clip.trimEnd != nil ? { clip.clearTrimEnd() } : nil) { clip.setTrimEnd() }
                 .disabled(locked)
             line
-            cell("Sync", clip.syncHere != nil ? "remove" : (clip.syncs.isEmpty ? "add" : "\(clip.syncs.count) · add"),
+            cell(String(localized: "Sync"), clip.syncHere != nil ? String(localized: "remove") : (clip.syncs.isEmpty ? String(localized: "add") : String(localized: "\(clip.syncs.count) · add")),
                  set: clip.syncHere != nil,
-                 help: "Add a sync point at clip \(index == 0 ? "A" : "B")'s playhead, or remove the one there (S)",
+                 help: String(localized: "Add a sync point at clip \(index == 0 ? "A" : "B")'s playhead, or remove the one there (S)"),
                  clear: nil) { clip.toggleSync() }
                 .disabled(locked)
             line
-            cell("Speed", speedText((speed * 100).rounded() / 100) + (clip.speed == nil ? "" : " ✎"), set: clip.speed != nil,
-                 help: clip.speed == nil ? "Automatic: matched to the other clip. Tap to set it yourself." : "Set by hand. Tap, then Auto, to match the other clip again.",
+            cell(String(localized: "Speed"), speedText((speed * 100).rounded() / 100) + (clip.speed == nil ? "" : " ✎"), set: clip.speed != nil,
+                 help: clip.speed == nil ? String(localized: "Automatic: matched to the other clip. Tap to set it yourself.") : String(localized: "Set by hand. Tap, then Auto, to match the other clip again."),
                  clear: clip.speed != nil ? { clip.speed = nil } : nil) { speedFor = index }
                 .popover(isPresented: Binding(get: { speedFor == index }, set: { if !$0 { speedFor = nil } }), arrowEdge: .trailing) {
                     VStack(spacing: 8) {
@@ -275,14 +275,17 @@ struct SegmentSidebar: View {
                       action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(spacing: 2) {
+                // (Shrinks rather than wraps or cuts off: some languages' words are long for four columns.)
                 Text(name.uppercased())
                     .font(.system(size: 8.5, weight: .bold)).kerning(0.5)
                     .foregroundStyle(Theme.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
                 Text(value)
                     .font(.system(size: 12, weight: .semibold).monospacedDigit())
                     .foregroundStyle(set ? Theme.accent : .white)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.75)
+                    .minimumScaleFactor(0.6)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .contentShape(Rectangle())
@@ -312,7 +315,7 @@ struct SegmentSidebar: View {
         let frames = comparison.drawnFrames
         return VStack(alignment: .leading, spacing: 8) {
             HStack {
-                title("Drawings")
+                title(String(localized: "Drawings"))
                 Spacer()
                 if frames.count > 1 {
                     RoundButton(symbol: "chevron.left", size: 24) { comparison.goToDrawing(next: false) }
@@ -332,7 +335,7 @@ struct SegmentSidebar: View {
                                 .frame(width: 64, height: 40)
                                 .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("\(frame.clip == 0 ? "A" : "B") · \(frame.everyFrame ? "every frame" : clock(frame.time))\(frame.overlay ? " · overlay" : "")")
+                                Text("\(frame.clip == 0 ? "A" : "B") · \(frame.everyFrame ? String(localized: "every frame") : clock(frame.time))\(frame.overlay ? String(localized: " · overlay") : "")")
                                     .font(.system(size: 12, weight: .medium).monospacedDigit())
                                 HStack(spacing: 3) {
                                     ForEach(Array(frame.colors.prefix(6).enumerated()), id: \.offset) { _, color in
@@ -365,7 +368,7 @@ struct SegmentSidebar: View {
         let kept = comparison.segment.snapshots ?? []
         if !kept.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
-                title("Snapshots")
+                title(String(localized: "Snapshots"))
                 ForEach(Array(kept.enumerated()), id: \.element.id) { number, snapshot in
                     HStack(spacing: 8) {
                         Group {
@@ -430,7 +433,7 @@ struct SegmentSidebar: View {
     private func save(_ snapshot: Snapshot, number: Int) {
         Task {
             guard let data = await Report.png(of: snapshot, comparison: comparison) else { return }
-            savingName = "\(comparison.segment.name) snapshot \(number)"
+            savingName = String(localized: "\(comparison.segment.name) snapshot \(number)")
             saving = PictureFile(data: data)
         }
     }
@@ -444,7 +447,7 @@ struct SegmentSidebar: View {
             .sorted { ($0.clip, $0.note.time) < ($1.clip, $1.note.time) }
         return VStack(alignment: .leading, spacing: 8) {
             HStack {
-                title("Notes on frames")
+                title(String(localized: "Notes on frames"))
                 Spacer()
                 Button {
                     // A new note on the frame the clip shows, written right here.
@@ -465,7 +468,7 @@ struct SegmentSidebar: View {
                         .font(.system(size: 11, weight: .semibold).monospacedDigit())
                         .foregroundStyle(Color(red: 1, green: 0.84, blue: 0.2))
                     if editing == .note(item.note.id) {
-                        inlineField(.note(item.note.id), prompt: "What to notice here", size: 12)
+                        inlineField(.note(item.note.id), prompt: String(localized: "What to notice here"), size: 12)
                     } else {
                         Text(item.note.text).font(.system(size: 12)).multilineTextAlignment(.leading)
                         Spacer(minLength: 0)
@@ -501,7 +504,7 @@ struct SegmentSidebar: View {
     private var about: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                title("About this segment")
+                title(String(localized: "About this segment"))
                 Spacer()
                 if editing == .about {
                     Button("Done") { commit() }
@@ -523,7 +526,7 @@ struct SegmentSidebar: View {
                     .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Theme.accent.opacity(0.8)))
             } else {
                 let written = comparison.segment.notes ?? ""
-                Text(written.isEmpty ? "Double-click to write what to look at in this segment." : written)
+                Text(written.isEmpty ? String(localized: "Double-click to write what to look at in this segment.") : written)
                     .font(.system(size: 12))
                     .foregroundStyle(written.isEmpty ? Theme.secondary : .white)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -541,7 +544,7 @@ struct SegmentSidebar: View {
     private var takes: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
-                title("Takes over time")
+                title(String(localized: "Takes over time"))
                 Spacer()
                 ForEach(0..<2, id: \.self) { index in
                     if comparison.clips[index].isLoaded {

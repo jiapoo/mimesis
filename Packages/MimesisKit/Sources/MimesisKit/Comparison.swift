@@ -177,10 +177,10 @@ public final class Comparison {
         public var id: Self { self }
         public var title: String {
             switch self {
-            case .both: "Both"
-            case .left: "Left"
-            case .right: "Right"
-            case .overlay: "Overlay"
+            case .both: String(localized: "Both")
+            case .left: String(localized: "Left")
+            case .right: String(localized: "Right")
+            case .overlay: String(localized: "Overlay")
             }
         }
     }
@@ -211,7 +211,7 @@ public final class Comparison {
     public internal(set) var takes: [[Take]] = [[], []]
     public internal(set) var takeIndex = [0, 0]
     /// The segments (see `Segment`); the clips show `segments[segmentIndex]`.
-    public internal(set) var segments = [Segment(name: "Segment 1")]
+    public internal(set) var segments = [Segment(name: String(localized: "Segment 1"))]
     public internal(set) var segmentIndex = 0
     public var layout: Layout = .both {
         didSet {

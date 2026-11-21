@@ -45,7 +45,7 @@ public struct LibraryClip: Codable, Identifiable {
 public final class Library {
     public private(set) var clips: [LibraryClip] = []
     /// Suggested tags; labels the user makes are added after them.
-    public static let presets = ["Good", "Mistake", "Key moment", "To review"]
+    public static let presets = [String(localized: "Good"), String(localized: "Mistake"), String(localized: "Key moment"), String(localized: "To review")]
 
     private let file: URL
 

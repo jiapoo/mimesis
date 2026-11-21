@@ -77,9 +77,9 @@ struct StroMotionView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("StroMotion").font(.title2.weight(.semibold))
-            Text("Clip \(letter)'s person at \(count) moments across \(bySyncs ? "its sync points" : "its trim") "
-                 + "(\(clock(chosenSpan.lowerBound)) – \(clock(chosenSpan.upperBound))), in one picture. "
-                 + "Pick a person in the overlay if others are in frame.")
+            Text(bySyncs
+                 ? "Clip \(letter)'s person at \(count) moments across its sync points (\(clock(chosenSpan.lowerBound)) – \(clock(chosenSpan.upperBound))), in one picture. Pick a person in the overlay if others are in frame."
+                 : "Clip \(letter)'s person at \(count) moments across its trim (\(clock(chosenSpan.lowerBound)) – \(clock(chosenSpan.upperBound))), in one picture. Pick a person in the overlay if others are in frame.")
                 .font(.callout).foregroundStyle(.secondary)
             if clip.syncs.count >= 2 {
                 Picker("Span", selection: $bySyncs) {
@@ -147,7 +147,7 @@ struct StroMotionView: View {
             if clip.cutout == nil || clip.cutout?.state != .ready { clip.makeCutout() }
             while let cutout = clip.cutout, case .preparing = cutout.state { try? await Task.sleep(for: .milliseconds(200)) }
             guard let cutout = clip.cutout, cutout.state == .ready else {
-                if case .failed(let why)? = clip.cutout?.state { problem = why } else { problem = "Nobody could be found." }
+                if case .failed(let why)? = clip.cutout?.state { problem = why } else { problem = String(localized: "Nobody could be found.") }
                 return
             }
             let wanted = chosenSpan

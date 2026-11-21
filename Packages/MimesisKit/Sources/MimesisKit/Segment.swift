@@ -193,7 +193,7 @@ extension Comparison {
         storeSegment()
         var copy = segments[segmentIndex]
         copy.id = UUID()
-        copy.name += " copy"
+        copy.name += String(localized: " copy")
         segments.insert(copy, at: segmentIndex + 1)
         loadSegment(segmentIndex + 1)
     }
@@ -206,7 +206,7 @@ extension Comparison {
     public func deleteSegment() {
         drawing = nil
         if segments.count == 1 {
-            segments = [Segment(name: "Segment 1")]
+            segments = [Segment(name: String(localized: "Segment 1"))]
             loadSegment(0)
         } else {
             segments.remove(at: segmentIndex)
@@ -217,8 +217,8 @@ extension Comparison {
 
     private var nextSegmentName: String {
         var number = segments.count + 1
-        while segments.contains(where: { $0.name == "Segment \(number)" }) { number += 1 }
-        return "Segment \(number)"
+        while segments.contains(where: { $0.name == String(localized: "Segment \(number)") }) { number += 1 }
+        return String(localized: "Segment \(number)")
     }
 
     /// Another video in a clip: its share of every segment starts afresh.
@@ -232,7 +232,7 @@ extension Comparison {
 
     /// Everything back to one empty segment (a new comparison).
     public func resetSegments() {
-        segments = [Segment(name: "Segment 1")]
+        segments = [Segment(name: String(localized: "Segment 1"))]
         segmentIndex = 0
         takes = [[], []]
         takeIndex = [0, 0]

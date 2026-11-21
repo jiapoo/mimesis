@@ -30,6 +30,8 @@ struct ClipPane: View {
     var onRevert: () -> Void = {}
     /// Its own Draw button: start or stop drawing on this clip.
     let onDraw: () -> Void
+    /// "Mimesis" on the picture (the free version, on one clip of the two).
+    var showsMark = false
 
     /// How far a finger moves for one frame.
     static let pointsPerFrame: CGFloat = 12
@@ -208,6 +210,10 @@ struct ClipPane: View {
             .padding(10)
             }
         }
+        // The free version's mark, as a channel's name on a broadcast.
+        .overlay {
+            if showsMark { MimesisMark(videoSize: clip.engine.videoSize) }
+        }
         // Notes pinned around this moment, above the timeline.
         .overlay(alignment: .bottomLeading) {
             VStack(alignment: .leading, spacing: 4) {
@@ -340,7 +346,7 @@ struct ClipPane: View {
         switch clip.poseTrack?.state {
         case .preparing(let done)? where clip.showsSkeleton: "Finding the body… \(Int(done * 100)) %"
         case .failed(let why)? where clip.showsSkeleton: why
-        default: "Skeleton: follow the body through this clip's stretch and show its joints and their angles (B)"
+        default: String(localized: "Skeleton: follow the body through this clip's stretch and show its joints and their angles (B)")
         }
     }
 
@@ -408,8 +414,8 @@ struct ClipTools: View {
     /// "Add sync", or "Add sync (2)" once there are some.
     private var syncLabel: String {
         switch clip.syncs.count {
-        case 0: return "Add sync"
-        default: return "Add sync (\(clip.syncs.count))"
+        case 0: return String(localized: "Add sync")
+        default: return String(localized: "Add sync (\(clip.syncs.count))")
         }
     }
 
@@ -433,8 +439,7 @@ struct ClipTools: View {
         .buttonStyle(ChipStyle(active: clip.syncHere != nil))
         .disabled(linked)
         .fixedSize()
-        .help("Mark this frame as a sync point inside the segment, or unmark it (S): a moment such as contact. "
-            + "Sync points pair up in order with the other clip's, so each phase between them lines up too.")
+        .help("Mark this frame as a sync point inside the segment, or unmark it (S): a moment such as contact. Sync points pair up in order with the other clip's, so each phase between them lines up too.")
     }
 
     /// In or Out: tap to set it at the playhead; once set, its ✕ clears it.
@@ -474,15 +479,15 @@ struct ClipTools: View {
         HStack(spacing: 6) {
             // In / Out show where the trim is once it's set, with an ✕ to take just that one away.
             trimButton(
-                label: clip.trimStart > 0 ? "In \(short(clip.trimStart))" : "In",
+                label: clip.trimStart > 0 ? String(localized: "In \(short(clip.trimStart))") : String(localized: "In"),
                 set: clip.trimStart > 0,
-                help: "This clip's start in the segment: the playhead ([). The two starts line up.",
+                help: String(localized: "This clip's start in the segment: the playhead ([). The two starts line up."),
                 action: clip.setTrimStart,
                 clear: clip.clearTrimStart)
             trimButton(
-                label: clip.trimEnd.map { "Out \(short($0))" } ?? "Out",
+                label: clip.trimEnd.map { String(localized: "Out \(short($0))") } ?? String(localized: "Out"),
                 set: clip.trimEnd != nil,
-                help: "This clip's end in the segment: the playhead (]). With an end on both clips, the shorter stretch is slowed to finish with the longer.",
+                help: String(localized: "This clip's end in the segment: the playhead (]). With an end on both clips, the shorter stretch is slowed to finish with the longer."),
                 action: clip.setTrimEnd,
                 clear: clip.clearTrimEnd)
 

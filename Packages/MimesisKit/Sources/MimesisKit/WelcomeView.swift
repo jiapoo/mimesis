@@ -182,8 +182,8 @@ struct WelcomeView: View {
     }
 
     @ViewBuilder private var slots: some View {
-        slot(0, title: "Clip A", detail: "Yours")
-        slot(1, title: "Clip B", detail: "The one to learn from")
+        slot(0, title: String(localized: "Clip A"), detail: String(localized: "Yours"))
+        slot(1, title: String(localized: "Clip B"), detail: String(localized: "The one to learn from"))
     }
 
     private func slot(_ side: Int, title: String, detail: String) -> some View {

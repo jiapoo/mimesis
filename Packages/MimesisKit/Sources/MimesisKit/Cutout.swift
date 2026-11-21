@@ -91,12 +91,12 @@ public final class Cutout {
                 self.labels = result.labels
                 self.frameRate = result.frameRate
                 self.hasSeveral = result.labels.values.contains { Set($0).subtracting([0]).count > 1 }
-                self.state = result.masks.isEmpty ? .failed("Nobody was found to cut out.") : .ready
+                self.state = result.masks.isEmpty ? .failed(String(localized: "Nobody was found to cut out.")) : .ready
                 if let pickAt { _ = self.pick(at: pickAt.time, point: pickAt.point) }
             } catch is CancellationError {
             } catch {
                 #if targetEnvironment(simulator)
-                self?.state = .failed("Cutting out needs a real iPhone or iPad (Vision can't run it in Simulator).")
+                self?.state = .failed(String(localized: "Cutting out needs a real iPhone or iPad (Vision can't run it in Simulator)."))
                 #else
                 self?.state = .failed(error.localizedDescription)
                 #endif

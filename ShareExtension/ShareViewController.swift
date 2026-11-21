@@ -14,7 +14,7 @@ final class ShareViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = UIColor(red: 0.047, green: 0.051, blue: 0.063, alpha: 1)
-        status.text = "Sending to Mimesis…"
+        status.text = String(localized: "Sending to Mimesis…")
         status.textColor = .white
         status.font = .systemFont(ofSize: 17, weight: .semibold)
         status.numberOfLines = 0
@@ -38,7 +38,7 @@ final class ShareViewController: UIViewController {
                 .containerURL(forSecurityApplicationGroupIdentifier: Self.group)?
                 .appendingPathComponent("Inbox", isDirectory: true)
         else {
-            finish("Mimesis takes videos: share one or two.")
+            finish(String(localized: "Mimesis takes videos: share one or two."))
             return
         }
         try? FileManager.default.createDirectory(at: inbox, withIntermediateDirectories: true)
@@ -49,13 +49,13 @@ final class ShareViewController: UIViewController {
             if await copy(provider, to: inbox, named: "\(batch)-\(index)") { saved += 1 }
         }
         guard saved > 0 else {
-            finish("Couldn't read the video.")
+            finish(String(localized: "Couldn't read the video."))
             return
         }
         if openMimesis() {
             extensionContext?.completeRequest(returningItems: nil)
         } else {
-            finish("Sent. Open Mimesis to compare.")
+            finish(String(localized: "Sent. Open Mimesis to compare."))
         }
     }
 

@@ -148,7 +148,7 @@ public final class ComparisonStore {
             note(url)
             return true
         } catch {
-            problem = "Couldn't save the project: \(error.localizedDescription)"
+            problem = String(localized: "Couldn't save the project: \(error.localizedDescription)")
             return false
         }
     }
@@ -221,7 +221,7 @@ public final class ComparisonStore {
         guard let data = try? Data(contentsOf: url.appendingPathComponent("project.json")),
               let state = try? JSONDecoder().decode(ComparisonState.self, from: data) else {
             if accessing { url.stopAccessingSecurityScopedResource() }
-            problem = "“\(url.lastPathComponent)” isn't a Mimesis project, or can't be read."
+            problem = String(localized: "“\(url.lastPathComponent)” isn't a Mimesis project, or can't be read.")
             return false
         }
         // Access is kept while the project is open: its videos play from inside it.
@@ -239,7 +239,7 @@ public final class ComparisonStore {
         guard let url = try? URL(resolvingBookmarkData: recent.bookmark, options: projectResolve, bookmarkDataIsStale: &stale),
               (url.startAccessingSecurityScopedResource() || true),
               FileManager.default.fileExists(atPath: url.appendingPathComponent("project.json").path) else {
-            problem = "“\(recent.name)” has been moved or deleted."
+            problem = String(localized: "“\(recent.name)” has been moved or deleted.")
             forget(recent)
             return false
         }
@@ -255,11 +255,11 @@ public final class ComparisonStore {
     /// Where a recent project is, to read: on the Mac its full path ("~/Documents/Serve.mimesis"); on
     /// iPhone and iPad where it shows in the Files app.
     public func path(of recent: RecentProject) -> String {
-        guard let url = location(of: recent) else { return "Moved or deleted" }
+        guard let url = location(of: recent) else { return String(localized: "Moved or deleted") }
         #if os(macOS)
         return (url.path as NSString).abbreviatingWithTildeInPath
         #else
-        if url.path.hasPrefix(Self.documentsFolder.path) { return "Files › On My \(UIDevice.current.model) › Mimesis › \(url.lastPathComponent)" }
+        if url.path.hasPrefix(Self.documentsFolder.path) { return String(localized: "Files › On My \(UIDevice.current.model) › Mimesis › \(url.lastPathComponent)") }
         return url.deletingLastPathComponent().lastPathComponent + " › " + url.lastPathComponent
         #endif
     }
@@ -284,7 +284,7 @@ public final class ComparisonStore {
             forget(recent)
             return true
         } catch {
-            problem = "Couldn't delete “\(recent.name)”: \(error.localizedDescription)"
+            problem = String(localized: "Couldn't delete “\(recent.name)”: \(error.localizedDescription)")
             return false
         }
     }
@@ -526,7 +526,7 @@ extension Comparison {
             // Whatever a clip that couldn't be opened had is kept; the chosen one goes on the clips.
             loadSegment(segmentIndex)
         } else {
-            segments = [Segment(name: "Segment 1")]
+            segments = [Segment(name: String(localized: "Segment 1"))]
             segmentIndex = 0
             storeSegment()
         }

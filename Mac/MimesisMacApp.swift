@@ -41,9 +41,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         MainActor.assumeIsolated {
             guard MenuRequests.shared.hasUnsaved else { return .terminateNow }
             let alert = NSAlert()
-            alert.messageText = MenuRequests.shared.projectName.map { "Save the changes to “\($0)” before quitting?" }
-                ?? "Save this comparison as a project before quitting?"
-            alert.informativeText = "Changes not saved in a project are lost."
+            alert.messageText = MenuRequests.shared.projectName.map { String(localized: "Save the changes to “\($0)” before quitting?") }
+                ?? String(localized: "Save this comparison as a project before quitting?")
+            alert.informativeText = String(localized: "Changes not saved in a project are lost.")
             alert.addButton(withTitle: "Save")
             alert.addButton(withTitle: "Don't Save")
             alert.addButton(withTitle: "Cancel")

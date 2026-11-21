@@ -22,8 +22,8 @@ enum AlignError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .noFrame(let clip): "Couldn't read \(clip)'s frame."
-        case .noBody(let clip): "No body found in \(clip)'s frame: step to a frame where the whole body shows."
+        case .noFrame(let clip): String(localized: "Couldn't read \(clip)'s frame.")
+        case .noBody(let clip): String(localized: "No body found in \(clip)'s frame: step to a frame where the whole body shows.")
         }
     }
 }
@@ -124,7 +124,7 @@ struct BackgroundMatch: Sendable {
 
 enum BackgroundError: LocalizedError {
     case noMatch
-    var errorDescription: String? { "The backgrounds don't match: are both clips filmed at the same place?" }
+    var errorDescription: String? { String(localized: "The backgrounds don't match: are both clips filmed at the same place?") }
 }
 
 extension Comparison {

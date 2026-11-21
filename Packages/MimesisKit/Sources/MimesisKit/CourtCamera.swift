@@ -51,7 +51,7 @@ final class CourtCamera {
 
     func start() async {
         guard await AVCaptureDevice.requestAccess(for: .video) else {
-            state = .unavailable("Mimesis needs the camera for Live replay: allow it in Settings › Privacy › Camera.")
+            state = .unavailable(String(localized: "Mimesis needs the camera for Live replay: allow it in Settings › Privacy › Camera."))
             return
         }
         #if os(iOS)
@@ -60,7 +60,7 @@ final class CourtCamera {
         let device = AVCaptureDevice.default(for: .video)
         #endif
         guard let device, let input = try? AVCaptureDeviceInput(device: device) else {
-            state = .unavailable("No camera found.")
+            state = .unavailable(String(localized: "No camera found."))
             return
         }
         Self.preferSixty(device)

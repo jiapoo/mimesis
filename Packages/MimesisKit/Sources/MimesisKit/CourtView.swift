@@ -122,7 +122,7 @@ struct CourtView: View {
                 onSave(file, side)
                 dismiss()
             } catch {
-                problem = "Nothing to save yet: wait for the picture to start."
+                problem = String(localized: "Nothing to save yet: wait for the picture to start.")
             }
             saving = false
         }

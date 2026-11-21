@@ -41,7 +41,7 @@ struct LibraryView: View {
             .alert("Clip not found", isPresented: Binding(get: { missing != nil }, set: { if !$0 { missing = nil } })) {
                 Button("OK", role: .cancel) {}
             } message: {
-                Text("\(missing ?? "The clip") has been moved or deleted.")
+                Text("\(missing ?? String(localized: "The clip")) has been moved or deleted.")
             }
         }
         .themedSheet(width: 520, height: 480)
@@ -140,7 +140,7 @@ struct LibraryView: View {
             Button("B") { open(clip, side: 1, at: time) }
         }
         .buttonStyle(.bordered)
-        .help("Open as clip A or clip B" + (time.map { " at \(clock($0))" } ?? ""))
+        .help(time.map { String(localized: "Open as clip A or clip B at \(clock($0))") } ?? String(localized: "Open as clip A or clip B"))
     }
 
     private func open(_ clip: LibraryClip, side: Int, at time: Double?) {

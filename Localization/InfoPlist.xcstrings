@@ -1,0 +1,78 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "NSCameraUsageDescription": {
+      "comment": "Why Live replay needs the camera",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live-Replay zeigt die Kamera ein paar Sekunden verzögert, damit du siehst, was du gerade gemacht hast."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live replay shows the camera a few seconds late, so you can watch what you just did."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Repetición en directo muestra la cámara con unos segundos de retraso, para que veas lo que acabas de hacer."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le replay en direct affiche la caméra avec quelques secondes de retard, pour que vous voyiez ce que vous venez de faire."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il Replay dal vivo mostra la fotocamera con qualche secondo di ritardo, così vedi cosa hai appena fatto."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ライブリプレイはカメラの映像を数秒遅れて表示するので、今の動きをすぐに見返せます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "라이브 리플레이는 카메라 화면을 몇 초 늦게 보여 주므로 방금 한 동작을 볼 수 있습니다."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Replay ao vivo mostra a câmera com alguns segundos de atraso, para você ver o que acabou de fazer."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Повтор вживую показывает изображение с камеры с задержкой в несколько секунд, чтобы вы видели, что только что сделали."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "实时回放会把摄像头画面延迟几秒显示，让你看到自己刚才的动作。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "即時重播會把相機畫面延遲幾秒顯示，讓你看到自己剛才的動作。"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

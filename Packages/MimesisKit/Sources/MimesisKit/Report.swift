@@ -24,8 +24,8 @@ enum Report {
             let key = (time * 100).rounded() / 100
             if !(byTime[key] ?? []).contains(label) { byTime[key, default: []].append(label) }
         }
-        for (index, sync) in part.syncs.enumerated() { add(sync, "Sync \(index + 1)") }
-        for drawing in part.drawings where !drawing.always && drawing.overlay != true { add(drawing.time, "Drawing") }
+        for (index, sync) in part.syncs.enumerated() { add(sync, String(localized: "Sync \(index + 1)")) }
+        for drawing in part.drawings where !drawing.always && drawing.overlay != true { add(drawing.time, String(localized: "Drawing")) }
         for note in part.notes ?? [] { add(note.time, "“\(note.text)”") }
         return byTime.keys.sorted().prefix(24).map { KeyFrame(clip: clip, time: $0, labels: byTime[$0]!) }
     }
@@ -78,8 +78,8 @@ enum Report {
                 let clip = comparison.clips[at]
                 let end = part.trimEnd ?? clip.engine.duration
                 var line = "\(at == 0 ? "A" : "B"): \(short(part.trimStart)) – \(short(end)) s (\(short(end - part.trimStart)) s)"
-                for (number, sync) in part.syncs.enumerated() { line += "   sync \(number + 1) at +\(short(sync - part.trimStart)) s" }
-                if let speed = part.speed { line += "   speed \(speedText(speed))" }
+                for (number, sync) in part.syncs.enumerated() { line += String(localized: "   sync \(number + 1) at +\(short(sync - part.trimStart)) s") }
+                if let speed = part.speed { line += String(localized: "   speed \(speedText(speed))") }
                 text(line, size: 10, gray: 0.25)
             }
             if let notes = segment.notes, !notes.isEmpty {
@@ -156,11 +156,11 @@ enum Report {
                 context.draw(image, in: CGRect(origin: .zero, size: shown))
                 context.restoreGState()
                 y += shown.height + 4
-                text("Snapshot \(number + 1) · \(snapshot.label)", size: 9.5, gray: 0.2)
+                text(String(localized: "Snapshot \(number + 1) · \(snapshot.label)"), size: 9.5, gray: 0.2)
                 y += 12
             }
             if frames.isEmpty && snapshots.isEmpty {
-                text("No key frames yet: add a sync point, a drawing or a note on a frame, or take a snapshot.", size: 10, gray: 0.5)
+                text(String(localized: "No key frames yet: add a sync point, a drawing or a note on a frame, or take a snapshot."), size: 10, gray: 0.5)
             }
             y += 16
         }
@@ -324,7 +324,7 @@ struct ReportView: View {
             do {
                 file = try await Report.make(comparison, title: title) { progress = $0 }
             } catch {
-                problem = "Couldn't make the report: \(error.localizedDescription)"
+                problem = String(localized: "Couldn't make the report: \(error.localizedDescription)")
             }
             progress = nil
         }
@@ -343,7 +343,7 @@ struct ReportView: View {
             NSWorkspace.shared.activateFileViewerSelecting([url])
             dismiss()
         } catch {
-            problem = "Couldn't save the report: \(error.localizedDescription)"
+            problem = String(localized: "Couldn't save the report: \(error.localizedDescription)")
         }
     }
     #endif

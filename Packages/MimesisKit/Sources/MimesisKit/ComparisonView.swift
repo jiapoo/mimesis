@@ -493,10 +493,10 @@ public struct ComparisonView: View {
                     if let movie = try await item.loadTransferable(type: PickedMovie.self) {
                         open(movie.url, in: index)
                     } else {
-                        openProblem = "Photos didn't hand over the video. If it's in iCloud, wait for it to download and try again."
+                        openProblem = String(localized: "Photos didn't hand over the video. If it's in iCloud, wait for it to download and try again.")
                     }
                 } catch {
-                    openProblem = "Couldn't get the video from Photos: \(error.localizedDescription)"
+                    openProblem = String(localized: "Couldn't get the video from Photos: \(error.localizedDescription)")
                 }
             }
         }
@@ -910,7 +910,7 @@ public struct ComparisonView: View {
 
     private func saved() {
         markSaved()
-        say("Saved “\(store.currentName ?? "")”")
+        say(String(localized: "Saved “\(store.currentName ?? "")”"))
     }
 
     /// New, or Close: both clips closed, no project. With something not saved, asks first.
@@ -1000,7 +1000,7 @@ public struct ComparisonView: View {
         panel.allowedContentTypes = [.mimesisProject]
         panel.canChooseDirectories = false
         panel.treatsFilePackagesAsDirectories = false
-        panel.title = "Open Project"
+        panel.title = String(localized: "Open Project")
         guard panel.runModal() == .OK, let url = panel.url else { return }
         Task { await store.open(url, into: comparison) }
         #else
@@ -1179,7 +1179,7 @@ public struct ComparisonView: View {
         let layout = wide ? AnyLayout(HStackLayout(spacing: 1)) : AnyLayout(VStackLayout(spacing: 1))
         return layout {
             if comparison.layout == .overlay {
-                OverlayPane(comparison: comparison, showsBadge: phone)
+                OverlayPane(comparison: comparison, showsBadge: phone, showsMark: !ProStore.shared.isPro)
                     .dropDestination(for: URL.self) { urls, _ in
                         let videos = urls.filter { isVideo($0) || isProject($0) }
                         guard !videos.isEmpty else { return false }
@@ -1211,7 +1211,9 @@ public struct ComparisonView: View {
                     onRevert: { revert(index) },
                     onDraw: {
                         comparison.drawing = comparison.drawing == .clip(index) ? nil : .clip(index)
-                    })
+                    },
+                    // The free version's mark: on one clip, the right one (the lower one, stacked).
+                    showsMark: !ProStore.shared.isPro && index == paneIndices.last(where: { comparison.clips[$0].isLoaded }))
                 // A pane belongs to its video: after A and B are swapped it's made again, so its player
                 // view shows the right video (kept, it stayed on the old one and went black).
                 .id(ObjectIdentifier(comparison.clips[index]))
@@ -1275,8 +1277,8 @@ public struct ComparisonView: View {
             let image = SnapshotCapture.take(picture, size: size, box: box, scale: displayScale)
             comparison.addSnapshot(image: image)
             withAnimation(.easeOut(duration: 0.15)) { snapBox = nil }
-            say(image == nil ? "Snapshot kept, without its picture: it couldn't be made"
-                : "Snapshot kept: it's in the sidebar, and in the report")
+            say(image == nil ? String(localized: "Snapshot kept, without its picture: it couldn't be made")
+                : String(localized: "Snapshot kept: it's in the sidebar, and in the report"))
         }
     }
 
@@ -1291,17 +1293,17 @@ extension Comparison.Layout {
         case .both: "A | B"
         case .left: "A"
         case .right: "B"
-        case .overlay: "Overlay"
+        case .overlay: String(localized: "Overlay")
         }
     }
 
     /// What it shows, for its button's tooltip.
     var explanation: String {
         switch self {
-        case .both: "Both clips, side by side (⌘1)"
-        case .left: "Clip A only, the whole window (⌘2)"
-        case .right: "Clip B only, the whole window (⌘3)"
-        case .overlay: "One clip over the other, see-through (needs both clips) (⌘4)"
+        case .both: String(localized: "Both clips, side by side (⌘1)")
+        case .left: String(localized: "Clip A only, the whole window (⌘2)")
+        case .right: String(localized: "Clip B only, the whole window (⌘3)")
+        case .overlay: String(localized: "One clip over the other, see-through (needs both clips) (⌘4)")
         }
     }
 
@@ -1436,8 +1438,8 @@ struct SavedComparisonsView: View {
     }
 
     #if os(macOS)
-    private let deleteLabel = "Move to Trash"
-    private let deleteMessage = "The project file, with its copies of the videos, goes to the Trash. The original videos aren't touched."
+    private let deleteLabel = String(localized: "Move to Trash")
+    private let deleteMessage = String(localized: "The project file, with its copies of the videos, goes to the Trash. The original videos aren't touched.")
 
     private func reveal(_ item: RecentProject) {
         guard let url = store.location(of: item) else { return }
@@ -1445,7 +1447,7 @@ struct SavedComparisonsView: View {
     }
     #else
     private let deleteLabel = "Delete"
-    private let deleteMessage = "The project file, with its copies of the videos, is deleted. The original videos aren't touched."
+    private let deleteMessage = String(localized: "The project file, with its copies of the videos, is deleted. The original videos aren't touched.")
     #endif
 }
 

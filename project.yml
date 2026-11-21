@@ -21,13 +21,14 @@ packages:
   # To change the package itself, see the README in github.com/jiapoo/apple-media.
   AreteMedia:
     url: https://github.com/jiapoo/apple-media
-    exactVersion: 1.17.0
+    exactVersion: 1.18.0
 targets:
   MimesisMac:
     type: application
     scheme: {}
     platform: macOS
-    sources: [Mac]
+    # Localization: the strings in every language (Localizable) and the camera prompt (InfoPlist).
+    sources: [Mac, Localization]
     dependencies:
       - package: MimesisKit
     info:
@@ -36,6 +37,8 @@ targets:
         CFBundleDisplayName: Mimesis
         LSApplicationCategoryType: public.app-category.sports
         NSCameraUsageDescription: Live replay shows the camera a few seconds late, so you can watch what you just did.
+        # The languages the app is in (as Localization/ has them), for the App Store and the system.
+        CFBundleLocalizations: [en, zh-Hans, zh-Hant, ja, ko, es, fr, de, pt-BR, it, ru]
         # Mimesis opens videos from other apps: Share › Mimesis on iPhone and iPad, Open With and the Dock icon on the Mac.
         CFBundleDocumentTypes:
           - CFBundleTypeName: Video
@@ -71,7 +74,7 @@ targets:
     type: application
     scheme: {}
     platform: iOS
-    sources: [iOS]
+    sources: [iOS, Localization]
     dependencies:
       - package: MimesisKit
       # Share › Mimesis in every app's Share sheet.
@@ -87,6 +90,8 @@ targets:
         UISupportedInterfaceOrientations~ipad: [UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
         UIFileSharingEnabled: true
         NSCameraUsageDescription: Live replay shows the camera a few seconds late, so you can watch what you just did.
+        # The languages the app is in (as Localization/ has them), for the App Store and the system.
+        CFBundleLocalizations: [en, zh-Hans, zh-Hant, ja, ko, es, fr, de, pt-BR, it, ru]
         # Mimesis opens videos from other apps: Share › Mimesis on iPhone and iPad, Open With and the Dock icon on the Mac.
         CFBundleDocumentTypes:
           - CFBundleTypeName: Video
@@ -128,7 +133,9 @@ targets:
   MimesisShare:
     type: app-extension
     platform: iOS
-    sources: [ShareExtension]
+    sources:
+      - ShareExtension
+      - Localization/Localizable.xcstrings
     info:
       path: ShareExtension/Info.plist
       properties:

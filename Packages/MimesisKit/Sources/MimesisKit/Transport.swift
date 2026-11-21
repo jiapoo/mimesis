@@ -396,7 +396,7 @@ struct Transport: View {
     private var linkedStatus: String {
         var parts = [comparison.segment.name, clock(max(0, comparison.position - comparison.range.lowerBound))]
         if let section = comparison.section {
-            parts.append("phase \(section.index) of \(section.count)")
+            parts.append(String(localized: "phase \(section.index) of \(section.count)"))
         }
         // Whichever clip is being slowed (or sped up) to match, and by how much, where the playhead is.
         for (letter, clip) in zip(["A", "B"], comparison.clips) {
