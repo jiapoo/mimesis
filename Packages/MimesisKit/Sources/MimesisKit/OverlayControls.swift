@@ -43,6 +43,7 @@ final class OverlayUI {
 
     /// Lines the top clip up with the one underneath: by the bodies (hips and feet), or the backgrounds.
     func align(_ comparison: Comparison, byBackground: Bool = false) {
+        guard ProStore.shared.allows(.cutout) else { return }
         guard comparison.overlayDrawings == 0 else {
             moving(comparison) { [weak self] in self?.align(comparison, byBackground: byBackground) }
             return
@@ -206,7 +207,7 @@ struct OverlayControls: View {
     @ViewBuilder private var cutoutAction: some View {
         switch top.cutout?.state {
         case nil:
-            Button { top.makeCutout() } label: {
+            Button { if ProStore.shared.allows(.cutout) { top.makeCutout() } } label: {
                 Label(compact ? "" : "Cut out", systemImage: "person.crop.rectangle")
                     .padding(.horizontal, 8).frame(height: 28).contentShape(Rectangle())
             }
@@ -246,7 +247,7 @@ struct OverlayControls: View {
                 .help("Remove the cutout: \(topLetter) goes back to how it was")
             }
         case .failed(let why)?:
-            Button { top.makeCutout() } label: {
+            Button { if ProStore.shared.allows(.cutout) { top.makeCutout() } } label: {
                 Label(compact ? "" : "Try again", systemImage: "exclamationmark.triangle")
                     .padding(.horizontal, 8).frame(height: 28).contentShape(Rectangle())
             }

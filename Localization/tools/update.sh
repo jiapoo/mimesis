@@ -31,4 +31,4 @@ for l, keys in todo.items():
 PY
 echo "Text that can't be translated as written:"
 python3 Localization/tools/coverage.py "$OUT" Packages/MimesisKit/Sources/MimesisKit/*.swift Mac/*.swift iOS/*.swift ShareExtension/*.swift \
-    | grep -v "MaskLabView\|MaskProbe\|Helvetica\|'Application'\|'Left'\|'Right'" || echo "  none"
+    | grep -v "MaskLabView\|MaskProbe\|Helvetica\|'Application'\|'Left'\|'Right'\|'Mimesis Pro'" || echo "  none"

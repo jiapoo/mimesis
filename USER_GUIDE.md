@@ -32,6 +32,7 @@ This guide goes from your first two clips to the advanced tools. If you only rea
 20. [Filming tips](#filming-tips)
 21. [Worked example: yours against a reference](#worked-example-yours-against-a-reference)
 22. [Good to know](#good-to-know)
+23. [Free and Mimesis Pro](#free-and-mimesis-pro)
 
 ---
 
@@ -635,3 +636,33 @@ You're left-handed; the person in the reference video is right-handed.
   until then, use Share › Mimesis there, one video at a time.
 - Not yet tried on real devices: Live replay, the cutout and auto-align on iPhone/iPad, iCloud sync
   between two devices. See [ROADMAP.md](ROADMAP.md) for everything done and still to do.
+
+---
+
+## Free and Mimesis Pro
+
+Mimesis is free, with no time limit: comparing two clips, In/Out, sync points with each phase lined up, linked
+play, slow motion, mirror, zoom, side by side and the see-through overlay, every drawing tool and angles in
+degrees, notes on frames, snapshots, segments, the library and tags, projects, live replay, and exporting videos
+and snapshot pictures.
+
+The free version shows **Mimesis** on one video, as a channel puts its name on a broadcast: bottom right of
+the right-hand clip (the lower one when they're stacked, the picture in the overlay). It stays put when you zoom.
+Exported videos and saved snapshot pictures carry it in the same place; snapshots themselves are kept without it,
+so after buying Pro, saving one again gives a clean picture.
+
+**Mimesis Pro** is one purchase, not a subscription, on all your Apple devices with the same Apple ID, and shared
+with your family (Family Sharing). It adds:
+
+- the person **cut out** over the other clip: pick the player, the soft box, the tint, lining up the bodies or
+  the backgrounds;
+- **StroMotion**;
+- the **skeleton** with its joint angles, and the A-against-B graphs;
+- the **PDF report**;
+- **takes**: progress over time;
+- exports and pictures **without the mark**.
+
+Tapping any of these in the free version shows what Pro adds, its price in your currency, **Buy** and **Restore
+Purchases**. Mimesis Pro and Restore Purchases are also in the **Mimesis** menu on the Mac and in the **⋯** menu on
+iPhone and iPad. Opening and saving projects is never limited.
+

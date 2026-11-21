@@ -92,7 +92,7 @@ public struct ComparisonView: View {
                 HStack(spacing: 0) {
                 if showsSidebar && !phone {
                     SegmentSidebar(comparison: comparison, onClose: { withAnimation(.easeOut(duration: 0.2)) { showsSidebar = false } },
-                                   onAddTake: { side in takeSide = side; importing = side })
+                                   onAddTake: { side in if ProStore.shared.allows(.takes) { takeSide = side; importing = side } })
                         .frame(width: sidebarWidth)
                         // Drag its right edge to make it wider or narrower.
                         .overlay(alignment: .trailing) { SidebarEdge(width: $sidebarWidth) }
@@ -199,7 +199,7 @@ public struct ComparisonView: View {
                 .overlay(alignment: .leading) {
                     if showsSidebar && phone {
                         SegmentSidebar(comparison: comparison, onClose: { withAnimation(.easeOut(duration: 0.2)) { showsSidebar = false } },
-                                   onAddTake: { side in takeSide = side; importing = side })
+                                   onAddTake: { side in if ProStore.shared.allows(.takes) { takeSide = side; importing = side } })
                             .frame(width: 300)
                             .shadow(color: .black.opacity(0.5), radius: 12)
                             .transition(.move(edge: .leading))
@@ -445,6 +445,8 @@ public struct ComparisonView: View {
         #else
         .sheet(item: $editing) { target in editor(target).frame(minWidth: 860, minHeight: 620) }
         #endif
+        // The Pro sheet: a Pro feature tapped in the free version, or Mimesis Pro from the menu.
+        .modifier(ProSheets())
         .sheet(isPresented: $reporting) {
             ReportView(comparison: comparison, title: store.currentName ?? defaultName)
         }
@@ -666,6 +668,12 @@ public struct ComparisonView: View {
                     Label("Open recent", systemImage: "clock.arrow.circlepath")
                 }
                 Button("Recent projects…", systemImage: "list.bullet.rectangle") { browsing = true }
+                Divider()
+                // Mimesis Pro, and Restore Purchases (App Review looks for it).
+                Button(ProStore.shared.isPro ? "Mimesis Pro ✓" : "Mimesis Pro…", systemImage: "star") { ProStore.shared.showingPro = true }
+                Button("Restore Purchases", systemImage: "arrow.clockwise") {
+                    Task { await ProStore.shared.restore(); ProStore.shared.showingPro = true }
+                }
                 #if os(macOS)
                 if let url = store.currentURL {
                     Button("Show “\(store.currentName ?? "")” in Finder", systemImage: "magnifyingglass") {
@@ -689,7 +697,7 @@ public struct ComparisonView: View {
                 Button("Export video…", systemImage: "film") { exporting = true }
                     .disabled(!comparison.canLink)
                     .shortcut("e", [.command])
-                Button("Report (PDF)…", systemImage: "doc.richtext") { reporting = true }
+                Button("Report (PDF)…", systemImage: "doc.richtext") { if ProStore.shared.allows(.report) { reporting = true } }
                     .disabled(!anyLoaded)
                 #if DEBUG
                 Divider()
@@ -846,7 +854,7 @@ public struct ComparisonView: View {
             #endif
         case .library: showingLibrary = true
         case .liveReplay: court = true
-        case .report: if anyLoaded { reporting = true }
+        case .report: if anyLoaded, ProStore.shared.allows(.report) { reporting = true }
         case .maskTest: maskTest = true
         case .saveThenQuit:
             #if os(macOS)
@@ -1119,6 +1127,8 @@ public struct ComparisonView: View {
             // B: the skeleton, on the selected clip (both while linked).
             key("b") {
                 let clips = comparison.linked ? comparison.clips.filter(\.isLoaded) : [comparison.focused].compactMap { $0 }
+                // (Turning it off is always allowed; on is Pro.)
+                guard clips.contains(where: \.showsSkeleton) || ProStore.shared.allows(.skeleton) else { return }
                 clips.forEach { $0.toggleSkeleton() }
             }
             // ⌥L: loop, or stop at the end.

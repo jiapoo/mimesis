@@ -90,6 +90,7 @@ struct AngleGraph: View {
                 ProgressView(value: tracking) { Text("Finding the body… \(Int(tracking * 100)) %").font(.system(size: 11)) }
             } else if !tracked {
                 Button {
+                    guard ProStore.shared.allows(.skeleton) else { return }
                     for (_, clip) in loaded { clip.trackPose() }
                 } label: {
                     Label("Measure the body in this segment", systemImage: "figure.arms.open")

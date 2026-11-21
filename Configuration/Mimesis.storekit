@@ -1,0 +1,38 @@
+{
+  "identifier" : "6A1F5C2E",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+    {
+      "displayPrice" : "24.99",
+      "familyShareable" : true,
+      "internalID" : "6739460001",
+      "localizations" : [
+        {
+          "description" : "The cut-out overlay, StroMotion, the skeleton and angle graphs, the PDF report, progress over takes, and exports without the mark.",
+          "displayName" : "Mimesis Pro",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.ljworkshop.mimesis.pro",
+      "referenceName" : "Mimesis Pro",
+      "type" : "NonConsumable"
+    }
+  ],
+  "settings" : {
+    "_failTransactionsEnabled" : false,
+    "_locale" : "en_US",
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+
+    ]
+  },
+  "subscriptionGroups" : [
+
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}

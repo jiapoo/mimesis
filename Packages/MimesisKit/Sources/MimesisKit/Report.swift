@@ -205,7 +205,9 @@ enum Report {
     /// A snapshot's picture as a PNG file's data.
     static func png(of snapshot: Snapshot, comparison: Comparison) async -> Data? {
         comparison.storeSegment()
-        guard let image = await picture(of: snapshot, in: comparison.segment, comparison: comparison) else { return nil }
+        guard let picture = await picture(of: snapshot, in: comparison.segment, comparison: comparison) else { return nil }
+        // The free version's mark goes on the saved picture (the snapshot itself is kept clean).
+        let image = ProStore.shared.stamped(picture)
         let data = NSMutableData()
         guard let destination = CGImageDestinationCreateWithData(data, UTType.png.identifier as CFString, 1, nil) else { return nil }
         CGImageDestinationAddImage(destination, image, nil)

@@ -80,6 +80,8 @@ private struct Plan: @unchecked Sendable {
     let masks: [CGImage?]
     let tinted: Bool
     let name: String
+    /// The free version's "Mimesis", bottom right of the right-hand picture (nil with Pro).
+    var mark: CGImage?
 
     @MainActor init?(_ comparison: Comparison, style: Exporter.Style) {
         let range = comparison.range
@@ -116,6 +118,7 @@ private struct Plan: @unchecked Sendable {
         }
         name = comparison.clips.compactMap(\.url).map { $0.deletingPathExtension().lastPathComponent }
             .joined(separator: " vs ")
+        if !ProStore.shared.isPro { mark = ProStore.shared.markImage(forHeight: outputSize().height) }
     }
 
     func render(progress: @Sendable (Double) -> Void) async throws -> URL {
@@ -162,7 +165,7 @@ private struct Plan: @unchecked Sendable {
             var buffer: CVPixelBuffer?
             CVPixelBufferPoolCreatePixelBuffer(nil, pool, &buffer)
             guard let buffer else { continue }
-            context.render(image, to: buffer, bounds: CGRect(origin: .zero, size: size), colorSpace: space)
+            context.render(withMark(image, in: size), to: buffer, bounds: CGRect(origin: .zero, size: size), colorSpace: space)
             adaptor.append(buffer, withPresentationTime: CMTime(value: CMTimeValue(index), timescale: CMTimeScale(Exporter.frameRate)))
             progress(Double(index + 1) / Double(count))
         }
@@ -229,6 +232,27 @@ private struct Plan: @unchecked Sendable {
             "inputAVector": CIVector(x: 0, y: 0, z: 0, w: opacity),
         ])
         return placed.composited(over: under).cropped(to: canvas).composited(over: Self.black(size))
+    }
+
+    /// `image` with the free version's mark in the bottom right corner of the right-hand picture (side by
+    /// side: clip B; the overlay: the picture underneath), as on screen.
+    private func withMark(_ image: CIImage, in size: CGSize) -> CIImage {
+        guard let mark else { return image }
+        let area = style == .sideBySide
+            ? Self.fitted(b.size, in: CGRect(x: size.width / 2, y: 0, width: size.width / 2, height: size.height))
+            : Self.fitted(topIsA ? b.size : a.size, in: CGRect(origin: .zero, size: size))
+        let w = CGFloat(mark.width), h = CGFloat(mark.height), inset = h * 0.55
+        return CIImage(cgImage: mark)
+            .transformed(by: CGAffineTransform(translationX: area.maxX - w - inset, y: area.minY + inset * 0.6))
+            .composited(over: image)
+    }
+
+    /// Where a picture of `size` sits, fitted and centred, in `rect`.
+    private static func fitted(_ size: CGSize, in rect: CGRect) -> CGRect {
+        guard size.width > 0, size.height > 0 else { return rect }
+        let scale = min(rect.width / size.width, rect.height / size.height)
+        let w = size.width * scale, h = size.height * scale
+        return CGRect(x: rect.minX + (rect.width - w) / 2, y: rect.minY + (rect.height - h) / 2, width: w, height: h)
     }
 
     private static func fit(_ image: CIImage, in rect: CGRect) -> CIImage {

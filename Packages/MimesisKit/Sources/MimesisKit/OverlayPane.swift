@@ -20,6 +20,7 @@ struct OverlayPane: View {
     @State private var showingMore = false
     /// Only the picture: the snapshot's box is up, or it's being taken.
     @Environment(\.cleanPicture) private var clean
+    @Environment(\.stills) private var stills
 
     private var ui: OverlayUI { comparison.overlayUI }
     private var picking: Bool { ui.picking }
@@ -156,7 +157,7 @@ struct OverlayPane: View {
         .clipped()
         // The free version's mark, on the picture underneath (the two are one picture here).
         .overlay {
-            if showsMark { MimesisMark(videoSize: base.engine.videoSize) }
+            if showsMark && stills == nil { MimesisMark(videoSize: base.engine.videoSize) }
         }
         .overlay(alignment: .top) {
             // Everything the overlay needs, in one row over the picture (the bar underneath is the same
@@ -332,7 +333,7 @@ struct OverlayPane: View {
                             .help("Show everyone found in \(topLetter), not only the person picked")
                     }
                 }
-                RoundButton(symbol: "arrow.clockwise") { top.makeCutout(fresh: true) }
+                RoundButton(symbol: "arrow.clockwise") { if ProStore.shared.allows(.cutout) { top.makeCutout(fresh: true) } }
                     .help("Cut out again, e.g. after changing \(topLetter)'s trim")
             }
             .padding(4)

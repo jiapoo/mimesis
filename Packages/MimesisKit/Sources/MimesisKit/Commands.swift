@@ -37,6 +37,11 @@ public struct MimesisCommands: Commands {
     public var body: some Commands {
         let menu = MenuRequests.shared
         // File: everything about projects, and the ways in and out (the Mac has no ⋯ button for them).
+        // The app menu: Mimesis Pro, and Restore Purchases (App Review looks for it).
+        CommandGroup(after: .appInfo) {
+            Button(ProStore.shared.isPro ? "Mimesis Pro ✓" : "Mimesis Pro…") { ProStore.shared.showingPro = true }
+            Button("Restore Purchases") { Task { await ProStore.shared.restore(); ProStore.shared.showingPro = true } }
+        }
         CommandGroup(replacing: .newItem) {
             Button("New Comparison") { menu.pending = .new }
                 .keyboardShortcut("n", modifiers: .command)

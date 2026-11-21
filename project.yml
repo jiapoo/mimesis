@@ -25,7 +25,9 @@ packages:
 targets:
   MimesisMac:
     type: application
-    scheme: {}
+    scheme:
+      # Buying Mimesis Pro from Xcode: the local StoreKit test store (Debug ▸ StoreKit ▸ Manage Transactions).
+      storeKitConfiguration: Configuration/Mimesis.storekit
     platform: macOS
     # Localization: the strings in every language (Localizable) and the camera prompt (InfoPlist).
     sources: [Mac, Localization]
@@ -72,7 +74,9 @@ targets:
           CODE_SIGN_ENTITLEMENTS: Mac/MimesisMacDebug.entitlements
   MimesisiOS:
     type: application
-    scheme: {}
+    scheme:
+      # Buying Mimesis Pro from Xcode: the local StoreKit test store (Debug ▸ StoreKit ▸ Manage Transactions).
+      storeKitConfiguration: Configuration/Mimesis.storekit
     platform: iOS
     sources: [iOS, Localization]
     dependencies:

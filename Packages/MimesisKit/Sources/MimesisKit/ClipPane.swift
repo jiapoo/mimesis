@@ -45,6 +45,7 @@ struct ClipPane: View {
     private var fitted: Bool { clip.zoom == 1 && clip.pan == .zero }
     /// Only the picture: the snapshot's box is up, or it's being taken.
     @Environment(\.cleanPicture) private var clean
+    @Environment(\.stills) private var stills
 
     var body: some View {
         Group {
@@ -212,7 +213,8 @@ struct ClipPane: View {
         }
         // The free version's mark, as a channel's name on a broadcast.
         .overlay {
-            if showsMark { MimesisMark(videoSize: clip.engine.videoSize) }
+            // (Not in a snapshot's capture: it's kept clean, and the mark goes on when it's saved.)
+            if showsMark && stills == nil { MimesisMark(videoSize: clip.engine.videoSize) }
         }
         // Notes pinned around this moment, above the timeline.
         .overlay(alignment: .bottomLeading) {
@@ -292,6 +294,7 @@ struct ClipPane: View {
                 .help("Mirror side to side (⇧⌘H)")
             RoundButton(symbol: skeletonSymbol, active: clip.showsSkeleton) {
                 onFocus()
+                guard clip.showsSkeleton || ProStore.shared.allows(.skeleton) else { return }
                 clip.toggleSkeleton()
             }
             .help(skeletonHelp)
@@ -311,7 +314,7 @@ struct ClipPane: View {
                 Button("Clear sync points", systemImage: "diamond") { clip.syncs = [] }
                     .disabled(clip.syncs.isEmpty || linked)
                 Divider()
-                Button("StroMotion…", systemImage: "figure.run") { stroMotion = true }
+                Button("StroMotion…", systemImage: "figure.run") { if ProStore.shared.allows(.stroMotion) { stroMotion = true } }
                 Button("Edit clip…", systemImage: "crop.rotate", action: onEdit)
                 if clip.beforeEdit != nil {
                     Button("Revert to the original", systemImage: "arrow.uturn.backward", action: onRevert)

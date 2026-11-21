@@ -1933,6 +1933,71 @@
         }
       }
     },
+    "A PDF to share: every segment's key frames, drawings, angles and notes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein PDF zum Teilen: Schlüsselbilder, Zeichnungen, Winkel und Notizen jedes Abschnitts."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un PDF para compartir: los fotogramas clave, dibujos, ángulos y notas de cada segmento."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un PDF à partager : les images clés, dessins, angles et notes de chaque segment."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un PDF da condividere: i fotogrammi chiave, i disegni, gli angoli e le note di ogni segmento."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "共有用の PDF：各区間のキーフレーム、描画、角度、メモ。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "공유용 PDF: 각 구간의 키 프레임, 그림, 각도, 메모."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Um PDF para compartilhar: os quadros-chave, desenhos, ângulos e notas de cada segmento."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF, чтобы поделиться: ключевые кадры, рисунки, углы и заметки каждого отрезка."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "可分享的 PDF：每个片段的关键帧、绘图、角度和备注。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "可分享的 PDF：每個片段的關鍵影格、繪圖、角度和備註。"
+          }
+        }
+      }
+    },
     "A soft box around %@'s person instead of their outline, for when the outline loses what they hold": {
       "extractionState": "manual",
       "localizations": {
@@ -2709,6 +2774,71 @@
           "stringUnit": {
             "state": "translated",
             "value": "全部…"
+          }
+        }
+      }
+    },
+    "Already bought Mimesis Pro on this Apple ID (or in your family)? Unlock it here": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mimesis Pro schon mit dieser Apple-ID (oder in deiner Familie) gekauft? Hier freischalten"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Ya compraste Mimesis Pro con este Apple ID (o en tu familia)? Desbloquéalo aquí"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vous avez déjà acheté Mimesis Pro avec cet identifiant Apple (ou en famille) ? Déverrouillez-le ici"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hai già acquistato Mimesis Pro con questo ID Apple (o in famiglia)? Sbloccalo qui"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "この Apple ID（またはファミリー）で Mimesis Pro を購入済みですか？ここでロックを解除"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 Apple ID(또는 가족 공유)로 Mimesis Pro를 이미 구입했나요? 여기서 잠금 해제하세요"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Já comprou o Mimesis Pro com este ID Apple (ou na sua família)? Desbloqueie aqui"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Уже покупали Mimesis Pro с этим Apple ID (или в семье)? Разблокируйте здесь"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已在此 Apple ID（或家人共享）中购买过 Mimesis Pro？在这里解锁"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已在此 Apple ID（或家人共享）中購買過 Mimesis Pro？在這裡解鎖"
           }
         }
       }
@@ -3493,6 +3623,201 @@
           "stringUnit": {
             "state": "translated",
             "value": "兩部影片並排（⌘1）"
+          }
+        }
+      }
+    },
+    "Buy Mimesis Pro": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mimesis Pro kaufen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comprar Mimesis Pro"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acheter Mimesis Pro"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acquista Mimesis Pro"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mimesis Pro を購入"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mimesis Pro 구입"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comprar o Mimesis Pro"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Купить Mimesis Pro"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "购买 Mimesis Pro"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "購買 Mimesis Pro"
+          }
+        }
+      }
+    },
+    "Buy Mimesis Pro for %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mimesis Pro für %@ kaufen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comprar Mimesis Pro por %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acheter Mimesis Pro pour %@"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acquista Mimesis Pro a %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mimesis Pro を %@ で購入"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@에 Mimesis Pro 구입"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comprar o Mimesis Pro por %@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Купить Mimesis Pro за %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "以 %@ 购买 Mimesis Pro"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "以 %@ 購買 Mimesis Pro"
+          }
+        }
+      }
+    },
+    "Buy Mimesis Pro: a one-time purchase": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mimesis Pro kaufen: ein einmaliger Kauf"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comprar Mimesis Pro: un pago único"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acheter Mimesis Pro : un achat unique"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acquista Mimesis Pro: un acquisto unico"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mimesis Pro を購入：買い切り"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mimesis Pro 구입: 한 번만 구입"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comprar o Mimesis Pro: uma compra única"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Купить Mimesis Pro: разовая покупка"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "购买 Mimesis Pro：一次性购买"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "購買 Mimesis Pro：一次性購買"
           }
         }
       }
@@ -9625,6 +9950,71 @@
         }
       }
     },
+    "Everything else stays free: comparing, syncing, slow motion, drawing, angles, snapshots, projects, live replay and exports.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alles andere bleibt kostenlos: vergleichen, synchronisieren, Zeitlupe, Zeichnen, Winkel, Schnappschüsse, Projekte, Live-Replay und Exporte."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Todo lo demás sigue siendo gratis: comparar, sincronizar, cámara lenta, dibujo, ángulos, instantáneas, proyectos, repetición en directo y exportaciones."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tout le reste reste gratuit : comparer, synchroniser, ralenti, dessin, angles, instantanés, projets, replay en direct et exports."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tutto il resto resta gratuito: confronto, sincronizzazione, rallentatore, disegno, angoli, istantanee, progetti, replay dal vivo ed esportazioni."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "それ以外はすべて無料：比較、同期、スローモーション、描画、角度、スナップショット、プロジェクト、ライブリプレイ、書き出し。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "그 외는 모두 무료: 비교, 동기화, 슬로 모션, 그리기, 각도, 스냅샷, 프로젝트, 라이브 리플레이, 내보내기."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Todo o resto continua grátis: comparar, sincronizar, câmera lenta, desenho, ângulos, instantâneos, projetos, Replay ao vivo e exportações."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Всё остальное остаётся бесплатным: сравнение, синхронизация, замедление, рисование, углы, снимки, проекты, повтор вживую и экспорт."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "其他一切都免费：比较、同步、慢放、绘图、角度、快照、项目、实时回放和导出。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "其他一切都免費：比較、同步、慢放、繪圖、角度、快照、專案、即時重播和輸出。"
+          }
+        }
+      }
+    },
     "Export": {
       "extractionState": "manual",
       "localizations": {
@@ -9881,6 +10271,71 @@
           "stringUnit": {
             "state": "translated",
             "value": "輸出影片…"
+          }
+        }
+      }
+    },
+    "Exports without the Mimesis mark": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exporte ohne das Mimesis-Zeichen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exportaciones sin la marca Mimesis"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exports sans la marque Mimesis"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esportazioni senza il marchio Mimesis"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mimesis マークなしで書き出し"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mimesis 표시 없이 내보내기"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exportações sem a marca Mimesis"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Экспорт без знака Mimesis"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导出不带 Mimesis 标志"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸出不帶 Mimesis 標誌"
           }
         }
       }
@@ -10998,6 +11453,71 @@
           "stringUnit": {
             "state": "translated",
             "value": "在每部影片的入點到出點間追蹤身體，繪製關節角度圖"
+          }
+        }
+      }
+    },
+    "Follow the body, read elbow, shoulder, hip and knee angles, and compare A with B over time.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Den Körper verfolgen, Ellbogen-, Schulter-, Hüft- und Kniewinkel ablesen und A mit B über die Zeit vergleichen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sigue el cuerpo, lee los ángulos de codo, hombro, cadera y rodilla, y compara A con B en el tiempo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suivez le corps, lisez les angles du coude, de l'épaule, de la hanche et du genou, et comparez A et B dans le temps."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Segui il corpo, leggi gli angoli di gomito, spalla, anca e ginocchio, e confronta A con B nel tempo."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "体を追跡し、ひじ・肩・股関節・ひざの角度を読み取り、A と B を時間で比べます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "몸을 추적해 팔꿈치, 어깨, 엉덩이, 무릎 각도를 읽고 A와 B를 시간에 따라 비교합니다."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Siga o corpo, leia os ângulos de cotovelo, ombro, quadril e joelho, e compare A com B ao longo do tempo."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отслеживайте тело, смотрите углы локтя, плеча, бедра и колена и сравнивайте A с B во времени."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "跟踪身体，读取肘、肩、髋和膝的角度，并随时间比较 A 与 B。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "追蹤身體，讀取肘、肩、髖和膝的角度，並隨時間比較 A 與 B。"
           }
         }
       }
@@ -14452,6 +14972,141 @@
       "extractionState": "manual",
       "shouldTranslate": false
     },
+    "Mimesis Pro is unlocked on this Apple ID. Thank you!": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mimesis Pro ist für diese Apple-ID freigeschaltet. Danke!"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mimesis Pro está desbloqueado en este Apple ID. ¡Gracias!"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mimesis Pro est déverrouillé pour cet identifiant Apple. Merci !"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mimesis Pro è sbloccato su questo ID Apple. Grazie!"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "この Apple ID で Mimesis Pro のロックが解除されています。ありがとうございます！"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 Apple ID에서 Mimesis Pro가 잠금 해제되었습니다. 감사합니다!"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Mimesis Pro está desbloqueado neste ID Apple. Obrigado!"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mimesis Pro разблокирован для этого Apple ID. Спасибо!"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此 Apple ID 已解锁 Mimesis Pro。谢谢！"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此 Apple ID 已解鎖 Mimesis Pro。謝謝！"
+          }
+        }
+      }
+    },
+    "Mimesis Pro ✓": {
+      "extractionState": "manual",
+      "localizations": {},
+      "shouldTranslate": false
+    },
+    "Mimesis Pro…": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mimesis Pro …"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mimesis Pro…"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mimesis Pro…"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mimesis Pro…"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mimesis Pro…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mimesis Pro…"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mimesis Pro…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mimesis Pro…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mimesis Pro…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mimesis Pro…"
+          }
+        }
+      }
+    },
     "Mimesis needs the camera for Live replay: allow it in Settings › Privacy › Camera.": {
       "extractionState": "manual",
       "localizations": {
@@ -15553,6 +16208,71 @@
           "stringUnit": {
             "state": "translated",
             "value": "新增片段：兩部影片的另一段，有自己的入點/出點、同步點、速度和繪圖"
+          }
+        }
+      }
+    },
+    "No Mimesis Pro purchase was found for this Apple ID.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Für diese Apple-ID wurde kein Kauf von Mimesis Pro gefunden."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se encontró ninguna compra de Mimesis Pro para este Apple ID."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aucun achat de Mimesis Pro n'a été trouvé pour cet identifiant Apple."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessun acquisto di Mimesis Pro trovato per questo ID Apple."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "この Apple ID で Mimesis Pro の購入は見つかりませんでした。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 Apple ID로 구입한 Mimesis Pro를 찾을 수 없습니다."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nenhuma compra do Mimesis Pro foi encontrada para este ID Apple."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Покупка Mimesis Pro для этого Apple ID не найдена."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此 Apple ID 没有找到 Mimesis Pro 的购买记录。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此 Apple ID 沒有找到 Mimesis Pro 的購買記錄。"
           }
         }
       }
@@ -16987,6 +17707,136 @@
         }
       }
     },
+    "One picture with the body at several moments of the movement.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein Bild mit dem Körper zu mehreren Momenten der Bewegung."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Una imagen con el cuerpo en varios momentos del movimiento."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Une image avec le corps à plusieurs moments du mouvement."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un'immagine con il corpo in diversi momenti del movimento."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "動きのいくつかの瞬間の体を 1 枚にした画像。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "동작의 여러 순간의 몸을 한 장에 담은 그림."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uma imagem com o corpo em vários momentos do movimento."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Одно изображение с телом в нескольких моментах движения."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "一张图片，显示动作中多个时刻的身体。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "一張圖片，顯示動作中多個時刻的身體。"
+          }
+        }
+      }
+    },
+    "One purchase, no subscription, on all your Apple devices. Family Sharing included.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein Kauf, kein Abo, auf all deinen Apple-Geräten. Mit Familienfreigabe."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un solo pago, sin suscripción, en todos tus dispositivos Apple. Con En familia."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un seul achat, sans abonnement, sur tous vos appareils Apple. Partage familial inclus."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un solo acquisto, nessun abbonamento, su tutti i tuoi dispositivi Apple. In Famiglia incluso."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 回の購入、サブスクリプションなし、すべての Apple デバイスで使えます。ファミリー共有に対応。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "한 번 구입, 구독 없음, 모든 Apple 기기에서 사용. 가족 공유 포함."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uma compra, sem assinatura, em todos os seus dispositivos Apple. Com Compartilhamento Familiar."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Одна покупка, без подписки, на всех ваших устройствах Apple. С Семейным доступом."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "一次购买，无需订阅，适用于你所有的 Apple 设备。支持家人共享。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "一次購買，無需訂閱，適用於你所有的 Apple 裝置。支援家人共享。"
+          }
+        }
+      }
+    },
     "Only the first %lld frames are cut out: set %@'s In and Out around the movement": {
       "extractionState": "manual",
       "localizations": {
@@ -17054,6 +17904,71 @@
           "stringUnit": {
             "state": "translated",
             "value": "只為前 %1$lld 格去背：請把 %2$@ 的入點和出點設在動作周圍"
+          }
+        }
+      }
+    },
+    "Only the player shows over your clip, picked from the others in frame, lined up and tinted.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nur der Spieler erscheint über deinem Clip, aus den anderen im Bild ausgewählt, ausgerichtet und eingefärbt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solo el jugador aparece sobre tu clip, elegido entre los demás del encuadre, alineado y teñido."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seul le joueur apparaît sur votre clip, choisi parmi les autres personnes du cadre, aligné et teinté."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solo il giocatore appare sulla tua clip, scelto tra gli altri nell'inquadratura, allineato e colorato."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選手だけをあなたのクリップに重ねます：画面内のほかの人から選び、位置を合わせ、色を付けます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "선수만 내 클립 위에 보입니다: 화면 속 다른 사람들 중에서 골라 맞추고 색을 입힙니다."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Só o jogador aparece sobre o seu clipe, escolhido entre os outros no quadro, alinhado e tingido."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Поверх вашего клипа виден только игрок: выбранный среди других в кадре, совмещённый и окрашенный."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "只有这名球员显示在你的视频上：从画面中的其他人里选出、对齐并着色。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "只有這名球員顯示在你的影片上：從畫面中的其他人裡選出、對齊並上色。"
           }
         }
       }
@@ -19463,6 +20378,71 @@
         }
       }
     },
+    "Progress over takes": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fortschritt über die Aufnahmen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Progreso a lo largo de las tomas"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Progrès au fil des prises"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Progressi nel tempo"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "日ごとの上達"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "날짜별 발전"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Progresso ao longo das tomadas"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Прогресс по дублям"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "不同时间的进步"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "不同時間的進步"
+          }
+        }
+      }
+    },
     "Project": {
       "extractionState": "manual",
       "localizations": {
@@ -21344,6 +22324,71 @@
           "stringUnit": {
             "state": "translated",
             "value": "重置"
+          }
+        }
+      }
+    },
+    "Restore Purchases": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Käufe wiederherstellen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restaurar compras"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restaurer les achats"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ripristina acquisti"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "購入を復元"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "구입 내역 복원"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restaurar compras"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Восстановить покупки"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "恢复购买"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "回復購買項目"
           }
         }
       }
@@ -26521,6 +27566,136 @@
         }
       }
     },
+    "The App Store can't be reached. Check the connection and try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der App Store ist nicht erreichbar. Prüfe die Verbindung und versuche es erneut."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se puede acceder al App Store. Comprueba la conexión e inténtalo de nuevo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossible de joindre l'App Store. Vérifiez la connexion et réessayez."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile raggiungere l'App Store. Controlla la connessione e riprova."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store に接続できません。接続を確認してもう一度お試しください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store에 연결할 수 없습니다. 연결을 확인한 후 다시 시도하세요."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não é possível acessar a App Store. Verifique a conexão e tente de novo."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нет связи с App Store. Проверьте подключение и попробуйте снова."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法连接 App Store。请检查网络后重试。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法連線 App Store。請檢查網路後再試一次。"
+          }
+        }
+      }
+    },
+    "The PDF report": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der PDF-Bericht"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El informe en PDF"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le rapport PDF"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il report PDF"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF レポート"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF 리포트"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O relatório em PDF"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отчёт в PDF"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF 报告"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF 報告"
+          }
+        }
+      }
+    },
     "The backgrounds don't match: are both clips filmed at the same place?": {
       "extractionState": "manual",
       "localizations": {
@@ -26976,6 +28151,71 @@
         }
       }
     },
+    "The person cut out over the other clip": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die freigestellte Person über dem anderen Clip"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La persona recortada sobre el otro clip"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La personne détourée sur l'autre clip"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La persona scontornata sopra l'altra clip"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "切り抜いた人物をもう一方のクリップに重ねる"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "배경을 제거한 인물을 다른 클립 위에"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A pessoa recortada sobre o outro clipe"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вырезанный человек поверх другого клипа"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "抠出的人物叠在另一个视频上"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "去背的人物疊在另一部影片上"
+          }
+        }
+      }
+    },
     "The project file, with its copies of the videos, goes to the Trash. The original videos aren't touched.": {
       "extractionState": "manual",
       "localizations": {
@@ -27106,6 +28346,71 @@
         }
       }
     },
+    "The same movement filmed on different days, each against the same model.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieselbe Bewegung an verschiedenen Tagen gefilmt, jedes Mal gegenüber demselben Vorbild."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El mismo movimiento grabado en días distintos, siempre frente al mismo modelo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le même mouvement filmé à des jours différents, toujours face au même modèle."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lo stesso movimento filmato in giorni diversi, sempre rispetto allo stesso modello."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "別の日に撮った同じ動きを、いつも同じ手本と比べます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다른 날 촬영한 같은 동작을 매번 같은 모델과 비교합니다."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O mesmo movimento filmado em dias diferentes, sempre contra o mesmo modelo."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Одно и то же движение, снятое в разные дни, каждый раз в сравнении с одним образцом."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同一动作在不同日子拍摄，每次都与同一个范例比较。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同一動作在不同日子拍攝，每次都與同一個範例比較。"
+          }
+        }
+      }
+    },
     "The skeleton needs a real iPhone or iPad (Vision can't find bodies in Simulator).": {
       "extractionState": "manual",
       "localizations": {
@@ -27167,6 +28472,71 @@
           "stringUnit": {
             "state": "translated",
             "value": "骨架需要真實的 iPhone 或 iPad（模擬器中 Vision 無法找到身體）。"
+          }
+        }
+      }
+    },
+    "The skeleton, joint angles and their graphs": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das Skelett, die Gelenkwinkel und ihre Diagramme"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El esqueleto, los ángulos de las articulaciones y sus gráficas"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le squelette, les angles des articulations et leurs graphiques"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lo scheletro, gli angoli delle articolazioni e i loro grafici"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "骨格、関節の角度とそのグラフ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "골격, 관절 각도와 그래프"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O esqueleto, os ângulos das articulações e seus gráficos"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Скелет, углы суставов и их графики"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "骨架、关节角度及其图表"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "骨架、關節角度及其圖表"
           }
         }
       }
@@ -28699,6 +30069,136 @@
           "stringUnit": {
             "state": "translated",
             "value": "取消靜音（M）"
+          }
+        }
+      }
+    },
+    "Videos and pictures without “Mimesis” on them.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Videos und Bilder ohne „Mimesis“."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vídeos e imágenes sin “Mimesis”."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Des vidéos et images sans « Mimesis »."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video e immagini senza “Mimesis”."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「Mimesis」が入らない動画と画像。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "‘Mimesis’가 없는 영상과 그림."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vídeos e imagens sem “Mimesis”."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Видео и изображения без «Mimesis»."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "视频和图片上不带“Mimesis”。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "影片和圖片上不帶「Mimesis」。"
+          }
+        }
+      }
+    },
+    "Waiting for approval (Ask to Buy). Pro unlocks as soon as it's approved.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Warte auf Zustimmung (Kaufanfrage). Pro wird freigeschaltet, sobald zugestimmt wurde."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esperando aprobación (Solicitar la compra). Pro se desbloquea en cuanto se apruebe."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En attente d'approbation (Demander l'autorisation d'acheter). Pro se déverrouille dès l'approbation."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In attesa di approvazione (Chiedi di acquistare). Pro si sblocca appena viene approvato."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "承認を待っています（承認と購入のリクエスト）。承認されるとすぐに Pro が使えます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "승인을 기다리는 중입니다(구입 요청). 승인되면 바로 Pro가 잠금 해제됩니다."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aguardando aprovação (Pedir para Comprar). O Pro é desbloqueado assim que for aprovado."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ожидание одобрения («Попросить купить»). Pro разблокируется сразу после одобрения."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在等待批准（询问后购买）。批准后 Pro 会立即解锁。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在等待核准（購買前詢問）。核准後 Pro 會立即解鎖。"
           }
         }
       }
